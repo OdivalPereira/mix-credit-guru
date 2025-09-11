@@ -1,5 +1,6 @@
 import { Produto, useCatalogoStore } from "@/store/useCatalogoStore";
-import { Fornecedor, useCotacaoStore } from "@/store/useCotacaoStore";
+import { useCotacaoStore } from "@/store/useCotacaoStore";
+import type { Supplier } from "@/types/domain";
 
 export const seedProdutos: Produto[] = [
   {
@@ -40,7 +41,7 @@ export const seedProdutos: Produto[] = [
   },
 ];
 
-export const seedFornecedores: Fornecedor[] = [
+export const seedFornecedores: Supplier[] = [
   {
     id: "forn-1",
     nome: "Alimentos Alpha",

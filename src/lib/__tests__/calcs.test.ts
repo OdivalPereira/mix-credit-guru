@@ -4,7 +4,7 @@ import type { Supplier } from '@/types/domain';
 
 describe('computeEffectiveCost', () => {
   it('soma preço, frete e impostos e subtrai crédito', () => {
-    const custo = computeEffectiveCost(100, 10, 10, 5, 2, 15);
+    const custo = computeEffectiveCost(100, 10, { ibs: 10, cbs: 5, is: 2 }, 15);
     expect(custo).toBe(112);
   });
 });
@@ -13,7 +13,7 @@ describe('rankSuppliers', () => {
   it('ordena fornecedores pelo menor custo efetivo', () => {
     const suppliers: Supplier[] = [
       {
-        id: 1,
+        id: '1',
         nome: 'A',
         tipo: 'x',
         regime: 'normal',
@@ -22,13 +22,9 @@ describe('rankSuppliers', () => {
         cbs: 5,
         is: 0,
         frete: 10,
-        creditavel: false,
-        credito: 0,
-        custoEfetivo: 0,
-        ranking: 0
       },
       {
-        id: 2,
+        id: '2',
         nome: 'B',
         tipo: 'x',
         regime: 'normal',
@@ -37,10 +33,6 @@ describe('rankSuppliers', () => {
         cbs: 5,
         is: 0,
         frete: 5,
-        creditavel: false,
-        credito: 0,
-        custoEfetivo: 0,
-        ranking: 0
       }
     ];
 

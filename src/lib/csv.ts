@@ -1,4 +1,4 @@
-import type { Fornecedor } from "../store/useCotacaoStore";
+import type { Supplier } from "@/types/domain";
 
 export const fornecedorCsvHeaders = [
   "nome",
@@ -11,7 +11,7 @@ export const fornecedorCsvHeaders = [
   "frete",
 ] as const;
 
-export function readFornecedoresCSV(csv: string): Fornecedor[] {
+export function readFornecedoresCSV(csv: string): Supplier[] {
   const lines = csv.trim().split(/\r?\n/);
   const [, ...rows] = lines;
   return rows.filter(Boolean).map((row) => {
@@ -30,7 +30,7 @@ export function readFornecedoresCSV(csv: string): Fornecedor[] {
   });
 }
 
-export function writeFornecedoresCSV(fornecedores: Fornecedor[]): string {
+export function writeFornecedoresCSV(fornecedores: Supplier[]): string {
   const header = fornecedorCsvHeaders.join(",");
   const rows = fornecedores.map((f) =>
     [
