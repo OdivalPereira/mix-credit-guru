@@ -2,7 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, TrendingUp, TrendingDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect } from "react";
+import { useAppStore } from "@/store/useAppStore";
 import type { Scenario } from "@/types/domain";
 
 const scenarios: Record<string, Scenario> = {
@@ -34,9 +35,17 @@ const scenarios: Record<string, Scenario> = {
 };
 
 export default function Cenarios() {
-  const [selectedYear, setSelectedYear] = useState("2025");
-  
-  const scenario = scenarios[selectedYear as keyof typeof scenarios];
+  const selectedYear = useAppStore((state) => state.scenario);
+  const setScenario = useAppStore((state) => state.setScenario);
+
+  useEffect(() => {
+    if (!(selectedYear in scenarios)) {
+      setScenario("2025");
+    }
+  }, [selectedYear, setScenario]);
+
+  const scenario =
+    scenarios[selectedYear as keyof typeof scenarios] ?? scenarios["2025"];
   
   const getImpactBadge = (impact: string) => {
     switch(impact) {
@@ -71,7 +80,10 @@ export default function Cenarios() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <Select
+            value={selectedYear in scenarios ? selectedYear : "2025"}
+            onValueChange={setScenario}
+          >
             <SelectTrigger className="w-full max-w-xs">
               <SelectValue />
             </SelectTrigger>
@@ -83,6 +95,20 @@ export default function Cenarios() {
               <SelectItem value="2033">2033 - Longo Prazo</SelectItem>
             </SelectContent>
           </Select>
+        </CardContent>
+      </Card>
+
+      {/* Active Scenario Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Resumo do Cenário</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline">Ano: {selectedYear}</Badge>
+            <Badge variant="secondary">{scenario.title}</Badge>
+            {getImpactBadge(scenario.impact)}
+          </div>
         </CardContent>
       </Card>
 
