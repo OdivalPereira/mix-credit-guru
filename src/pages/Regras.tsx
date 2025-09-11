@@ -1,153 +1,280 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
+import { useRef, ChangeEvent } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAppStore } from "@/store/useAppStore";
+import { z } from "zod";
 
-const creditMatrix = [
-  {
-    destino: "Refeição (A)",
-    regimeNormal: { credito: "Total", status: "yes" },
-    simples: { credito: "Não", status: "no" },
-    presumido: { credito: "Limitado", status: "limited" }
-  },
-  {
-    destino: "Revenda (B)",
-    regimeNormal: { credito: "Total", status: "yes" },
-    simples: { credito: "Não", status: "no" },
-    presumido: { credito: "Total", status: "yes" }
-  }
-];
-
-const taxTerms = [
-  { term: "IBS", definition: "Imposto sobre Bens e Serviços - substitui ICMS, ISS, IPI" },
-  { term: "CBS", definition: "Contribuição sobre Bens e Serviços - substitui PIS e COFINS" },
-  { term: "IS", definition: "Imposto Seletivo - incide sobre produtos específicos" },
-  { term: "NCM", definition: "Nomenclatura Comum do Mercosul - código de classificação de mercadorias" }
-];
+const ruleSchema = z.object({
+  ncm: z.string().regex(/^\d{4}\.\d{2}\.\d{2}$/, "NCM inválido"),
+  descricao: z.string().min(1, "Descrição obrigatória"),
+  receita: z.object({
+    codigo: z.string().min(1, "Código obrigatório"),
+    descricao: z.string().min(1, "Descrição obrigatória"),
+  }),
+  aliquotas: z.object({
+    ibs: z.number().nonnegative(),
+    cbs: z.number().nonnegative(),
+    is: z.number().nonnegative(),
+  }),
+});
 
 export default function Regras() {
-  const getCreditBadge = (status: string) => {
-    switch(status) {
-      case 'yes':
-        return <Badge variant="success">✓ Total</Badge>;
-      case 'no':
-        return <Badge variant="destructive">ɸ Não</Badge>;
-      case 'limited':
-        return <Badge variant="warning">! Limitado</Badge>;
-      default:
-        return null;
+  const regras = useAppStore((s) => s.regras);
+  const receitas = useAppStore((s) => s.receitas);
+  const addRegra = useAppStore((s) => s.addRegra);
+  const updateRegra = useAppStore((s) => s.updateRegra);
+  const removeRegra = useAppStore((s) => s.removeRegra);
+  const setRegras = useAppStore((s) => s.setRegras);
+
+  const addReceita = useAppStore((s) => s.addReceita);
+  const updateReceita = useAppStore((s) => s.updateReceita);
+  const removeReceita = useAppStore((s) => s.removeReceita);
+
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleField = (
+    ncm: string,
+    field: keyof typeof regras[number],
+    value: string,
+    subfield?: keyof typeof regras[number]["aliquotas"] | keyof typeof regras[number]["receita"],
+  ) => {
+    try {
+      const next = regras.map((r) =>
+        r.ncm === ncm
+          ? {
+              ...r,
+              [field]:
+                field === "aliquotas"
+                  ? { ...r.aliquotas, [subfield as string]: Number(value) }
+                  : field === "receita"
+                  ? { ...r.receita, [subfield as string]: value }
+                  : value,
+            }
+          : r,
+      );
+      const result = ruleSchema.safeParse(next.find((r) => r.ncm === ncm));
+      if (!result.success) return;
+      setRegras(next);
+    } catch {
+      /* ignore */
     }
+  };
+
+  const handleAddRegra = () => {
+    addRegra({
+      ncm: "0000.00.00",
+      descricao: "",
+      receita: { codigo: "", descricao: "" },
+      aliquotas: { ibs: 0, cbs: 0, is: 0 },
+    });
+  };
+
+  const handleImport = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    try {
+      const json = JSON.parse(text);
+      if (Array.isArray(json)) {
+        const valid = json.filter((j) => ruleSchema.safeParse(j).success);
+        setRegras(valid);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleExport = () => {
+    const data = JSON.stringify(regras, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "regras.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleReload = async () => {
+    try {
+      const res = await fetch("/data/rules/ncm_rules.json");
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        setRegras(json);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleAddReceita = () => {
+    addReceita({ codigo: "", descricao: "" });
   };
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Regras de Crédito</h2>
-        <p className="text-muted-foreground">
-          Matriz de creditabilidade tributária por regime e destinação
-        </p>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => fileRef.current?.click()}>Importar JSON</Button>
+        <input
+          type="file"
+          accept="application/json"
+          className="hidden"
+          ref={fileRef}
+          onChange={handleImport}
+        />
+        <Button variant="secondary" onClick={handleExport}>
+          Exportar JSON
+        </Button>
+        <Button variant="outline" onClick={handleReload}>
+          Recarregar regras
+        </Button>
       </div>
 
-      {/* Credit Matrix */}
       <Card>
         <CardHeader>
-          <CardTitle>Matriz de Crédito Tributário</CardTitle>
-          <CardDescription>
-            Regras de creditabilidade baseadas no regime do comprador e destinação da mercadoria
-          </CardDescription>
+          <CardTitle>Regras NCM</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Destinação</TableHead>
-                  <TableHead className="text-center">Regime Normal</TableHead>
-                  <TableHead className="text-center">Simples Nacional</TableHead>
-                  <TableHead className="text-center">Lucro Presumido</TableHead>
+          <div className="mb-4">
+            <Button size="sm" onClick={handleAddRegra}>
+              Adicionar regra
+            </Button>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>NCM</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Código Receita</TableHead>
+                <TableHead>Descrição Receita</TableHead>
+                <TableHead>IBS</TableHead>
+                <TableHead>CBS</TableHead>
+                <TableHead>IS</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {regras.map((r) => (
+                <TableRow key={r.ncm}>
+                  <TableCell>
+                    <Input
+                      value={r.ncm}
+                      onChange={(e) => handleField(r.ncm, "ncm", e.target.value)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={r.descricao}
+                      onChange={(e) => handleField(r.ncm, "descricao", e.target.value)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={r.receita.codigo}
+                      onChange={(e) =>
+                        handleField(r.ncm, "receita", e.target.value, "codigo")
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={r.receita.descricao}
+                      onChange={(e) =>
+                        handleField(r.ncm, "receita", e.target.value, "descricao")
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={r.aliquotas.ibs}
+                      onChange={(e) =>
+                        handleField(r.ncm, "aliquotas", e.target.value, "ibs")
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={r.aliquotas.cbs}
+                      onChange={(e) =>
+                        handleField(r.ncm, "aliquotas", e.target.value, "cbs")
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={r.aliquotas.is}
+                      onChange={(e) =>
+                        handleField(r.ncm, "aliquotas", e.target.value, "is")
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeRegra(r.ncm)}
+                    >
+                      Remover
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {creditMatrix.map((row, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{row.destino}</TableCell>
-                    <TableCell className="text-center">
-                      {getCreditBadge(row.regimeNormal.status)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getCreditBadge(row.simples.status)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getCreditBadge(row.presumido.status)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Tax Terms Glossary */}
       <Card>
         <CardHeader>
-          <CardTitle>Glossário de Termos Tributários</CardTitle>
-          <CardDescription>
-            Definições dos principais termos utilizados no sistema
-          </CardDescription>
+          <CardTitle>Receitas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-            {taxTerms.map((item, index) => (
-              <div key={index} className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline">{item.term}</Badge>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">{item.definition}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <p className="text-sm text-muted-foreground flex-1">{item.definition}</p>
-              </div>
-            ))}
+          <div className="mb-4">
+            <Button size="sm" onClick={handleAddReceita}>
+              Adicionar receita
+            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Additional Rules */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Regras Especiais</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 border border-success/20 bg-success/5 rounded-lg">
-            <h4 className="font-medium text-success mb-2">Cesta Básica</h4>
-            <p className="text-sm text-muted-foreground">
-              Produtos da cesta básica possuem alíquota reduzida e regras especiais de creditabilidade
-            </p>
-          </div>
-          
-          <div className="p-4 border border-warning/20 bg-warning/5 rounded-lg">
-            <h4 className="font-medium text-warning mb-2">Imposto Seletivo</h4>
-            <p className="text-sm text-muted-foreground">
-              Produtos sujeitos ao IS (bebidas, cigarros, etc.) têm tributação adicional
-            </p>
-          </div>
-          
-          <div className="p-4 border border-primary/20 bg-primary/5 rounded-lg">
-            <h4 className="font-medium text-primary mb-2">Transição 2025-2027</h4>
-            <p className="text-sm text-muted-foreground">
-              Durante o período de transição, coexistirão regras antigas e novas
-            </p>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {receitas.map((r) => (
+                <TableRow key={r.codigo}>
+                  <TableCell>
+                    <Input
+                      value={r.codigo}
+                      onChange={(e) => updateReceita(r.codigo, { codigo: e.target.value })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={r.descricao}
+                      onChange={(e) => updateReceita(r.codigo, { descricao: e.target.value })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeReceita(r.codigo)}
+                    >
+                      Remover
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
