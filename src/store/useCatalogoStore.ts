@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export interface Produto {
   id: string;
@@ -78,7 +78,10 @@ export const useCatalogoStore = create<CatalogoStore>()(
         return [header, ...rows].join("\n");
       },
     }),
-    { name: "catalogo-storage" },
+    {
+      name: "cmx_v03_catalogo",
+      storage: createJSONStorage(() => localStorage),
+    },
   ),
 );
 
