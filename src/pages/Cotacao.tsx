@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,47 +6,96 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Plus } from "lucide-react";
-
-const mockSuppliers = [
-  {
-    id: 1,
-    nome: "Fornecedor Alpha",
-    tipo: "Cadeia",
-    regime: "Regime Normal",
-    preco: 15.50,
-    ibs: 12.0,
-    cbs: 9.25,
-    is: 5.0,
-    frete: 2.30,
-    creditavel: true,
-    credito: 21.25,
-    custoEfetivo: 12.55,
-    ranking: 1
-  },
-  {
-    id: 2,
-    nome: "Distribuidora Beta",
-    tipo: "Independente", 
-    regime: "Simples Nacional",
-    preco: 14.80,
-    ibs: 0,
-    cbs: 0,
-    is: 0,
-    frete: 3.20,
-    creditavel: false,
-    credito: 0,
-    custoEfetivo: 18.00,
-    ranking: 2
-  }
-];
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  Download,
+  Plus,
+  Upload,
+  Copy,
+  Trash,
+  BarChartHorizontal,
+} from "lucide-react";
+import { useCotacaoStore, Fornecedor } from "@/store/useCotacaoStore";
 
 export default function Cotacao() {
-  const [data, setData] = useState(new Date().toISOString().split('T')[0]);
-  const [uf, setUf] = useState("");
-  const [destino, setDestino] = useState("");
-  const [regime, setRegime] = useState("");
-  const [produto, setProduto] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mostrarGrafico, setMostrarGrafico] = useState(false);
+
+  const {
+    contexto,
+    setContexto,
+    fornecedores,
+    resultados,
+    upsertFornecedor,
+    removeFornecedor,
+    importarCSV,
+    exportarCSV,
+    limpar,
+    calcular,
+  } = useCotacaoStore();
+
+  useEffect(() => {
+    calcular();
+  }, [contexto, fornecedores, calcular]);
+
+  const handleContextoChange = (key: keyof typeof contexto, value: string) => {
+    setContexto({ [key]: value });
+  };
+
+  const numericFields: Array<keyof Fornecedor> = [
+    "preco",
+    "ibs",
+    "cbs",
+    "is",
+    "frete",
+  ];
+
+  const isNumericField = (
+    f: keyof Fornecedor,
+  ): f is (typeof numericFields)[number] => numericFields.includes(f);
+
+  const handleFornecedorChange = (
+    id: string,
+    field: keyof Fornecedor,
+    value: string,
+  ) => {
+    const original = fornecedores.find((f) => f.id === id) as Fornecedor;
+    upsertFornecedor({
+      id,
+      ...original,
+      [field]: isNumericField(field) ? parseFloat(value) || 0 : value,
+    });
+  };
+
+  const handleDuplicate = (f: Fornecedor) => {
+    const { id, ...rest } = f;
+    upsertFornecedor({ ...rest });
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    importarCSV(text);
+    e.target.value = "";
+  };
+
+  const handleExport = () => {
+    const csv = exportarCSV();
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fornecedores.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const getCreditBadge = (creditavel: boolean, credito: number) => {
     if (!creditavel) return <Badge variant="creditNo">ɸ Não creditável</Badge>;
@@ -79,14 +128,17 @@ export default function Cotacao() {
               <Input
                 id="data"
                 type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
+                value={contexto.data}
+                onChange={(e) => handleContextoChange("data", e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="uf">UF</Label>
-              <Select value={uf} onValueChange={setUf}>
+              <Select
+                value={contexto.uf}
+                onValueChange={(v) => handleContextoChange("uf", v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
@@ -101,7 +153,10 @@ export default function Cotacao() {
 
             <div className="space-y-2">
               <Label htmlFor="destino">Destino</Label>
-              <Select value={destino} onValueChange={setDestino}>
+              <Select
+                value={contexto.destino}
+                onValueChange={(v) => handleContextoChange("destino", v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Finalidade" />
                 </SelectTrigger>
@@ -114,7 +169,10 @@ export default function Cotacao() {
 
             <div className="space-y-2">
               <Label htmlFor="regime">Seu Regime</Label>
-              <Select value={regime} onValueChange={setRegime}>
+              <Select
+                value={contexto.regime}
+                onValueChange={(v) => handleContextoChange("regime", v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Regime tributário" />
                 </SelectTrigger>
@@ -131,8 +189,8 @@ export default function Cotacao() {
               <Input
                 id="produto"
                 placeholder="NCM ou descrição"
-                value={produto}
-                onChange={(e) => setProduto(e.target.value)}
+                value={contexto.produto}
+                onChange={(e) => handleContextoChange("produto", e.target.value)}
               />
             </div>
           </div>
@@ -149,13 +207,39 @@ export default function Cotacao() {
             </CardDescription>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleImport}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => upsertFornecedor({ nome: "", tipo: "", regime: "", preco: 0, ibs: 0, cbs: 0, is: 0, frete: 0 })}
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Adicionar Fornecedor
+              Adicionar
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Importar CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" />
               Exportar CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={limpar}>
+              Limpar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMostrarGrafico((v) => !v)}
+            >
+              <BarChartHorizontal className="mr-2 h-4 w-4" />
+              {mostrarGrafico ? "Ocultar" : "Gráfico"}
             </Button>
           </div>
         </CardHeader>
@@ -176,27 +260,116 @@ export default function Cotacao() {
                   <TableHead>Creditável</TableHead>
                   <TableHead className="text-right">Crédito</TableHead>
                   <TableHead className="text-right font-bold">Custo Efetivo</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockSuppliers.map((supplier) => (
-                  <TableRow key={supplier.id} className={supplier.ranking === 1 ? "bg-success/5" : ""}>
+                {resultados.map((supplier) => (
+                  <TableRow
+                    key={supplier.id}
+                    className={supplier.ranking === 1 ? "bg-success/5" : ""}
+                  >
                     <TableCell className="font-medium">
-                      {supplier.ranking === 1 && <Badge variant="success" className="mr-2">1º</Badge>}
+                      {supplier.ranking === 1 && (
+                        <Badge variant="success" className="mr-2">
+                          1º
+                        </Badge>
+                      )}
                       {supplier.ranking}
                     </TableCell>
-                    <TableCell className="font-medium">{supplier.nome}</TableCell>
-                    <TableCell>{supplier.tipo}</TableCell>
-                    <TableCell>{supplier.regime}</TableCell>
-                    <TableCell className="text-right">R$ {supplier.preco.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{supplier.ibs}%</TableCell>
-                    <TableCell className="text-right">{supplier.cbs}%</TableCell>
-                    <TableCell className="text-right">{supplier.is}%</TableCell>
-                    <TableCell className="text-right">R$ {supplier.frete.toFixed(2)}</TableCell>
-                    <TableCell>{getCreditBadge(supplier.creditavel, supplier.credito)}</TableCell>
-                    <TableCell className="text-right">R$ {supplier.credito.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium">
+                      <Input
+                        value={supplier.nome}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "nome", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={supplier.tipo}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "tipo", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={supplier.regime}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "regime", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        className="text-right"
+                        value={supplier.preco}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "preco", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        className="text-right"
+                        value={supplier.ibs}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "ibs", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        className="text-right"
+                        value={supplier.cbs}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "cbs", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        className="text-right"
+                        value={supplier.is}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "is", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        className="text-right"
+                        value={supplier.frete}
+                        onChange={(e) =>
+                          handleFornecedorChange(supplier.id, "frete", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {getCreditBadge(supplier.creditavel, supplier.credito)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      R$ {supplier.credito.toFixed(2)}
+                    </TableCell>
                     <TableCell className="text-right font-bold text-lg">
                       R$ {supplier.custoEfetivo.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDuplicate(supplier)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFornecedor(supplier.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -205,6 +378,69 @@ export default function Cotacao() {
           </div>
         </CardContent>
       </Card>
+
+      {mostrarGrafico && resultados.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Custos Efetivos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{ custoEfetivo: { label: "Custo Efetivo", color: "hsl(var(--chart-1))" } }}
+              className="h-[300px]"
+            >
+              <BarChart data={resultados} layout="vertical">
+                <CartesianGrid vertical={false} />
+                <XAxis type="number" dataKey="custoEfetivo" hide />
+                <YAxis
+                  dataKey="nome"
+                  type="category"
+                  width={150}
+                  tick={{ fontSize: 12 }}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar
+                  dataKey="custoEfetivo"
+                  fill="var(--color-custoEfetivo)"
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {resultados.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cadeia de Fornecimento</CardTitle>
+            <CardDescription>
+              Painel de cadeia com até quatro estágios por fornecedor
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible>
+              {resultados.map((r) => (
+                <AccordionItem key={r.id} value={r.id}>
+                  <AccordionTrigger>{r.nome}</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="rounded border p-2 text-center text-sm"
+                        >
+                          Estágio {i + 1}
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
