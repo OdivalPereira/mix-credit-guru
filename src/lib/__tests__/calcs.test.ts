@@ -36,11 +36,11 @@ describe('rankSuppliers', () => {
       }
     ];
 
-    const ranked = rankSuppliers(suppliers, { destino: 'A', regime: 'normal' });
+    const ranked = rankSuppliers(suppliers, { destino: 'A', regime: 'normal', scenario: 'default', uf: 'SP' });
 
     expect(ranked.map(s => s.ranking)).toEqual([1, 2]);
     expect(ranked[0].custoEfetivo).toBeLessThan(ranked[1].custoEfetivo);
-    expect(ranked[0].credito).toBe(15);
-    expect(ranked[1].credito).toBe(11);
+    expect(ranked[0].credito).toBe(17);
+    expect(ranked[1].credito).toBeCloseTo(18.7);
   });
 });

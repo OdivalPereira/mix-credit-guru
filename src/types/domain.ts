@@ -6,6 +6,11 @@ export interface Scenario {
   impact: ScenarioImpact;
 }
 
+export interface FlagsItem {
+  ncm?: string;
+  reducao?: boolean;
+}
+
 export interface Supplier {
   id: string;
   nome: string;
@@ -17,6 +22,8 @@ export interface Supplier {
   is: number;
   frete: number;
   cadeia?: string[];
+  flagsItem?: FlagsItem;
+  isRefeicaoPronta?: boolean;
 }
 
 export interface AliquotasConfig {

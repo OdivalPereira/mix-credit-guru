@@ -16,4 +16,14 @@ describe('computeCredit', () => {
     const result = computeCredit('A', 'presumido', 100, 10, 5);
     expect(result).toEqual({ status: 'limited', creditavel: true, credito: 7.5 });
   });
+
+  it('não gera crédito para refeição pronta', () => {
+    const result = computeCredit('A', 'normal', 100, 10, 5, { isRefeicaoPronta: true });
+    expect(result).toEqual({ status: 'no', creditavel: false, credito: 0 });
+  });
+
+  it('ajusta crédito para cenários positivos', () => {
+    const result = computeCredit('A', 'normal', 100, 10, 5, { scenario: 'positive' });
+    expect(result).toEqual({ status: 'yes', creditavel: true, credito: 16.5 });
+  });
 });

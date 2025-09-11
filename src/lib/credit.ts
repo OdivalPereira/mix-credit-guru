@@ -17,17 +17,28 @@ export interface CreditResult {
  * tributário do comprador. Valores de IBS e CBS são utilizados como base para o
  * cálculo do crédito potencial.
  */
+interface CreditOptions {
+  isRefeicaoPronta?: boolean;
+  scenario?: string;
+}
+
 export function computeCredit(
   destino: string,
   regime: string,
   preco: number,
   ibs: number,
-  cbs: number
+  cbs: number,
+  options: CreditOptions = {}
 ): CreditResult {
+  const { isRefeicaoPronta = false, scenario } = options;
+
+  if (isRefeicaoPronta) {
+    return { status: "no", creditavel: false, credito: 0 };
+  }
+
   const destinoKey = destino.toUpperCase();
   const regimeKey = regime.toLowerCase();
-  const status: CreditStatus =
-    creditRules[destinoKey]?.[regimeKey] ?? "no";
+  let status: CreditStatus = creditRules[destinoKey]?.[regimeKey] ?? "no";
 
   const baseRate = (ibs + cbs) / 100;
   let credito = 0;
@@ -36,6 +47,13 @@ export function computeCredit(
   } else if (status === "limited") {
     // crédito limitado assume 50% do potencial
     credito = preco * baseRate * 0.5;
+  }
+
+  if (scenario === "negative") {
+    status = "no";
+    credito = 0;
+  } else if (scenario === "positive") {
+    credito *= 1.1; // bônus simples para cenários positivos
   }
 
   return {
