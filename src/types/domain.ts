@@ -85,3 +85,55 @@ export interface QuoteFormParams {
   regime: string;
   produto: string;
 }
+
+export type Unit = 'un' | 'kg' | 'g' | 'l' | 'ml' | 'ton';
+
+export interface UnitConv {
+  de: Unit;
+  para: Unit;
+  fator: number;
+}
+
+export interface YieldConfig {
+  entrada: Unit;
+  saida: Unit;
+  rendimento: number;
+}
+
+export interface PriceBreak {
+  quantidade: number;
+  preco: number;
+}
+
+export interface FreightBreak {
+  quantidade: number;
+  frete: number;
+}
+
+export interface ContractFornecedor {
+  fornecedorId: string;
+  produtoId: string;
+  unidade: Unit;
+  precoBase: number;
+  priceBreaks?: PriceBreak[];
+  freightBreaks?: FreightBreak[];
+  yield?: YieldConfig;
+  conversoes?: UnitConv[];
+}
+
+export interface SupplierConstraints {
+  fornecedorId: string;
+  minimo?: number;
+  maximo?: number;
+}
+
+export interface OptimizePrefs {
+  objetivo?: 'custo' | 'credito';
+  maxFornecedores?: number;
+  constraints?: SupplierConstraints[];
+}
+
+export interface CompareRequest {
+  contratos: ContractFornecedor[];
+  prefs?: OptimizePrefs;
+}
