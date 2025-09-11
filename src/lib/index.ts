@@ -5,4 +5,9 @@ export {
   computeTaxes,
   round
 } from "./calcs";
+export {
+  fornecedorCsvHeaders,
+  readFornecedoresCSV,
+  writeFornecedoresCSV,
+} from "./csv";
 

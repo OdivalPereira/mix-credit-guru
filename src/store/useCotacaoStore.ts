@@ -1,4 +1,8 @@
 import { create } from "zustand";
+import {
+  readFornecedoresCSV,
+  writeFornecedoresCSV,
+} from "../lib/csv";
 
 export interface Contexto {
   data: string;
@@ -37,6 +41,8 @@ export interface CotacaoStore {
   limpar: () => void;
   importarCSV: (csv: string) => void;
   exportarCSV: () => string;
+  importarJSON: (json: string) => void;
+  exportarJSON: () => string;
   calcular: () => void;
 }
 
@@ -79,37 +85,29 @@ export const useCotacaoStore = create<CotacaoStore>((set, get) => ({
     resultados: [],
   }),
 
-  importarCSV: (csv) =>
-    set(() => {
-      const lines = csv.trim().split("\n");
-      const [header, ...rows] = lines;
-      const headers = header.split(",").map((h) => h.trim());
-      const fornecedores: Fornecedor[] = rows.map((row) => {
-        const cols = row.split(",");
-        const obj: Record<string, string> = {};
-        headers.forEach((h, i) => (obj[h] = cols[i]?.trim() ?? ""));
-        return {
-          id: crypto.randomUUID(),
-          nome: obj.nome ?? "",
-          tipo: obj.tipo ?? "",
-          regime: obj.regime ?? "",
-          preco: parseFloat(obj.preco) || 0,
-          ibs: parseFloat(obj.ibs) || 0,
-          cbs: parseFloat(obj.cbs) || 0,
-          is: parseFloat(obj.is) || 0,
-          frete: parseFloat(obj.frete) || 0,
-        };
-      });
-      return { fornecedores };
-    }),
+  importarCSV: (csv) => {
+    const fornecedores = readFornecedoresCSV(csv);
+    set({ fornecedores });
+    get().calcular();
+  },
 
-  exportarCSV: () => {
-    const { fornecedores } = get();
-    const header = "nome,tipo,regime,preco,ibs,cbs,is,frete";
-    const rows = fornecedores.map((f) =>
-      [f.nome, f.tipo, f.regime, f.preco, f.ibs, f.cbs, f.is, f.frete].join(",")
-    );
-    return [header, ...rows].join("\n");
+  exportarCSV: () => writeFornecedoresCSV(get().fornecedores),
+
+  importarJSON: (json) => {
+    const data = JSON.parse(json) as Partial<{
+      contexto: Contexto;
+      fornecedores: Fornecedor[];
+    }>;
+    set({
+      contexto: data.contexto ?? initialContexto,
+      fornecedores: data.fornecedores ?? [],
+    });
+    get().calcular();
+  },
+
+  exportarJSON: () => {
+    const { contexto, fornecedores, resultados } = get();
+    return JSON.stringify({ contexto, fornecedores, resultados });
   },
 
   calcular: () =>
