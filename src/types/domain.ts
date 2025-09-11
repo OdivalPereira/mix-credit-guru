@@ -9,6 +9,7 @@ export interface Scenario {
 export interface FlagsItem {
   ncm?: string;
   reducao?: boolean;
+  cesta?: boolean;
 }
 
 export interface Supplier {
