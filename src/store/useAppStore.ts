@@ -7,6 +7,8 @@ interface AppStore {
   regras: NcmRule[];
   receitas: Receita[];
   setScenario: (scenario: string) => void;
+  setRegras: (regras: NcmRule[]) => void;
+  setReceitas: (receitas: Receita[]) => void;
   addRegra: (regra: NcmRule) => void;
   updateRegra: (ncm: string, data: Partial<NcmRule>) => void;
   removeRegra: (ncm: string) => void;
@@ -22,6 +24,8 @@ export const useAppStore = create<AppStore>()(
       regras: [],
       receitas: [],
       setScenario: (scenario) => set({ scenario }),
+      setRegras: (regras) => set({ regras }),
+      setReceitas: (receitas) => set({ receitas }),
       addRegra: (regra) =>
         set((state) => ({ regras: [...state.regras, regra] })),
       updateRegra: (ncm, data) =>
