@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import DonationModal from "./components/DonationModal";
 import Cotacao from "./pages/Cotacao";
 import Catalogo from "./pages/Catalogo";
 import Cenarios from "./pages/Cenarios";
@@ -18,6 +19,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <DonationModal />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
