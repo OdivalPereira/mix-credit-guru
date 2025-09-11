@@ -5,6 +5,8 @@ import {
   writeFornecedoresCSV,
 } from "../lib/csv";
 import type { Supplier, MixResultado } from "@/types/domain";
+import { rankSuppliers } from "@/lib/calcs";
+import { useAppStore } from "./useAppStore";
 
 export interface Contexto {
   data: string;
@@ -102,16 +104,13 @@ export const useCotacaoStore = create<CotacaoStore>()(
       calcular: () =>
         set((state) => {
           const { contexto, fornecedores } = state;
-          const itens = fornecedores
-            .map((f) => {
-              const creditoPerc = (f.ibs + f.cbs + f.is) / 100;
-              const creditavel = contexto.regime !== "simples" && creditoPerc > 0;
-              const credito = creditavel ? f.preco * creditoPerc : 0;
-              const custoEfetivo = f.preco + f.frete - credito;
-              return { ...f, creditavel, credito, custoEfetivo, ranking: 0 };
-            })
-            .sort((a, b) => a.custoEfetivo - b.custoEfetivo)
-            .map((r, idx) => ({ ...r, ranking: idx + 1 }));
+          const scenario = useAppStore.getState().scenario;
+          const itens = rankSuppliers(fornecedores, {
+            destino: contexto.destino,
+            regime: contexto.regime,
+            scenario,
+            uf: contexto.uf,
+          });
           return { resultado: { itens } };
         }),
     }),

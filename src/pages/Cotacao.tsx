@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChartContainer,
   ChartTooltip,
@@ -25,7 +26,8 @@ import { useCotacaoStore } from "@/store/useCotacaoStore";
 import type { Supplier } from "@/types/domain";
 
 export default function Cotacao() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const jsonInputRef = useRef<HTMLInputElement>(null);
   const [mostrarGrafico, setMostrarGrafico] = useState(false);
 
   const {
@@ -37,6 +39,8 @@ export default function Cotacao() {
     removeFornecedor,
     importarCSV,
     exportarCSV,
+    importarJSON,
+    exportarJSON,
     limpar,
     calcular,
   } = useCotacaoStore();
@@ -51,13 +55,7 @@ export default function Cotacao() {
     setContexto({ [key]: value });
   };
 
-  const numericFields: Array<keyof Supplier> = [
-    "preco",
-    "ibs",
-    "cbs",
-    "is",
-    "frete",
-  ];
+  const numericFields: Array<keyof Supplier> = ["preco", "frete"];
 
   const isNumericField = (
     f: keyof Supplier,
@@ -81,7 +79,7 @@ export default function Cotacao() {
     upsertFornecedor({ ...rest });
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await file.text();
@@ -89,7 +87,7 @@ export default function Cotacao() {
     e.target.value = "";
   };
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     const csv = exportarCSV();
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -98,6 +96,42 @@ export default function Cotacao() {
     a.download = "fornecedores.csv";
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    importarJSON(text);
+    e.target.value = "";
+  };
+
+  const handleExportJSON = () => {
+    const json = exportarJSON();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cotacao.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFlagChange = (
+    id: string,
+    flag: "cesta" | "reducao" | "refeicao",
+    value: boolean,
+  ) => {
+    const original = fornecedores.find((f) => f.id === id) as Supplier;
+    if (flag === "refeicao") {
+      upsertFornecedor({ id, ...original, isRefeicaoPronta: value });
+    } else {
+      upsertFornecedor({
+        id,
+        ...original,
+        flagsItem: { ...original.flagsItem, [flag]: value },
+      });
+    }
   };
 
   const getCreditBadge = (creditavel: boolean, credito: number) => {
@@ -211,27 +245,55 @@ export default function Cotacao() {
           </div>
           <div className="flex space-x-2">
             <input
-              ref={fileInputRef}
+              ref={csvInputRef}
               type="file"
               accept=".csv"
               className="hidden"
-              onChange={handleImport}
+              onChange={handleImportCSV}
+            />
+            <input
+              ref={jsonInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportJSON}
             />
             <Button
               variant="outline"
               size="sm"
-              onClick={() => upsertFornecedor({ nome: "", tipo: "", regime: "", preco: 0, ibs: 0, cbs: 0, is: 0, frete: 0 })}
+              onClick={() =>
+                upsertFornecedor({
+                  nome: "",
+                  tipo: "",
+                  regime: "",
+                  preco: 0,
+                  ibs: 0,
+                  cbs: 0,
+                  is: 0,
+                  frete: 0,
+                  flagsItem: { cesta: false, reducao: false },
+                  isRefeicaoPronta: false,
+                })
+              }
             >
               <Plus className="mr-2 h-4 w-4" />
               Adicionar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Button variant="outline" size="sm" onClick={() => csvInputRef.current?.click()}>
               <Upload className="mr-2 h-4 w-4" />
               Importar CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExport}>
+            <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <Download className="mr-2 h-4 w-4" />
               Exportar CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => jsonInputRef.current?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Importar JSON
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportJSON}>
+              <Download className="mr-2 h-4 w-4" />
+              Exportar JSON
             </Button>
             <Button variant="outline" size="sm" onClick={limpar}>
               Limpar
@@ -260,6 +322,9 @@ export default function Cotacao() {
                   <TableHead className="text-right">CBS%</TableHead>
                   <TableHead className="text-right">IS%</TableHead>
                   <TableHead className="text-right">Frete</TableHead>
+                  <TableHead>Cesta</TableHead>
+                  <TableHead>Redução</TableHead>
+                  <TableHead>Refeição</TableHead>
                   <TableHead>Creditável</TableHead>
                   <TableHead className="text-right">Crédito</TableHead>
                   <TableHead className="text-right font-bold">Custo Efetivo</TableHead>
@@ -314,31 +379,13 @@ export default function Cotacao() {
                       />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        className="text-right"
-                        value={supplier.ibs}
-                        onChange={(e) =>
-                          handleFornecedorChange(supplier.id, "ibs", e.target.value)
-                        }
-                      />
+                      {supplier.ibs}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        className="text-right"
-                        value={supplier.cbs}
-                        onChange={(e) =>
-                          handleFornecedorChange(supplier.id, "cbs", e.target.value)
-                        }
-                      />
+                      {supplier.cbs}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        className="text-right"
-                        value={supplier.is}
-                        onChange={(e) =>
-                          handleFornecedorChange(supplier.id, "is", e.target.value)
-                        }
-                      />
+                      {supplier.is}
                     </TableCell>
                     <TableCell className="text-right">
                       <Input
@@ -346,6 +393,42 @@ export default function Cotacao() {
                         value={supplier.frete}
                         onChange={(e) =>
                           handleFornecedorChange(supplier.id, "frete", e.target.value)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Checkbox
+                        checked={supplier.flagsItem?.cesta ?? false}
+                        onCheckedChange={(v) =>
+                          handleFlagChange(
+                            supplier.id,
+                            "cesta",
+                            v as boolean,
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Checkbox
+                        checked={supplier.flagsItem?.reducao ?? false}
+                        onCheckedChange={(v) =>
+                          handleFlagChange(
+                            supplier.id,
+                            "reducao",
+                            v as boolean,
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Checkbox
+                        checked={supplier.isRefeicaoPronta ?? false}
+                        onCheckedChange={(v) =>
+                          handleFlagChange(
+                            supplier.id,
+                            "refeicao",
+                            v as boolean,
+                          )
                         }
                       />
                     </TableCell>
