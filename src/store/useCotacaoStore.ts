@@ -3,6 +3,7 @@ import {
   readFornecedoresCSV,
   writeFornecedoresCSV,
 } from "../lib/csv";
+import type { Supplier, MixResultadoItem, MixResultado } from "@/types/domain";
 
 export interface Contexto {
   data: string;
@@ -12,32 +13,13 @@ export interface Contexto {
   produto: string;
 }
 
-export interface Fornecedor {
-  id: string;
-  nome: string;
-  tipo: string;
-  regime: string;
-  preco: number;
-  ibs: number;
-  cbs: number;
-  is: number;
-  frete: number;
-  cadeia?: string[];
-}
-
-export interface Resultado extends Fornecedor {
-  creditavel: boolean;
-  credito: number;
-  custoEfetivo: number;
-  ranking: number;
-}
 
 export interface CotacaoStore {
   contexto: Contexto;
-  fornecedores: Fornecedor[];
-  resultados: Resultado[];
+  fornecedores: Supplier[];
+  resultado: MixResultado;
   setContexto: (contexto: Partial<Contexto>) => void;
-  upsertFornecedor: (fornecedor: Omit<Fornecedor, "id"> & { id?: string }) => void;
+  upsertFornecedor: (fornecedor: Omit<Supplier, "id"> & { id?: string }) => void;
   removeFornecedor: (id: string) => void;
   limpar: () => void;
   importarCSV: (csv: string) => void;
@@ -58,7 +40,7 @@ const initialContexto: Contexto = {
 export const useCotacaoStore = create<CotacaoStore>((set, get) => ({
   contexto: initialContexto,
   fornecedores: [],
-  resultados: [],
+  resultado: { itens: [] },
 
   setContexto: (ctx) =>
     set((state) => ({ contexto: { ...state.contexto, ...ctx } })),
@@ -80,11 +62,11 @@ export const useCotacaoStore = create<CotacaoStore>((set, get) => ({
       fornecedores: state.fornecedores.filter((f) => f.id !== id),
     })),
 
-  limpar: () => set({
-    contexto: initialContexto,
-    fornecedores: [],
-    resultados: [],
-  }),
+    limpar: () => set({
+      contexto: initialContexto,
+      fornecedores: [],
+      resultado: { itens: [] },
+    }),
 
   importarCSV: (csv) => {
     const fornecedores = readFornecedoresCSV(csv);
@@ -97,24 +79,26 @@ export const useCotacaoStore = create<CotacaoStore>((set, get) => ({
   importarJSON: (json) => {
     const data = JSON.parse(json) as Partial<{
       contexto: Contexto;
-      fornecedores: Fornecedor[];
+      fornecedores: Supplier[];
+      resultado: MixResultado;
     }>;
     set({
       contexto: data.contexto ?? initialContexto,
       fornecedores: data.fornecedores ?? [],
+      resultado: data.resultado ?? { itens: [] },
     });
     get().calcular();
   },
 
   exportarJSON: () => {
-    const { contexto, fornecedores, resultados } = get();
-    return JSON.stringify({ contexto, fornecedores, resultados });
+    const { contexto, fornecedores, resultado } = get();
+    return JSON.stringify({ contexto, fornecedores, resultado });
   },
 
   calcular: () =>
     set((state) => {
       const { contexto, fornecedores } = state;
-      const resultados = fornecedores
+      const itens = fornecedores
         .map((f) => {
           const creditoPerc = (f.ibs + f.cbs + f.is) / 100;
           const creditavel = contexto.regime !== "simples" && creditoPerc > 0;
@@ -124,7 +108,7 @@ export const useCotacaoStore = create<CotacaoStore>((set, get) => ({
         })
         .sort((a, b) => a.custoEfetivo - b.custoEfetivo)
         .map((r, idx) => ({ ...r, ranking: idx + 1 }));
-      return { resultados };
+      return { resultado: { itens } };
     }),
 }));
 

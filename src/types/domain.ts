@@ -7,7 +7,7 @@ export interface Scenario {
 }
 
 export interface Supplier {
-  id: number;
+  id: string;
   nome: string;
   tipo: string;
   regime: string;
@@ -16,10 +16,39 @@ export interface Supplier {
   cbs: number;
   is: number;
   frete: number;
+  cadeia?: string[];
+}
+
+export interface AliquotasConfig {
+  ibs: number;
+  cbs: number;
+  is: number;
+}
+
+export type OverridesUF = Record<string, Partial<AliquotasConfig>>;
+
+export interface Receita {
+  codigo: string;
+  descricao: string;
+}
+
+export interface NcmRule {
+  ncm: string;
+  descricao: string;
+  receita: Receita;
+  aliquotas: AliquotasConfig;
+  overridesUF?: OverridesUF;
+}
+
+export interface MixResultadoItem extends Supplier {
   creditavel: boolean;
   credito: number;
   custoEfetivo: number;
   ranking: number;
+}
+
+export interface MixResultado {
+  itens: MixResultadoItem[];
 }
 
 export type CreditStatus = 'yes' | 'no' | 'limited';

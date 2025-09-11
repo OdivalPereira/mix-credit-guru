@@ -21,7 +21,8 @@ import {
   Trash,
   BarChartHorizontal,
 } from "lucide-react";
-import { useCotacaoStore, Fornecedor } from "@/store/useCotacaoStore";
+import { useCotacaoStore } from "@/store/useCotacaoStore";
+import type { Supplier } from "@/types/domain";
 
 export default function Cotacao() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +32,7 @@ export default function Cotacao() {
     contexto,
     setContexto,
     fornecedores,
-    resultados,
+    resultado,
     upsertFornecedor,
     removeFornecedor,
     importarCSV,
@@ -39,6 +40,8 @@ export default function Cotacao() {
     limpar,
     calcular,
   } = useCotacaoStore();
+
+  const resultados = resultado.itens;
 
   useEffect(() => {
     calcular();
@@ -48,7 +51,7 @@ export default function Cotacao() {
     setContexto({ [key]: value });
   };
 
-  const numericFields: Array<keyof Fornecedor> = [
+  const numericFields: Array<keyof Supplier> = [
     "preco",
     "ibs",
     "cbs",
@@ -57,15 +60,15 @@ export default function Cotacao() {
   ];
 
   const isNumericField = (
-    f: keyof Fornecedor,
+    f: keyof Supplier,
   ): f is (typeof numericFields)[number] => numericFields.includes(f);
 
   const handleFornecedorChange = (
     id: string,
-    field: keyof Fornecedor,
+    field: keyof Supplier,
     value: string,
   ) => {
-    const original = fornecedores.find((f) => f.id === id) as Fornecedor;
+    const original = fornecedores.find((f) => f.id === id) as Supplier;
     upsertFornecedor({
       id,
       ...original,
@@ -73,7 +76,7 @@ export default function Cotacao() {
     });
   };
 
-  const handleDuplicate = (f: Fornecedor) => {
+  const handleDuplicate = (f: Supplier) => {
     const { id, ...rest } = f;
     upsertFornecedor({ ...rest });
   };

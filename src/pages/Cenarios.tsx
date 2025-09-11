@@ -3,8 +3,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { useState } from "react";
+import type { Scenario } from "@/types/domain";
 
-const scenarios = {
+const scenarios: Record<string, Scenario> = {
   "2025": {
     title: "Reforma Tributária - Fase 1",
     changes: "Introdução do IBS e CBS mantendo ICMS e IPI em transição",
