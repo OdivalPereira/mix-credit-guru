@@ -14,3 +14,4 @@ export {
 } from "./csv";
 
 export { normalizeOffer } from "./units";
+export { resolveUnitPrice } from "./contracts";
