@@ -22,6 +22,7 @@ export interface Fornecedor {
   cbs: number;
   is: number;
   frete: number;
+  cadeia?: string[];
 }
 
 export interface Resultado extends Fornecedor {
