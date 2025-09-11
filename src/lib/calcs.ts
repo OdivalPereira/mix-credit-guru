@@ -1,5 +1,6 @@
 import type { Supplier, MixResultadoItem, AliquotasConfig } from "@/types/domain";
 import { computeCredit } from "./credit";
+import { computeRates } from "./rates";
 
 export function round(value: number, digits = 2): number {
   return Number(value.toFixed(digits));
@@ -23,6 +24,8 @@ export function computeEffectiveCost(
 interface RankContext {
   destino: string;
   regime: string;
+  scenario: string;
+  uf: string;
 }
 
 export function rankSuppliers(
@@ -30,19 +33,26 @@ export function rankSuppliers(
   ctx: RankContext
 ): MixResultadoItem[] {
   const calculated = suppliers.map((s) => {
-    const credit = computeCredit(ctx.destino, ctx.regime, s.preco, s.ibs, s.cbs);
+    const rates = computeRates(ctx.scenario, ctx.uf, s.flagsItem ?? {});
+    const credit = computeCredit(ctx.destino, ctx.regime, s.preco, rates.ibs, rates.cbs, {
+      scenario: ctx.scenario,
+      isRefeicaoPronta: s.isRefeicaoPronta,
+    });
     const custoEfetivo = computeEffectiveCost(
       s.preco,
       s.frete,
-      { ibs: s.ibs, cbs: s.cbs, is: s.is },
+      rates,
       credit.credito
     );
 
     return {
       ...s,
+      ibs: rates.ibs,
+      cbs: rates.cbs,
+      is: rates.is,
       creditavel: credit.creditavel,
       credito: credit.credito,
-      custoEfetivo
+      custoEfetivo,
     };
   });
 
