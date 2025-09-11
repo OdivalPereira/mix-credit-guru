@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
+# Mix Credit Guru
 
-## Project info
+Aplicativo para comparar fornecedores e analisar créditos tributários de produtos, auxiliando empresas durante a reforma tributária brasileira.
 
-**URL**: https://lovable.dev/projects/d1d85843-2938-403f-ad05-864d69c4c33d
+## Funcionalidades atuais
+- **Catálogo de produtos**: gerencie itens com código NCM e indicadores fiscais, importando ou exportando dados em CSV.
+- **Cotação de fornecedores**: calcule IBS, CBS, IS e custo efetivo, com ranking de fornecedores e suporte a importação/exportação.
+- **Cenários tributários**: visualize o impacto da reforma em diferentes anos.
+- **Regras de crédito**: consulte matriz de creditabilidade e glossário de termos.
+- **Configurações e relatórios** adicionais para estudos fiscais.
 
-## How can I edit this code?
+## Scripts
+Para instalar dependências e executar o projeto localmente:
 
-There are several ways of editing your application.
+```bash
+npm i
+npm run dev
+npm run test
+```
 
-**Use Lovable**
+## Principais dependências
+- React
+- Zustand
+- shadcn/ui (Radix UI)
+- React Router
+- @tanstack/react-query
+- Supabase
+- Tailwind CSS
+- Vite
+- Vitest
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d1d85843-2938-403f-ad05-864d69c4c33d) and start prompting.
+## Como posso editar este código?
+Há várias maneiras de editar sua aplicação.
 
-Changes made via Lovable will be committed automatically to this repo.
+### Usando o Lovable
+Acesse o [projeto no Lovable](https://lovable.dev/projects/d1d85843-2938-403f-ad05-864d69c4c33d) e comece a editar. As alterações feitas via Lovable são automaticamente commitadas neste repositório.
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Usando seu IDE preferido
+Clone este repositório, faça mudanças localmente e envie os commits:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clonar o repositório
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Instalar dependências
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Rodar o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Editando direto no GitHub
+- Navegue até o arquivo desejado e clique em "Edit".
+- Faça as alterações e realize o commit.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d1d85843-2938-403f-ad05-864d69c4c33d) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Usando GitHub Codespaces
+- Clique no botão "Code" e abra um novo Codespace.
+- Edite os arquivos e envie suas alterações quando terminar.
