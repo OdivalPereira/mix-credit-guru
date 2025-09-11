@@ -9,6 +9,47 @@ Aplicativo para comparar fornecedores e analisar créditos tributários de produ
 - **Regras de crédito**: consulte matriz de creditabilidade e glossário de termos.
 - **Configurações e relatórios** adicionais para estudos fiscais.
 
+## Guia de uso
+
+### Regras de crédito (JSON)
+- Acesse a página **Regras** para editar a matriz de creditabilidade.
+- Utilize **Importar JSON** para carregar um arquivo no formato:
+
+```json
+[
+  {
+    "ncm": "0000.00.00",
+    "descricao": "Produto",
+    "receita": { "codigo": "01", "descricao": "Exemplo" },
+    "aliquotas": { "ibs": 0, "cbs": 0, "is": 0 }
+  }
+]
+```
+- Use **Exportar JSON** para salvar as regras atuais ou **Recarregar regras** para restaurar o arquivo padrão.
+
+### Cenários tributários
+- Na página **Cenários** selecione o período desejado no menu suspenso.
+- O cenário escolhido é aplicado nos cálculos e permanece salvo entre sessões.
+
+### Receitas
+- Em **Receitas** cadastre códigos e descrições para montar o mix.
+- Os três fornecedores com menor custo efetivo são usados para calcular custos por porção.
+
+### Relatórios
+- Após realizar uma cotação, acesse **Relatórios** e clique em **Imprimir/Salvar PDF** para gerar um relatório com fornecedores vencedores, comparativo de custos e receitas cadastradas.
+
+### Importação e exportação
+- **Regras de crédito**: botões de importação/exportação em JSON na própria página.
+- **Catálogo de produtos**: importação/exportação em CSV (colunas `descricao,ncm,refeicao,cesta,reducao,is`).
+- **Cotação de fornecedores**: importação/exportação em CSV ou JSON contendo contexto e fornecedores.
+
+### Persistência
+O estado é armazenado no `localStorage` usando as chaves:
+
+- `cmx_v03_app`: cenário, regras e receitas.
+- `cmx_v03_catalogo`: catálogo de produtos.
+- `cmx_v03_cotacao`: dados de cotação e fornecedores.
+
 ## Scripts
 Para instalar dependências e executar o projeto localmente:
 
