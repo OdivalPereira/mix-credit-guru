@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -21,6 +22,7 @@ import {
   Copy,
   Trash,
   BarChartHorizontal,
+  Loader2,
 } from "lucide-react";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import type { Supplier } from "@/types/domain";
@@ -29,6 +31,8 @@ export default function Cotacao() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const [mostrarGrafico, setMostrarGrafico] = useState(false);
+  const [optProgress, setOptProgress] = useState(0);
+  const [optimizing, setOptimizing] = useState(false);
 
   const {
     contexto,
@@ -115,6 +119,28 @@ export default function Cotacao() {
     a.download = "cotacao.json";
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleOptimize = () => {
+    const worker = new Worker(
+      new URL("../workers/optWorker.ts", import.meta.url),
+      { type: "module" }
+    );
+    setOptimizing(true);
+    setOptProgress(0);
+    worker.postMessage({
+      quantity: 100,
+      offers: fornecedores.map((f) => ({ id: f.id, price: f.preco })),
+    });
+    worker.onmessage = (e) => {
+      const msg = e.data as { type: string; value?: number };
+      if (msg.type === "progress" && typeof msg.value === "number") {
+        setOptProgress(msg.value);
+      } else if (msg.type === "result") {
+        setOptimizing(false);
+        worker.terminate();
+      }
+    };
   };
 
   const handleFlagChange = (
@@ -306,9 +332,25 @@ export default function Cotacao() {
               <BarChartHorizontal className="mr-2 h-4 w-4" />
               {mostrarGrafico ? "Ocultar" : "Gráfico"}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOptimize}
+              disabled={optimizing}
+            >
+              {optimizing && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Otimizar
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
+          {optimizing && (
+            <div className="mb-4">
+              <Progress value={optProgress} />
+            </div>
+          )}
           <div className="rounded-md border">
             <Table>
               <TableHeader>
