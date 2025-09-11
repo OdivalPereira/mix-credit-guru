@@ -1,0 +1,24 @@
+[
+  {
+    "ncm": "1006.30.11",
+    "descricao": "Arroz semibranqueado",
+    "cest": "07.005.00",
+    "reducao": false,
+    "aliquota": {
+      "ibs": 4,
+      "cbs": 2,
+      "is": 0
+    }
+  },
+  {
+    "ncm": "1507.90.10",
+    "descricao": "Óleo de soja refinado",
+    "cest": "07.006.00",
+    "reducao": false,
+    "aliquota": {
+      "ibs": 7,
+      "cbs": 3,
+      "is": 1
+    }
+  }
+]

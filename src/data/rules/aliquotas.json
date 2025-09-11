@@ -1,0 +1,5 @@
+{
+  "default": { "ibs": 12, "cbs": 5, "is": 2 },
+  "cesta": { "ibs": 7, "cbs": 3, "is": 1 },
+  "reducao": { "ibs": 4, "cbs": 2, "is": 0 }
+}
