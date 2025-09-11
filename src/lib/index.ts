@@ -13,3 +13,4 @@ export {
   writeFornecedoresCSV,
 } from "./csv";
 
+export { normalizeOffer } from "./units";
