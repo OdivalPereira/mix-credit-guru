@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/store/useAppStore";
 import { z } from "zod";
 
+const vigenciaSchema = z
+  .object({
+    inicio: z.string().optional(),
+    fim: z.string().optional(),
+  })
+  .optional();
+
 const ruleSchema = z.object({
   ncm: z.string().regex(/^\d{4}\.\d{2}\.\d{2}$/, "NCM inválido"),
   descricao: z.string().min(1, "Descrição obrigatória"),
@@ -18,6 +25,8 @@ const ruleSchema = z.object({
     cbs: z.number().nonnegative(),
     is: z.number().nonnegative(),
   }),
+  vigencia: vigenciaSchema,
+  prioridade: z.number().int().min(0).optional(),
 });
 
 export default function Regras() {
@@ -34,32 +43,75 @@ export default function Regras() {
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleField = (
+  const updateRegraField = (
     ncm: string,
-    field: keyof typeof regras[number],
-    value: string,
-    subfield?: keyof typeof regras[number]["aliquotas"] | keyof typeof regras[number]["receita"],
+    updater: (regra: (typeof regras)[number]) => (typeof regras)[number],
   ) => {
     try {
-      const next = regras.map((r) =>
-        r.ncm === ncm
-          ? {
-              ...r,
-              [field]:
-                field === "aliquotas"
-                  ? { ...r.aliquotas, [subfield as string]: Number(value) }
-                  : field === "receita"
-                  ? { ...r.receita, [subfield as string]: value }
-                  : value,
-            }
-          : r,
-      );
-      const result = ruleSchema.safeParse(next.find((r) => r.ncm === ncm));
+      const next = regras.map((r) => (r.ncm === ncm ? updater(r) : r));
+      const current = next.find((r) => r.ncm === ncm);
+      if (!current) return;
+      const result = ruleSchema.safeParse({
+        ...current,
+        aliquotas: {
+          ibs: Number(current.aliquotas.ibs) || 0,
+          cbs: Number(current.aliquotas.cbs) || 0,
+          is: Number(current.aliquotas.is) || 0,
+        },
+        prioridade:
+          typeof current.prioridade === "number"
+            ? Number(current.prioridade)
+            : undefined,
+      });
       if (!result.success) return;
       setRegras(next);
     } catch {
       /* ignore */
     }
+  };
+
+  const handleSimpleField = (
+    ncm: string,
+    field: "ncm" | "descricao" | "prioridade",
+    value: string,
+  ) => {
+    updateRegraField(ncm, (regra) => ({
+      ...regra,
+      [field]: field === "prioridade" ? Number(value) || 0 : value,
+    }));
+  };
+
+  const handleReceitaField = (
+    ncm: string,
+    field: "codigo" | "descricao",
+    value: string,
+  ) => {
+    updateRegraField(ncm, (regra) => ({
+      ...regra,
+      receita: { ...regra.receita, [field]: value },
+    }));
+  };
+
+  const handleAliquotaField = (
+    ncm: string,
+    field: "ibs" | "cbs" | "is",
+    value: string,
+  ) => {
+    updateRegraField(ncm, (regra) => ({
+      ...regra,
+      aliquotas: { ...regra.aliquotas, [field]: Number(value) || 0 },
+    }));
+  };
+
+  const handleVigenciaField = (
+    ncm: string,
+    field: "inicio" | "fim",
+    value: string,
+  ) => {
+    updateRegraField(ncm, (regra) => ({
+      ...regra,
+      vigencia: { ...regra.vigencia, [field]: value },
+    }));
   };
 
   const handleAddRegra = () => {
@@ -68,6 +120,8 @@ export default function Regras() {
       descricao: "",
       receita: { codigo: "", descricao: "" },
       aliquotas: { ibs: 0, cbs: 0, is: 0 },
+      vigencia: { inicio: "", fim: "" },
+      prioridade: 0,
     });
   };
 
@@ -152,6 +206,9 @@ export default function Regras() {
                 <TableHead>IBS</TableHead>
                 <TableHead>CBS</TableHead>
                 <TableHead>IS</TableHead>
+                <TableHead>Início Vigência</TableHead>
+                <TableHead>Fim Vigência</TableHead>
+                <TableHead>Prioridade</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -161,28 +218,28 @@ export default function Regras() {
                   <TableCell>
                     <Input
                       value={r.ncm}
-                      onChange={(e) => handleField(r.ncm, "ncm", e.target.value)}
+                      onChange={(e) => handleSimpleField(r.ncm, "ncm", e.target.value)}
                     />
                   </TableCell>
                   <TableCell>
                     <Input
                       value={r.descricao}
-                      onChange={(e) => handleField(r.ncm, "descricao", e.target.value)}
+                      onChange={(e) =>
+                        handleSimpleField(r.ncm, "descricao", e.target.value)
+                      }
                     />
                   </TableCell>
                   <TableCell>
                     <Input
                       value={r.receita.codigo}
-                      onChange={(e) =>
-                        handleField(r.ncm, "receita", e.target.value, "codigo")
-                      }
+                      onChange={(e) => handleReceitaField(r.ncm, "codigo", e.target.value)}
                     />
                   </TableCell>
                   <TableCell>
                     <Input
                       value={r.receita.descricao}
                       onChange={(e) =>
-                        handleField(r.ncm, "receita", e.target.value, "descricao")
+                        handleReceitaField(r.ncm, "descricao", e.target.value)
                       }
                     />
                   </TableCell>
@@ -190,26 +247,47 @@ export default function Regras() {
                     <Input
                       type="number"
                       value={r.aliquotas.ibs}
-                      onChange={(e) =>
-                        handleField(r.ncm, "aliquotas", e.target.value, "ibs")
-                      }
+                      onChange={(e) => handleAliquotaField(r.ncm, "ibs", e.target.value)}
                     />
                   </TableCell>
                   <TableCell>
                     <Input
                       type="number"
                       value={r.aliquotas.cbs}
-                      onChange={(e) =>
-                        handleField(r.ncm, "aliquotas", e.target.value, "cbs")
-                      }
+                      onChange={(e) => handleAliquotaField(r.ncm, "cbs", e.target.value)}
                     />
                   </TableCell>
                   <TableCell>
                     <Input
                       type="number"
                       value={r.aliquotas.is}
+                      onChange={(e) => handleAliquotaField(r.ncm, "is", e.target.value)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="date"
+                      value={r.vigencia?.inicio ?? ""}
                       onChange={(e) =>
-                        handleField(r.ncm, "aliquotas", e.target.value, "is")
+                        handleVigenciaField(r.ncm, "inicio", e.target.value)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="date"
+                      value={r.vigencia?.fim ?? ""}
+                      onChange={(e) =>
+                        handleVigenciaField(r.ncm, "fim", e.target.value)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={r.prioridade ?? 0}
+                      onChange={(e) =>
+                        handleSimpleField(r.ncm, "prioridade", e.target.value)
                       }
                     />
                   </TableCell>

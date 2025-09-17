@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ChartContainer,
@@ -14,6 +15,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useAppStore } from "@/store/useAppStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import type { MixResultadoItem } from "@/types/domain";
+import { AlertTriangle } from "lucide-react";
 
 export default function Receitas() {
   const receitas = useAppStore((s) => s.receitas);
@@ -27,6 +29,9 @@ export default function Receitas() {
   const [porcoes, setPorcoes] = useState(1);
 
   const mixData = calcularMix(vencedores, porcoes);
+
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const handleField = (
     codigo: string,
@@ -123,7 +128,7 @@ export default function Receitas() {
               />
             </div>
             <ChartContainer
-              config={{ custo: { label: "Custo por porção", color: "hsl(var(--chart-1))" } }}
+              config={{ custo: { label: "Custo normalizado por porção", color: "hsl(var(--chart-1))" } }}
               className="h-[300px]"
             >
               <BarChart data={mixData} layout="vertical">
@@ -164,11 +169,37 @@ export default function Receitas() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>Custo efetivo: R$ {f.custoEfetivo.toFixed(2)}</div>
-                      <div>Crédito: R$ {f.credito.toFixed(2)}</div>
-                      <div>Frete: R$ {f.frete.toFixed(2)}</div>
+                      <div>Custo efetivo: {formatCurrency(f.custoEfetivo)}</div>
+                      <div>Custo normalizado: {formatCurrency(f.custoNormalizado ?? f.custoEfetivo)}</div>
+                      <div>Crédito: {formatCurrency(f.credito)}</div>
+                      <div>Frete: {formatCurrency(f.frete)}</div>
                       <div>Ranking: {f.ranking}</div>
+                      <div className="flex items-center gap-2">
+                        Degrau:
+                        {f.degrauAplicado ? (
+                          <Badge variant="outline" className="border-primary/40 bg-primary/10">
+                            {f.degrauAplicado}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">Não aplicado</span>
+                        )}
+                      </div>
                     </div>
+                    {f.restricoes?.length ? (
+                      <div className="mt-3 space-y-1 text-sm">
+                        <div className="font-medium text-amber-800">Restrições</div>
+                        {f.restricoes.map((restricao) => (
+                          <Badge
+                            key={restricao}
+                            variant="outline"
+                            className="flex w-max items-center gap-1 border-amber-300 bg-amber-50 text-amber-800"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            {restricao}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : null}
                   </AccordionContent>
                 </AccordionItem>
               ))}
@@ -183,11 +214,23 @@ export default function Receitas() {
 function calcularMix(
   itens: MixResultadoItem[],
   porcoes: number,
-): Array<MixResultadoItem & { mix: number; custoPorPorcao: number }> {
-  const total = itens.reduce((sum, i) => sum + i.custoEfetivo, 0);
-  return itens.map((i) => ({
-    ...i,
-    mix: total ? (i.custoEfetivo / total) * 100 : 0,
-    custoPorPorcao: i.custoEfetivo / porcoes,
-  }));
+): Array<
+  MixResultadoItem & {
+    mix: number;
+    custoPorPorcao: number;
+  }
+> {
+  const totalNormalizado = itens.reduce(
+    (sum, i) => sum + (i.custoNormalizado ?? i.custoEfetivo),
+    0,
+  );
+  return itens.map((i) => {
+    const custoNormalizado = i.custoNormalizado ?? i.custoEfetivo;
+    return {
+      ...i,
+      custoNormalizado,
+      mix: totalNormalizado ? (custoNormalizado / totalNormalizado) * 100 : 0,
+      custoPorPorcao: custoNormalizado / porcoes,
+    };
+  });
 }

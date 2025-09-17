@@ -40,12 +40,19 @@ export interface Receita {
   descricao: string;
 }
 
+export interface VigenciaRegra {
+  inicio?: string;
+  fim?: string;
+}
+
 export interface NcmRule {
   ncm: string;
   descricao: string;
   receita: Receita;
   aliquotas: AliquotasConfig;
   overridesUF?: OverridesUF;
+  vigencia?: VigenciaRegra;
+  prioridade?: number;
 }
 
 export interface MixResultadoItem extends Supplier {
@@ -53,6 +60,9 @@ export interface MixResultadoItem extends Supplier {
   credito: number;
   custoEfetivo: number;
   ranking: number;
+  custoNormalizado?: number;
+  degrauAplicado?: string;
+  restricoes?: string[];
 }
 
 export interface MixResultado {
