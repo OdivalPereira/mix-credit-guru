@@ -1,5 +1,38 @@
 {
-  "default": { "ibs": 12, "cbs": 5, "is": 2 },
-  "cesta": { "ibs": 7, "cbs": 3, "is": 1 },
-  "reducao": { "ibs": 4, "cbs": 2, "is": 0 }
+  "global": {
+    "default": [
+      {
+        "validFrom": "2026-01-01",
+        "validTo": "2027-12-31",
+        "rates": { "ibs": 12, "cbs": 5, "is": 2 }
+      },
+      {
+        "validFrom": "2028-01-01",
+        "rates": { "ibs": 11, "cbs": 4.5, "is": 1.5 }
+      }
+    ],
+    "cesta": [
+      {
+        "validFrom": "2026-01-01",
+        "rates": { "ibs": 7, "cbs": 3, "is": 1 }
+      }
+    ],
+    "reducao": [
+      {
+        "validFrom": "2026-01-01",
+        "rates": { "ibs": 4, "cbs": 2, "is": 0 }
+      }
+    ]
+  },
+  "ncm": {
+    "1507.90.10": {
+      "default": [
+        {
+          "validFrom": "2026-01-01",
+          "rates": { "ibs": 8, "cbs": 3, "is": 1 }
+        }
+      ]
+    }
+  },
+  "items": {}
 }
