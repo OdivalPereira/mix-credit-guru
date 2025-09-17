@@ -23,6 +23,7 @@ import {
   Trash,
   BarChartHorizontal,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import type { Supplier } from "@/types/domain";
@@ -33,6 +34,9 @@ export default function Cotacao() {
   const [mostrarGrafico, setMostrarGrafico] = useState(false);
   const [optProgress, setOptProgress] = useState(0);
   const [optimizing, setOptimizing] = useState(false);
+
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const {
     contexto,
@@ -370,6 +374,9 @@ export default function Cotacao() {
                   <TableHead>Creditável</TableHead>
                   <TableHead className="text-right">Crédito</TableHead>
                   <TableHead className="text-right font-bold">Custo Efetivo</TableHead>
+                  <TableHead className="text-right">Custo Normalizado</TableHead>
+                  <TableHead>Degrau</TableHead>
+                  <TableHead>Restrições</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -478,10 +485,42 @@ export default function Cotacao() {
                       {getCreditBadge(supplier.creditavel, supplier.credito)}
                     </TableCell>
                     <TableCell className="text-right">
-                      R$ {supplier.credito.toFixed(2)}
+                      {formatCurrency(supplier.credito)}
                     </TableCell>
                     <TableCell className="text-right font-bold text-lg">
-                      R$ {supplier.custoEfetivo.toFixed(2)}
+                      {formatCurrency(supplier.custoEfetivo)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(
+                        supplier.custoNormalizado ?? supplier.custoEfetivo,
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {supplier.degrauAplicado ? (
+                        <Badge variant="outline" className="border-primary/40 bg-primary/10">
+                          Degrau {supplier.degrauAplicado}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {supplier.restricoes?.length ? (
+                        <div className="flex flex-col gap-1">
+                          {supplier.restricoes.map((restricao) => (
+                            <Badge
+                              key={restricao}
+                              variant="outline"
+                              className="flex items-center gap-1 border-amber-300 bg-amber-50 text-amber-800"
+                            >
+                              <AlertTriangle className="h-3 w-3" />
+                              {restricao}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sem alertas</span>
+                      )}
                     </TableCell>
                     <TableCell className="space-x-2">
                       <Button
