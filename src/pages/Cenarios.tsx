@@ -84,7 +84,7 @@ export default function Cenarios() {
             value={selectedYear in scenarios ? selectedYear : "2025"}
             onValueChange={setScenario}
           >
-            <SelectTrigger className="w-full max-w-xs">
+            <SelectTrigger className="w-full max-w-xs" data-testid="scenario-select">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

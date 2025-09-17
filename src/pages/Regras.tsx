@@ -181,6 +181,7 @@ export default function Regras() {
           accept="application/json"
           className="hidden"
           ref={fileRef}
+          data-testid="regras-import-input"
           onChange={handleImport}
         />
         <Button variant="secondary" onClick={handleExport}>
@@ -202,6 +203,7 @@ export default function Regras() {
             </Button>
           </div>
           <Table
+            data-testid="regras-table"
             containerRef={regrasTableRef}
             containerClassName={shouldVirtualizeRegras ? "max-h-[500px]" : undefined}
           >
@@ -226,7 +228,7 @@ export default function Regras() {
               scrollElement={() => regrasTableRef.current}
               estimateSize={() => 68}
               renderRow={(r) => (
-                <TableRow key={r.ncm}>
+                <TableRow key={r.ncm} data-testid="regras-row">
                   <TableCell>
                     <Input
                       value={r.ncm}
@@ -330,6 +332,7 @@ export default function Regras() {
             </Button>
           </div>
           <Table
+            data-testid="receitas-table"
             containerRef={receitasTableRef}
             containerClassName={shouldVirtualizeReceitas ? "max-h-[400px]" : undefined}
           >

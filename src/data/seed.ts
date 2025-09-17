@@ -93,6 +93,13 @@ export const seedFornecedores: Supplier[] = [
 ];
 
 export function loadSeedData() {
+  if (typeof window !== "undefined") {
+    const skip = window.localStorage?.getItem("cmx_skip_seed");
+    if (skip === "true") {
+      return;
+    }
+  }
+
   const catalogo = useCatalogoStore.getState();
   if (catalogo.produtos.length === 0) {
     useCatalogoStore.setState({ produtos: seedProdutos });
