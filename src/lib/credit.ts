@@ -1,4 +1,5 @@
 import type { CreditStatus } from "@/types/domain";
+import { memoize } from "./memoize";
 
 // Regras simplificadas de creditabilidade por destinação e regime tributário
 const creditRules: Record<string, Record<string, CreditStatus>> = {
@@ -22,14 +23,14 @@ interface CreditOptions {
   scenario?: string;
 }
 
-export function computeCredit(
+const computeCreditInternal = (
   destino: string,
   regime: string,
   preco: number,
   ibs: number,
   cbs: number,
   options: CreditOptions = {}
-): CreditResult {
+): CreditResult => {
   const { isRefeicaoPronta = false, scenario } = options;
 
   if (isRefeicaoPronta) {
@@ -61,5 +62,11 @@ export function computeCredit(
     creditavel: status !== "no",
     credito: Number(credito.toFixed(2))
   };
-}
+};
+
+export const computeCredit = memoize(computeCreditInternal, {
+  getKey: (destino, regime, preco, ibs, cbs, options = {}) =>
+    JSON.stringify({ destino, regime, preco, ibs, cbs, options }),
+  maxSize: 200,
+});
 
