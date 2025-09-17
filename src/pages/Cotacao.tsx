@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import type { Supplier } from "@/types/domain";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Cotacao() {
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -37,6 +38,7 @@ export default function Cotacao() {
   const [mostrarGrafico, setMostrarGrafico] = useState(false);
   const [optProgress, setOptProgress] = useState(0);
   const [optimizing, setOptimizing] = useState(false);
+  const [optStatusMessage, setOptStatusMessage] = useState<string | null>(null);
 
   const formatCurrency = (value: number) =>
     value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -141,23 +143,56 @@ export default function Cotacao() {
     workerRef.current = worker;
     setOptimizing(true);
     setOptProgress(0);
+    setOptStatusMessage("Estamos preparando a otimização dos fornecedores...");
     worker.postMessage({
       quantity: 100,
       offers: fornecedores.map((f) => ({ id: f.id, price: f.preco })),
     });
     worker.onmessage = (e) => {
-      const msg = e.data as { type: string; value?: number };
-      if (msg.type === "progress" && typeof msg.value === "number") {
+      type WorkerMessage =
+        | { type: "progress"; value: number }
+        | { type: "result" }
+        | { type: "error"; message: string };
+
+      const msg = e.data as WorkerMessage;
+
+      if (msg.type === "progress") {
         setOptProgress(msg.value);
+        if (msg.value >= 1) {
+          setOptStatusMessage(
+            `Otimizando cotação... ${Math.round(msg.value)}% concluído.`,
+          );
+        }
       } else if (msg.type === "result") {
         setOptProgress(100);
         setOptimizing(false);
+        setOptStatusMessage(null);
+        workerRef.current?.terminate();
+        workerRef.current = null;
+      } else if (msg.type === "error") {
+        setOptimizing(false);
+        setOptStatusMessage(null);
+        setOptProgress(0);
+        toast({
+          variant: "destructive",
+          title: "Erro na otimização",
+          description:
+            msg.message || "Não foi possível concluir a otimização.",
+        });
         workerRef.current?.terminate();
         workerRef.current = null;
       }
     };
-    worker.onerror = () => {
+    worker.onerror = (event) => {
       setOptimizing(false);
+      setOptStatusMessage(null);
+      setOptProgress(0);
+      toast({
+        variant: "destructive",
+        title: "Erro na otimização",
+        description:
+          event.message || "Não foi possível concluir a otimização.",
+      });
       workerRef.current?.terminate();
       workerRef.current = null;
     };
@@ -374,8 +409,18 @@ export default function Cotacao() {
         </CardHeader>
         <CardContent>
           {optimizing && (
-            <div className="mb-4">
-              <Progress value={optProgress} />
+            <div className="mb-4 space-y-3 rounded-md border border-dashed p-4">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Otimizando cotação</p>
+                  <p className="text-xs text-muted-foreground">
+                    {optStatusMessage ??
+                      "Estamos analisando as melhores combinações. Isso pode levar alguns segundos."}
+                  </p>
+                </div>
+              </div>
+              <Progress value={optProgress} aria-label="Progresso da otimização" />
             </div>
           )}
           <div className="rounded-md border">
