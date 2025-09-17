@@ -27,5 +27,9 @@ describe('normalizeOffer', () => {
     });
     expect(preco).toBeCloseTo(25);
   });
+
+  it('lança erro quando não existe caminho de conversão', () => {
+    expect(() => normalizeOffer(10, [1], 'kg', 'ml', convs)).toThrow('Conversão inválida');
+  });
 });
 

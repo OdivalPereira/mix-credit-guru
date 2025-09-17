@@ -228,7 +228,7 @@ export default function Cotacao() {
                 value={contexto.uf}
                 onValueChange={(v) => handleContextoChange("uf", v)}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="UF" data-testid="select-uf">
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,7 +246,7 @@ export default function Cotacao() {
                 value={contexto.destino}
                 onValueChange={(v) => handleContextoChange("destino", v)}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Destino" data-testid="select-destino">
                   <SelectValue placeholder="Finalidade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,7 +262,7 @@ export default function Cotacao() {
                 value={contexto.regime}
                 onValueChange={(v) => handleContextoChange("regime", v)}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Regime" data-testid="select-regime">
                   <SelectValue placeholder="Regime tributário" />
                 </SelectTrigger>
                 <SelectContent>
@@ -313,6 +313,7 @@ export default function Cotacao() {
             <Button
               variant="outline"
               size="sm"
+              data-testid="add-fornecedor"
               onClick={() =>
                 upsertFornecedor({
                   nome: "",
@@ -413,6 +414,8 @@ export default function Cotacao() {
                 renderRow={(supplier) => (
                   <TableRow
                     key={supplier.id}
+                    data-testid="supplier-row"
+                    data-supplier-id={supplier.id}
                     className={supplier.ranking === 1 ? "bg-success/5" : ""}
                   >
                     <TableCell className="font-medium">
@@ -425,6 +428,7 @@ export default function Cotacao() {
                     </TableCell>
                     <TableCell className="font-medium">
                       <Input
+                        data-testid="supplier-name"
                         value={supplier.nome}
                         onChange={(e) =>
                           handleFornecedorChange(supplier.id, "nome", e.target.value)
@@ -433,6 +437,7 @@ export default function Cotacao() {
                     </TableCell>
                     <TableCell>
                       <Input
+                        data-testid="supplier-tipo"
                         value={supplier.tipo}
                         onChange={(e) =>
                           handleFornecedorChange(supplier.id, "tipo", e.target.value)
@@ -441,6 +446,7 @@ export default function Cotacao() {
                     </TableCell>
                     <TableCell>
                       <Input
+                        data-testid="supplier-regime"
                         value={supplier.regime}
                         onChange={(e) =>
                           handleFornecedorChange(supplier.id, "regime", e.target.value)
@@ -449,6 +455,7 @@ export default function Cotacao() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Input
+                        data-testid="supplier-price"
                         className="text-right"
                         value={supplier.preco}
                         onChange={(e) =>
@@ -467,6 +474,7 @@ export default function Cotacao() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Input
+                        data-testid="supplier-frete"
                         className="text-right"
                         value={supplier.frete}
                         onChange={(e) =>

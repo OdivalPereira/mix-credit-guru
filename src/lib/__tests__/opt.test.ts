@@ -2,6 +2,17 @@ import { describe, it, expect } from "vitest";
 import { optimizePerItem, type Offer } from "@/lib/opt";
 
 describe("optimizePerItem", () => {
+  it("aloca quantidade respeitando limite de participação", () => {
+    const offers: Offer[] = [
+      { id: "a", price: 8, share: 0.3 },
+      { id: "b", price: 9 },
+    ];
+    const res = optimizePerItem({ quantity: 100, offers });
+    expect(res.allocation).toEqual({ a: 30, b: 70 });
+    expect(res.cost).toBe(870);
+    expect(res.violations).toHaveLength(0);
+  });
+
   it("retorna violação de MOQ quando quantidade menor que mínimo", () => {
     const offers: Offer[] = [{ id: "a", price: 10, moq: 50 }];
     const res = optimizePerItem({ quantity: 30, offers });

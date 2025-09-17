@@ -1,0 +1,18 @@
+[
+  {
+    "ncm": "1234.56.78",
+    "descricao": "Regra Effective",
+    "receita": { "codigo": "RC1", "descricao": "Receita Crédito" },
+    "aliquotas": { "ibs": 2.5, "cbs": 1.5, "is": 0.0 },
+    "vigencia": { "inicio": "2025-01-01", "fim": "2025-12-31" },
+    "prioridade": 1
+  },
+  {
+    "ncm": "8765.43.21",
+    "descricao": "Regra Temporária",
+    "receita": { "codigo": "RC2", "descricao": "Receita Temporária" },
+    "aliquotas": { "ibs": 1.0, "cbs": 0.5, "is": 0.0 },
+    "vigencia": { "inicio": "2030-06-01", "fim": "2030-12-31" },
+    "prioridade": 2
+  }
+]
