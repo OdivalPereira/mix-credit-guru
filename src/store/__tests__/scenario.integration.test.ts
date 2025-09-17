@@ -16,7 +16,14 @@ describe('mudança de cenário', () => {
   beforeEach(() => {
     useAppStore.setState({ scenario: 'default', regras: [], receitas: [] });
     useCotacaoStore.setState({
-      contexto: { data: '', uf: 'SP', destino: 'A', regime: 'normal', produto: '' },
+      contexto: {
+        data: '2026-06-01',
+        uf: 'SP',
+        municipio: '',
+        destino: 'A',
+        regime: 'normal',
+        produto: '',
+      },
       fornecedores: [],
       resultado: { itens: [] },
     });

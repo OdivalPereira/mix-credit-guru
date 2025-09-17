@@ -25,7 +25,9 @@ interface RankContext {
   destino: string;
   regime: string;
   scenario: string;
+  date: string | Date;
   uf: string;
+  municipio?: string;
 }
 
 export function rankSuppliers(
@@ -33,7 +35,12 @@ export function rankSuppliers(
   ctx: RankContext
 ): MixResultadoItem[] {
   const calculated = suppliers.map((s) => {
-    const rates = computeRates(ctx.scenario, ctx.uf, s.flagsItem ?? {});
+    const rates = computeRates(ctx.scenario, ctx.date, {
+      uf: ctx.uf,
+      municipio: ctx.municipio,
+      itemId: s.id,
+      flagsItem: s.flagsItem,
+    });
     const credit = computeCredit(ctx.destino, ctx.regime, s.preco, rates.ibs, rates.cbs, {
       scenario: ctx.scenario,
       isRefeicaoPronta: s.isRefeicaoPronta,

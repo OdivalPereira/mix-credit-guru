@@ -12,7 +12,9 @@ interface RecipeContext {
   destino: string;
   regime: string;
   scenario: string;
+  data: string | Date;
   uf: string;
+  municipio?: string;
 }
 
 /**
@@ -27,7 +29,12 @@ export function computeRecipeMix(
     let best: MixResultadoItem | null = null;
 
     for (const supplier of item.suppliers) {
-      const rates = computeRates(ctx.scenario, ctx.uf, supplier.flagsItem ?? {});
+      const rates = computeRates(ctx.scenario, ctx.data, {
+        uf: ctx.uf,
+        municipio: ctx.municipio,
+        itemId: supplier.id,
+        flagsItem: supplier.flagsItem,
+      });
       const credit = computeCredit(
         ctx.destino,
         ctx.regime,

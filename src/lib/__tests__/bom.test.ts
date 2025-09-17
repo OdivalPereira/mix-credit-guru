@@ -84,6 +84,7 @@ describe('computeRecipeMix', () => {
       destino: 'A',
       regime: 'normal',
       scenario: 'default',
+      data: '2026-06-01',
       uf: 'SP',
     });
 
@@ -140,6 +141,7 @@ describe('computeRecipeMix', () => {
       destino: 'A',
       regime: 'normal',
       scenario: 'cesta',
+      data: '2026-06-01',
       uf: 'SP',
     });
 
@@ -194,10 +196,12 @@ describe('computeRecipeMix', () => {
         destino: 'A',
         regime: 'normal',
         scenario: year,
+        data: `${year}-06-01`,
         uf: 'SP',
       });
-      expect(winners[0].ibs).toBe(12);
-      expect(winners[1].ibs).toBe(12);
+      const expectedIbs = Number(year) >= 2028 ? 10.5 : 12;
+      expect(winners[0].ibs).toBe(expectedIbs);
+      expect(winners[1].ibs).toBe(expectedIbs);
       const mix = calcularMix(winners, 1);
       const totalMix = mix.reduce((sum, i) => sum + i.mix, 0);
       expect(totalMix).toBeCloseTo(100);

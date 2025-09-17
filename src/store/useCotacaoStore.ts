@@ -11,6 +11,7 @@ import { useAppStore } from "./useAppStore";
 export interface Contexto {
   data: string;
   uf: string;
+  municipio?: string;
   destino: string;
   regime: string;
   produto: string;
@@ -35,6 +36,7 @@ export interface CotacaoStore {
 const initialContexto: Contexto = {
   data: "",
   uf: "",
+  municipio: "",
   destino: "",
   regime: "",
   produto: "",
@@ -109,7 +111,9 @@ export const useCotacaoStore = create<CotacaoStore>()(
             destino: contexto.destino,
             regime: contexto.regime,
             scenario,
+            date: contexto.data || new Date().toISOString().slice(0, 10),
             uf: contexto.uf,
+            municipio: contexto.municipio,
           });
           return { resultado: { itens } };
         }),
