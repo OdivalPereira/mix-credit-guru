@@ -2,16 +2,28 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { NcmRule, Receita } from "@/types/domain";
 
+interface EffectiveRule extends NcmRule {
+  validFrom: string;
+  validTo?: string;
+}
+
 interface AppStore {
   scenario: string;
-  regras: NcmRule[];
+  /** Rules for the currently selected scenario */
+  regras: EffectiveRule[];
+  /** All scenario rules keyed by scenario name */
+  scenarios: Record<string, EffectiveRule[]>;
   receitas: Receita[];
   setScenario: (scenario: string) => void;
-  setRegras: (regras: NcmRule[]) => void;
+  setRegras: (regras: EffectiveRule[]) => void;
   setReceitas: (receitas: Receita[]) => void;
-  addRegra: (regra: NcmRule) => void;
-  updateRegra: (ncm: string, data: Partial<NcmRule>) => void;
-  removeRegra: (ncm: string) => void;
+  addRegra: (regra: EffectiveRule) => void;
+  updateRegra: (
+    ncm: string,
+    validFrom: string,
+    data: Partial<EffectiveRule>
+  ) => void;
+  removeRegra: (ncm: string, validFrom: string) => void;
   addReceita: (receita: Receita) => void;
   updateReceita: (codigo: string, data: Partial<Receita>) => void;
   removeReceita: (codigo: string) => void;
@@ -19,25 +31,50 @@ interface AppStore {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       scenario: "default",
       regras: [],
+      scenarios: { default: [] },
       receitas: [],
-      setScenario: (scenario) => set({ scenario }),
-      setRegras: (regras) => set({ regras }),
+      setScenario: (scenario) =>
+        set((state) => ({
+          scenario,
+          regras: state.scenarios[scenario] ?? [],
+        })),
+      setRegras: (regras) =>
+        set((state) => ({
+          regras,
+          scenarios: { ...state.scenarios, [state.scenario]: regras },
+        })),
       setReceitas: (receitas) => set({ receitas }),
       addRegra: (regra) =>
-        set((state) => ({ regras: [...state.regras, regra] })),
-      updateRegra: (ncm, data) =>
-        set((state) => ({
-          regras: state.regras.map((r) =>
-            r.ncm === ncm ? { ...r, ...data } : r
-          ),
-        })),
-      removeRegra: (ncm) =>
-        set((state) => ({
-          regras: state.regras.filter((r) => r.ncm !== ncm),
-        })),
+        set((state) => {
+          const regras = [...state.regras, regra];
+          return {
+            regras,
+            scenarios: { ...state.scenarios, [state.scenario]: regras },
+          };
+        }),
+      updateRegra: (ncm, validFrom, data) =>
+        set((state) => {
+          const regras = state.regras.map((r) =>
+            r.ncm === ncm && r.validFrom === validFrom ? { ...r, ...data } : r
+          );
+          return {
+            regras,
+            scenarios: { ...state.scenarios, [state.scenario]: regras },
+          };
+        }),
+      removeRegra: (ncm, validFrom) =>
+        set((state) => {
+          const regras = state.regras.filter(
+            (r) => !(r.ncm === ncm && r.validFrom === validFrom)
+          );
+          return {
+            regras,
+            scenarios: { ...state.scenarios, [state.scenario]: regras },
+          };
+        }),
       addReceita: (receita) =>
         set((state) => ({ receitas: [...state.receitas, receita] })),
       updateReceita: (codigo, data) =>
@@ -52,7 +89,7 @@ export const useAppStore = create<AppStore>()(
         })),
     }),
     {
-      name: "cmx_v03_app",
+      name: "cmx_v04_app",
       storage: createJSONStorage(() => localStorage),
     }
   )

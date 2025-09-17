@@ -21,7 +21,9 @@ Aplicativo para comparar fornecedores e analisar créditos tributários de produ
     "ncm": "0000.00.00",
     "descricao": "Produto",
     "receita": { "codigo": "01", "descricao": "Exemplo" },
-    "aliquotas": { "ibs": 0, "cbs": 0, "is": 0 }
+    "aliquotas": { "ibs": 0, "cbs": 0, "is": 0 },
+    "validFrom": "2024-01-01",
+    "validTo": "2024-12-31"
   }
 ]
 ```
@@ -46,9 +48,9 @@ Aplicativo para comparar fornecedores e analisar créditos tributários de produ
 ### Persistência
 O estado é armazenado no `localStorage` usando as chaves:
 
-- `cmx_v03_app`: cenário, regras e receitas.
-- `cmx_v03_catalogo`: catálogo de produtos.
-- `cmx_v03_cotacao`: dados de cotação e fornecedores.
+- `cmx_v04_app`: cenário, regras (effective-dated) e receitas.
+- `cmx_v04_catalogo`: catálogo de produtos.
+- `cmx_v04_cotacao`: dados de cotação, fornecedores e preferências.
 
 ## Scripts
 Para instalar dependências e executar o projeto localmente:

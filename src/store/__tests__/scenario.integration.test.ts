@@ -14,11 +14,18 @@ function calcularMix(itens: MixResultadoItem[], porcoes: number) {
 
 describe('mudança de cenário', () => {
   beforeEach(() => {
-    useAppStore.setState({ scenario: 'default', regras: [], receitas: [] });
+    useAppStore.setState({
+      scenario: 'default',
+      regras: [],
+      scenarios: { default: [] },
+      receitas: [],
+    });
     useCotacaoStore.setState({
       contexto: { data: '', uf: 'SP', destino: 'A', regime: 'normal', produto: '' },
       fornecedores: [],
       resultado: { itens: [] },
+      constraints: [],
+      prefs: { objetivo: 'custo', constraints: [] },
     });
   });
 
