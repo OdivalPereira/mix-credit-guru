@@ -1,3 +1,5 @@
+import { memoize } from "./memoize";
+
 export interface Offer {
   id: string;
   price: number;
@@ -23,10 +25,10 @@ export interface OptimizePerItemResult {
  * Greedy optimization allocating quantity across offers while
  * respecting MOQ, step, capacity, budget and share constraints.
  */
-export function optimizePerItem(
+const optimizePerItemInternal = (
   { quantity, offers, budget }: OptimizePerItemInput,
-  onProgress?: (percent: number) => void
-): OptimizePerItemResult {
+  onProgress?: (percent: number) => void,
+): OptimizePerItemResult => {
   const totalQty = quantity;
   let remainingQty = quantity;
   let remainingBudget = budget ?? Infinity;
@@ -90,5 +92,15 @@ export function optimizePerItem(
   }
 
   return { allocation, cost, violations };
-}
+};
+
+export const optimizePerItem = memoize(optimizePerItemInternal, {
+  getKey: (input) => JSON.stringify(input),
+  maxSize: 50,
+  onCacheHit: (_input, onProgress) => {
+    if (typeof onProgress === "function") {
+      onProgress(100);
+    }
+  },
+});
 

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,8 @@ export default function Receitas() {
   const addReceita = useAppStore((s) => s.addReceita);
   const updateReceita = useAppStore((s) => s.updateReceita);
   const removeReceita = useAppStore((s) => s.removeReceita);
+  const receitasTableRef = useRef<HTMLDivElement>(null);
+  const shouldVirtualize = receitas.length >= 200;
 
   const resultado = useCotacaoStore((s) => s.resultado);
   const vencedores = resultado.itens.slice(0, 3);
@@ -68,7 +71,10 @@ export default function Receitas() {
               Adicionar receita
             </Button>
           </div>
-          <Table>
+          <Table
+            containerRef={receitasTableRef}
+            containerClassName={shouldVirtualize ? "max-h-[420px]" : undefined}
+          >
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
@@ -76,8 +82,12 @@ export default function Receitas() {
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {receitas.map((r) => (
+            <VirtualizedTableBody
+              data={receitas}
+              colSpan={3}
+              scrollElement={() => receitasTableRef.current}
+              estimateSize={() => 64}
+              renderRow={(r) => (
                 <TableRow key={r.codigo}>
                   <TableCell>
                     <Input
@@ -101,8 +111,8 @@ export default function Receitas() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
+              )}
+            />
           </Table>
         </CardContent>
       </Card>

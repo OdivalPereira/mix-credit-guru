@@ -1,6 +1,7 @@
 import { useRef, ChangeEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Table, TableHeader, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/store/useAppStore";
@@ -42,6 +43,10 @@ export default function Regras() {
   const removeReceita = useAppStore((s) => s.removeReceita);
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const regrasTableRef = useRef<HTMLDivElement>(null);
+  const receitasTableRef = useRef<HTMLDivElement>(null);
+  const shouldVirtualizeRegras = regras.length >= 200;
+  const shouldVirtualizeReceitas = receitas.length >= 200;
 
   const updateRegraField = (
     ncm: string,
@@ -196,7 +201,10 @@ export default function Regras() {
               Adicionar regra
             </Button>
           </div>
-          <Table>
+          <Table
+            containerRef={regrasTableRef}
+            containerClassName={shouldVirtualizeRegras ? "max-h-[500px]" : undefined}
+          >
             <TableHeader>
               <TableRow>
                 <TableHead>NCM</TableHead>
@@ -212,8 +220,12 @@ export default function Regras() {
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {regras.map((r) => (
+            <VirtualizedTableBody
+              data={regras}
+              colSpan={11}
+              scrollElement={() => regrasTableRef.current}
+              estimateSize={() => 68}
+              renderRow={(r) => (
                 <TableRow key={r.ncm}>
                   <TableCell>
                     <Input
@@ -301,8 +313,8 @@ export default function Regras() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
+              )}
+            />
           </Table>
         </CardContent>
       </Card>
@@ -317,7 +329,10 @@ export default function Regras() {
               Adicionar receita
             </Button>
           </div>
-          <Table>
+          <Table
+            containerRef={receitasTableRef}
+            containerClassName={shouldVirtualizeReceitas ? "max-h-[400px]" : undefined}
+          >
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
@@ -325,8 +340,12 @@ export default function Regras() {
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {receitas.map((r) => (
+            <VirtualizedTableBody
+              data={receitas}
+              colSpan={3}
+              scrollElement={() => receitasTableRef.current}
+              estimateSize={() => 64}
+              renderRow={(r) => (
                 <TableRow key={r.codigo}>
                   <TableCell>
                     <Input
@@ -350,8 +369,8 @@ export default function Regras() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
+              )}
+            />
           </Table>
         </CardContent>
       </Card>

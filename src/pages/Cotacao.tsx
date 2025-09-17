@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,6 +32,8 @@ import type { Supplier } from "@/types/domain";
 export default function Cotacao() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
+  const supplierTableContainerRef = useRef<HTMLDivElement>(null);
+  const workerRef = useRef<Worker | null>(null);
   const [mostrarGrafico, setMostrarGrafico] = useState(false);
   const [optProgress, setOptProgress] = useState(0);
   const [optimizing, setOptimizing] = useState(false);
@@ -54,6 +57,7 @@ export default function Cotacao() {
   } = useCotacaoStore();
 
   const resultados = resultado.itens;
+  const shouldVirtualizeSuppliers = resultados.length >= 200;
 
   useEffect(() => {
     calcular();
@@ -126,10 +130,15 @@ export default function Cotacao() {
   };
 
   const handleOptimize = () => {
+    if (workerRef.current) {
+      workerRef.current.terminate();
+    }
+
     const worker = new Worker(
       new URL("../workers/optWorker.ts", import.meta.url),
       { type: "module" }
     );
+    workerRef.current = worker;
     setOptimizing(true);
     setOptProgress(0);
     worker.postMessage({
@@ -141,11 +150,24 @@ export default function Cotacao() {
       if (msg.type === "progress" && typeof msg.value === "number") {
         setOptProgress(msg.value);
       } else if (msg.type === "result") {
+        setOptProgress(100);
         setOptimizing(false);
-        worker.terminate();
+        workerRef.current?.terminate();
+        workerRef.current = null;
       }
     };
+    worker.onerror = () => {
+      setOptimizing(false);
+      workerRef.current?.terminate();
+      workerRef.current = null;
+    };
   };
+
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
 
   const handleFlagChange = (
     id: string,
@@ -356,7 +378,10 @@ export default function Cotacao() {
             </div>
           )}
           <div className="rounded-md border">
-            <Table>
+            <Table
+              containerRef={supplierTableContainerRef}
+              containerClassName={shouldVirtualizeSuppliers ? "max-h-[600px]" : undefined}
+            >
               <TableHeader>
                 <TableRow>
                   <TableHead>#</TableHead>
@@ -380,8 +405,12 @@ export default function Cotacao() {
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {resultados.map((supplier) => (
+              <VirtualizedTableBody
+                data={resultados}
+                colSpan={19}
+                scrollElement={() => supplierTableContainerRef.current}
+                estimateSize={() => 72}
+                renderRow={(supplier) => (
                   <TableRow
                     key={supplier.id}
                     className={supplier.ranking === 1 ? "bg-success/5" : ""}
@@ -539,8 +568,8 @@ export default function Cotacao() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
+                )}
+              />
             </Table>
           </div>
         </CardContent>

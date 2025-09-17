@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,10 @@ const defaultYield: YieldConfig[] = [
 export default function UnidadesConversoes() {
   const [conversoes, setConversoes] = useState<UnitConv[]>(defaultConversoes);
   const [yieldConfigs, setYieldConfigs] = useState<YieldConfig[]>(defaultYield);
+  const conversoesTableRef = useRef<HTMLDivElement>(null);
+  const yieldTableRef = useRef<HTMLDivElement>(null);
+  const shouldVirtualizeConversoes = conversoes.length >= 200;
+  const shouldVirtualizeYield = yieldConfigs.length >= 200;
 
   const handleConversaoChange = (
     index: number,
@@ -121,7 +126,10 @@ export default function UnidadesConversoes() {
           <CardDescription>Informe os fatores de conversão entre unidades cadastradas</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table
+            containerRef={conversoesTableRef}
+            containerClassName={shouldVirtualizeConversoes ? "max-h-[480px]" : undefined}
+          >
             <TableHeader>
               <TableRow>
                 <TableHead>De</TableHead>
@@ -130,8 +138,19 @@ export default function UnidadesConversoes() {
                 <TableHead className="w-16"></TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {conversoes.map((conv, index) => (
+            <VirtualizedTableBody
+              data={conversoes}
+              colSpan={4}
+              scrollElement={() => conversoesTableRef.current}
+              estimateSize={() => 64}
+              emptyRow={
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                    Nenhuma conversão cadastrada.
+                  </TableCell>
+                </TableRow>
+              }
+              renderRow={(conv, index) => (
                 <TableRow key={`${conv.de}-${conv.para}-${index}`}>
                   <TableCell>
                     <Select
@@ -184,15 +203,8 @@ export default function UnidadesConversoes() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
-              {conversoes.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                    Nenhuma conversão cadastrada.
-                  </TableCell>
-                </TableRow>
               )}
-            </TableBody>
+            />
           </Table>
         </CardContent>
       </Card>
@@ -205,7 +217,10 @@ export default function UnidadesConversoes() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table
+            containerRef={yieldTableRef}
+            containerClassName={shouldVirtualizeYield ? "max-h-[480px]" : undefined}
+          >
             <TableHeader>
               <TableRow>
                 <TableHead>Entrada</TableHead>
@@ -214,8 +229,19 @@ export default function UnidadesConversoes() {
                 <TableHead className="w-16"></TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {yieldConfigs.map((config, index) => (
+            <VirtualizedTableBody
+              data={yieldConfigs}
+              colSpan={4}
+              scrollElement={() => yieldTableRef.current}
+              estimateSize={() => 64}
+              emptyRow={
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                    Nenhuma configuração de yield cadastrada.
+                  </TableCell>
+                </TableRow>
+              }
+              renderRow={(config, index) => (
                 <TableRow key={`${config.entrada}-${config.saida}-${index}`}>
                   <TableCell>
                     <Select
@@ -268,15 +294,8 @@ export default function UnidadesConversoes() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
-              {yieldConfigs.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                    Nenhuma configuração de yield cadastrada.
-                  </TableCell>
-                </TableRow>
               )}
-            </TableBody>
+            />
           </Table>
         </CardContent>
       </Card>
