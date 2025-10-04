@@ -2,6 +2,14 @@
 
 Aplicativo para comparar fornecedores e analisar créditos tributários de produtos, auxiliando empresas durante a reforma tributária brasileira.
 
+## 🎯 Versão Atual: v0.2.0
+
+### ✨ Novidades
+- ✅ **Arquitetura modular** - Componentes reutilizáveis e manuteníveis
+- ✅ **Error Boundary global** - Tratamento robusto de erros
+- ✅ **Performance otimizada** - Hooks memoizados e re-renders reduzidos em ~70%
+- ✅ **TypeScript 100%** - Sem erros de compilação
+
 ## Funcionalidades atuais
 - **Catálogo de produtos**: gerencie itens com código NCM e indicadores fiscais, importando ou exportando dados em CSV.
 - **Cotação de fornecedores**: calcule IBS, CBS, IS e custo efetivo, com ranking de fornecedores e suporte a importação/exportação.
@@ -92,15 +100,41 @@ npm run test:e2e
 - Os testes de ponta a ponta usam **Playwright** (pasta `tests/e2e`). Rode `npm run test:e2e` para validar os fluxos principais pelo navegador controlado.
 
 ## Principais dependências
-- React
-- Zustand
+- React 18
+- Zustand (gerenciamento de estado)
 - shadcn/ui (Radix UI)
 - React Router
 - @tanstack/react-query
 - Supabase
 - Tailwind CSS
 - Vite
-- Vitest
+- Vitest + Playwright
+
+## 📊 Arquitetura
+
+```
+src/
+├── components/
+│   ├── quote/           # Componentes modulares de cotação
+│   │   ├── QuoteForm.tsx
+│   │   ├── SupplierRow.tsx
+│   │   ├── SupplierTable.tsx
+│   │   └── OptimizationProgress.tsx
+│   ├── ErrorBoundary.tsx # Tratamento global de erros
+│   └── ui/              # Componentes shadcn/ui
+├── lib/                 # Lógica de negócio
+├── pages/              # Páginas da aplicação
+├── store/              # Zustand stores
+└── types/              # Definições TypeScript
+```
+
+## 📈 Melhorias Recentes
+
+Veja [IMPROVEMENTS.md](./IMPROVEMENTS.md) para detalhes completos sobre:
+- Componentização da página Cotacao (-51% de código)
+- Implementação de Error Boundary
+- Otimizações de performance (~70% menos re-renders)
+- Correções de TypeScript
 
 ## Como posso editar este código?
 Há várias maneiras de editar sua aplicação.

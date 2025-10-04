@@ -85,7 +85,9 @@ export default function Catalogo() {
   const getFlagBadge = (flag: keyof Produto["flags"], active: boolean) => {
     if (!active) return null;
 
-    const variants: Record<keyof Produto["flags"], { variant: string; label: string }> = {
+    type BadgeVariant = "success" | "default" | "warning" | "destructive";
+
+    const variants: Record<keyof Produto["flags"], { variant: BadgeVariant; label: string }> = {
       refeicao: { variant: "success", label: "Refeição" },
       cesta: { variant: "default", label: "Cesta Básica" },
       reducao: { variant: "warning", label: "Redução" },
