@@ -13,6 +13,7 @@
 - Criada `src/components/quote/QuoteContextSummary.tsx` com painel compacto que apresenta data, UF, municipio, destino e regime em cartoes e badges.
 - Atualizada `src/pages/Cotacao.tsx` para incluir cards de metricas (fornecedores ativos, melhor custo, credito medio e ultima otimizacao) e alerta condicional para restricoes.
 - Refatorada `src/components/quote/SupplierTable.tsx` adicionando menu de dados, botoes com tooltip, estado vazio orientativo e botao de otimizacao destacado.
+- Ajustados container principal, distribuicao de campos do formulario e largura das colunas da tabela para acomodar textos longos sem cortes (`src/components/Layout.tsx`, `src/components/quote/QuoteForm.tsx`, `src/components/quote/SupplierTable.tsx`, `src/components/quote/SupplierRow.tsx`).
 
 ## Testes
 - `npm run lint` (avisa sobre regras existentes de Fast Refresh herdadas do projeto base).

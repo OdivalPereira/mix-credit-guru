@@ -37,7 +37,7 @@ const SupplierRowComponent = ({
       data-supplier-id={supplier.id}
       className={supplier.ranking === 1 ? "bg-success/5" : ""}
     >
-      <TableCell className="font-medium">
+      <TableCell className="w-16 text-center font-medium">
         {supplier.ranking === 1 && (
           <Badge variant="success" className="mr-2">
             1o
@@ -46,7 +46,7 @@ const SupplierRowComponent = ({
         {supplier.ranking}
       </TableCell>
 
-      <TableCell className="font-medium">
+      <TableCell className="min-w-[240px] font-medium">
         <Input
           data-testid="supplier-name"
           value={supplier.nome}
@@ -56,7 +56,7 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell>
+      <TableCell className="min-w-[140px]">
         <Input
           data-testid="supplier-tipo"
           value={supplier.tipo}
@@ -66,7 +66,7 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell>
+      <TableCell className="min-w-[140px]">
         <Input
           data-testid="supplier-regime"
           value={supplier.regime}
@@ -76,7 +76,7 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell className="text-right">
+      <TableCell className="min-w-[140px] text-right">
         <Input
           data-testid="supplier-price"
           type="number"
@@ -88,17 +88,17 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell className="text-right">
+      <TableCell className="w-24 text-right">
         {supplier.ibs.toFixed(2)}%
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="w-24 text-right">
         {supplier.cbs.toFixed(2)}%
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="w-24 text-right">
         {supplier.is.toFixed(2)}%
       </TableCell>
 
-      <TableCell className="text-right">
+      <TableCell className="min-w-[140px] text-right">
         <Input
           data-testid="supplier-frete"
           type="number"
@@ -110,7 +110,7 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell>
+      <TableCell className="w-24 text-center">
         <Checkbox
           checked={supplier.flagsItem?.cesta ?? false}
           onCheckedChange={(value) =>
@@ -120,7 +120,7 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell>
+      <TableCell className="w-28 text-center">
         <Checkbox
           checked={supplier.flagsItem?.reducao ?? false}
           onCheckedChange={(value) =>
@@ -130,7 +130,7 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell>
+      <TableCell className="w-28 text-center">
         <Checkbox
           checked={supplier.isRefeicaoPronta ?? false}
           onCheckedChange={(value) =>
@@ -140,16 +140,20 @@ const SupplierRowComponent = ({
         />
       </TableCell>
 
-      <TableCell>{getCreditBadge(supplier.creditavel, supplier.credito)}</TableCell>
-      <TableCell className="text-right">{formatCurrency(supplier.credito)}</TableCell>
-      <TableCell className="text-right font-bold">
+      <TableCell className="min-w-[160px] text-center">
+        {getCreditBadge(supplier.creditavel, supplier.credito)}
+      </TableCell>
+      <TableCell className="min-w-[140px] text-right">
+        {formatCurrency(supplier.credito)}
+      </TableCell>
+      <TableCell className="min-w-[160px] text-right font-bold">
         {formatCurrency(supplier.custoEfetivo)}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="min-w-[160px] text-right">
         {supplier.custoNormalizado ? formatCurrency(supplier.custoNormalizado) : "-"}
       </TableCell>
 
-      <TableCell>
+      <TableCell className="min-w-[140px]">
         {supplier.degrauAplicado ? (
           <Badge variant="outline">{supplier.degrauAplicado}</Badge>
         ) : (
@@ -157,7 +161,7 @@ const SupplierRowComponent = ({
         )}
       </TableCell>
 
-      <TableCell>
+      <TableCell className="min-w-[160px]">
         {supplier.restricoes?.length ? (
           <div className="space-y-1">
             {supplier.restricoes.map((restriction) => (
@@ -171,8 +175,8 @@ const SupplierRowComponent = ({
         )}
       </TableCell>
 
-      <TableCell>
-        <div className="flex space-x-1">
+      <TableCell className="w-[120px] text-center">
+        <div className="flex justify-center space-x-1">
           <Button
             variant="ghost"
             size="sm"

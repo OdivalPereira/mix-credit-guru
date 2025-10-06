@@ -212,28 +212,32 @@ const SupplierTableComponent = ({
             containerClassName={shouldVirtualize ? "max-h-[600px]" : undefined}
           >
             <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Regime</TableHead>
-                <TableHead className="text-right">Preco</TableHead>
-                <TableHead className="text-right">IBS%</TableHead>
-                <TableHead className="text-right">CBS%</TableHead>
-                <TableHead className="text-right">IS%</TableHead>
-                <TableHead className="text-right">Frete</TableHead>
-                <TableHead>Cesta</TableHead>
-                <TableHead>Reducao</TableHead>
-                <TableHead>Refeicao</TableHead>
-                <TableHead>Creditavel</TableHead>
-                <TableHead className="text-right">Credito</TableHead>
-                <TableHead className="text-right font-bold">
+              <TableRow className="whitespace-nowrap">
+                <TableHead className="w-16 text-center">#</TableHead>
+                <TableHead className="min-w-[240px]">Fornecedor</TableHead>
+                <TableHead className="min-w-[140px]">Tipo</TableHead>
+                <TableHead className="min-w-[140px]">Regime</TableHead>
+                <TableHead className="min-w-[140px] text-right">Preco</TableHead>
+                <TableHead className="w-24 text-right">IBS%</TableHead>
+                <TableHead className="w-24 text-right">CBS%</TableHead>
+                <TableHead className="w-24 text-right">IS%</TableHead>
+                <TableHead className="min-w-[140px] text-right">Frete</TableHead>
+                <TableHead className="w-24 text-center">Cesta</TableHead>
+                <TableHead className="w-28 text-center">Reducao</TableHead>
+                <TableHead className="w-28 text-center">Refeicao</TableHead>
+                <TableHead className="min-w-[160px] text-center">
+                  Creditavel
+                </TableHead>
+                <TableHead className="min-w-[140px] text-right">Credito</TableHead>
+                <TableHead className="min-w-[160px] text-right font-bold">
                   Custo efetivo
                 </TableHead>
-                <TableHead className="text-right">Custo normalizado</TableHead>
-                <TableHead>Degrau</TableHead>
-                <TableHead>Restricoes</TableHead>
-                <TableHead>Acoes</TableHead>
+                <TableHead className="min-w-[160px] text-right">
+                  Custo normalizado
+                </TableHead>
+                <TableHead className="min-w-[140px]">Degrau</TableHead>
+                <TableHead className="min-w-[160px]">Restricoes</TableHead>
+                <TableHead className="w-[120px] text-center">Acoes</TableHead>
               </TableRow>
             </TableHeader>
             <VirtualizedTableBody
