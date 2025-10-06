@@ -13,8 +13,12 @@ const Cotacao = lazy(() => import("./pages/Cotacao"));
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Cenarios = lazy(() => import("./pages/Cenarios"));
 const Regras = lazy(() => import("./pages/Regras"));
+const Receitas = lazy(() => import("./pages/Receitas"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Config = lazy(() => import("./pages/Config"));
+const CompararCenarios = lazy(() => import("./pages/CompararCenarios"));
+const FornecedoresContratos = lazy(() => import("./pages/FornecedoresContratos"));
+const UnidadesConversoes = lazy(() => import("./pages/UnidadesConversoes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,9 +47,13 @@ const App = () => (
                 <Route index element={<Cotacao />} />
                 <Route path="catalogo" element={<Catalogo />} />
                 <Route path="cenarios" element={<Cenarios />} />
-                <Route path="regras" element={<Regras />} />
-                <Route path="relatorios" element={<Relatorios />} />
-                <Route path="config" element={<Config />} />
+              <Route path="regras" element={<Regras />} />
+              <Route path="receitas" element={<Receitas />} />
+              <Route path="relatorios" element={<Relatorios />} />
+              <Route path="comparar-cenarios" element={<CompararCenarios />} />
+              <Route path="contratos" element={<FornecedoresContratos />} />
+              <Route path="unidades" element={<UnidadesConversoes />} />
+              <Route path="config" element={<Config />} />
               </Route>
             </Routes>
           </Suspense>

@@ -1,12 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import {
-  readFornecedoresCSV,
-  writeFornecedoresCSV,
-} from "../lib/csv";
+import { readFornecedoresCSV, writeFornecedoresCSV } from "../lib/csv";
 import type { Supplier, MixResultado } from "@/types/domain";
 import { rankSuppliers } from "@/lib/calcs";
 import { useAppStore } from "./useAppStore";
+import type { OptimizePerItemResult } from "@/lib/opt";
 
 export interface Contexto {
   data: string;
@@ -22,6 +20,7 @@ export interface CotacaoStore {
   contexto: Contexto;
   fornecedores: Supplier[];
   resultado: MixResultado;
+  ultimaOtimizacao: OptimizePerItemResult | null;
   setContexto: (contexto: Partial<Contexto>) => void;
   upsertFornecedor: (fornecedor: Omit<Supplier, "id"> & { id?: string }) => void;
   removeFornecedor: (id: string) => void;
@@ -31,14 +30,15 @@ export interface CotacaoStore {
   importarJSON: (json: string) => void;
   exportarJSON: () => string;
   calcular: () => void;
+  registrarOtimizacao: (resultado: OptimizePerItemResult) => void;
 }
 
 const initialContexto: Contexto = {
   data: "",
-  uf: "",
+  uf: "SP",
   municipio: "",
-  destino: "",
-  regime: "",
+  destino: "A",
+  regime: "normal",
   produto: "",
 };
 
@@ -48,9 +48,16 @@ export const useCotacaoStore = create<CotacaoStore>()(
       contexto: initialContexto,
       fornecedores: [],
       resultado: { itens: [] },
+      ultimaOtimizacao: null,
 
       setContexto: (ctx) =>
-        set((state) => ({ contexto: { ...state.contexto, ...ctx } })),
+        set((state) => {
+          const next = { ...state.contexto, ...ctx };
+          if (next.uf) {
+            next.uf = next.uf.toUpperCase();
+          }
+          return { contexto: next };
+        }),
 
       upsertFornecedor: (fornecedor) =>
         set((state) => {
@@ -74,6 +81,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
           contexto: initialContexto,
           fornecedores: [],
           resultado: { itens: [] },
+          ultimaOtimizacao: null,
         }),
 
       importarCSV: (csv) => {
@@ -91,9 +99,12 @@ export const useCotacaoStore = create<CotacaoStore>()(
           resultado: MixResultado;
         }>;
         set({
-          contexto: data.contexto ?? initialContexto,
+          contexto: data.contexto
+            ? { ...initialContexto, ...data.contexto, uf: (data.contexto.uf ?? "").toUpperCase() }
+            : initialContexto,
           fornecedores: data.fornecedores ?? [],
           resultado: data.resultado ?? { itens: [] },
+          ultimaOtimizacao: null,
         });
         get().calcular();
       },
@@ -115,7 +126,27 @@ export const useCotacaoStore = create<CotacaoStore>()(
             uf: contexto.uf,
             municipio: contexto.municipio,
           });
-          return { resultado: { itens } };
+          return { resultado: { itens }, ultimaOtimizacao: null };
+        }),
+
+      registrarOtimizacao: (resultadoOtimizacao) =>
+        set((state) => {
+          const itensAtualizados = state.resultado.itens.map((item) => {
+            const quantidade = resultadoOtimizacao.allocation[item.id] ?? 0;
+            const restricoes =
+              resultadoOtimizacao.violations.length > 0
+                ? resultadoOtimizacao.violations
+                : item.restricoes;
+            return {
+              ...item,
+              degrauAplicado: quantidade > 0 ? `Qtd otimizada: ${quantidade}` : item.degrauAplicado,
+              restricoes,
+            };
+          });
+          return {
+            resultado: { itens: itensAtualizados },
+            ultimaOtimizacao: resultadoOtimizacao,
+          };
         }),
     }),
     {

@@ -1,17 +1,22 @@
 import { memo } from "react";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Copy, Trash } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { TableCell, TableRow } from "@/components/ui/table";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 
 interface SupplierRowProps {
   supplier: MixResultadoItem;
   formatCurrency: (value: number) => string;
   onFieldChange: (id: string, field: keyof Supplier, value: string) => void;
-  onFlagChange: (id: string, flag: "cesta" | "reducao" | "refeicao", value: boolean) => void;
+  onFlagChange: (
+    id: string,
+    flag: "cesta" | "reducao" | "refeicao",
+    value: boolean,
+  ) => void;
   onDuplicate: (supplier: MixResultadoItem) => void;
   onRemove: (id: string) => void;
   getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
@@ -35,96 +40,115 @@ const SupplierRowComponent = ({
       <TableCell className="font-medium">
         {supplier.ranking === 1 && (
           <Badge variant="success" className="mr-2">
-            1º
+            1o
           </Badge>
         )}
         {supplier.ranking}
       </TableCell>
-      
+
       <TableCell className="font-medium">
         <Input
           data-testid="supplier-name"
           value={supplier.nome}
-          onChange={(e) => onFieldChange(supplier.id, "nome", e.target.value)}
+          onChange={(event) =>
+            onFieldChange(supplier.id, "nome", event.target.value)
+          }
         />
       </TableCell>
-      
+
       <TableCell>
         <Input
           data-testid="supplier-tipo"
           value={supplier.tipo}
-          onChange={(e) => onFieldChange(supplier.id, "tipo", e.target.value)}
+          onChange={(event) =>
+            onFieldChange(supplier.id, "tipo", event.target.value)
+          }
         />
       </TableCell>
-      
+
       <TableCell>
         <Input
           data-testid="supplier-regime"
           value={supplier.regime}
-          onChange={(e) => onFieldChange(supplier.id, "regime", e.target.value)}
+          onChange={(event) =>
+            onFieldChange(supplier.id, "regime", event.target.value)
+          }
         />
       </TableCell>
-      
+
       <TableCell className="text-right">
         <Input
-          data-testid="supplier-preco"
+          data-testid="supplier-price"
           type="number"
           step="0.01"
           value={supplier.preco}
-          onChange={(e) => onFieldChange(supplier.id, "preco", e.target.value)}
+          onChange={(event) =>
+            onFieldChange(supplier.id, "preco", event.target.value)
+          }
         />
       </TableCell>
-      
-      <TableCell className="text-right">{supplier.ibs.toFixed(2)}%</TableCell>
-      <TableCell className="text-right">{supplier.cbs.toFixed(2)}%</TableCell>
-      <TableCell className="text-right">{supplier.is.toFixed(2)}%</TableCell>
-      
+
+      <TableCell className="text-right">
+        {supplier.ibs.toFixed(2)}%
+      </TableCell>
+      <TableCell className="text-right">
+        {supplier.cbs.toFixed(2)}%
+      </TableCell>
+      <TableCell className="text-right">
+        {supplier.is.toFixed(2)}%
+      </TableCell>
+
       <TableCell className="text-right">
         <Input
           data-testid="supplier-frete"
           type="number"
           step="0.01"
           value={supplier.frete}
-          onChange={(e) => onFieldChange(supplier.id, "frete", e.target.value)}
+          onChange={(event) =>
+            onFieldChange(supplier.id, "frete", event.target.value)
+          }
         />
       </TableCell>
-      
+
       <TableCell>
         <Checkbox
           checked={supplier.flagsItem?.cesta ?? false}
-          onCheckedChange={(v) => onFlagChange(supplier.id, "cesta", v as boolean)}
-          aria-label="Cesta básica"
+          onCheckedChange={(value) =>
+            onFlagChange(supplier.id, "cesta", Boolean(value))
+          }
+          aria-label="Cesta basica"
         />
       </TableCell>
-      
+
       <TableCell>
         <Checkbox
           checked={supplier.flagsItem?.reducao ?? false}
-          onCheckedChange={(v) => onFlagChange(supplier.id, "reducao", v as boolean)}
-          aria-label="Redução"
+          onCheckedChange={(value) =>
+            onFlagChange(supplier.id, "reducao", Boolean(value))
+          }
+          aria-label="Reducao"
         />
       </TableCell>
-      
+
       <TableCell>
         <Checkbox
           checked={supplier.isRefeicaoPronta ?? false}
-          onCheckedChange={(v) => onFlagChange(supplier.id, "refeicao", v as boolean)}
-          aria-label="Refeição pronta"
+          onCheckedChange={(value) =>
+            onFlagChange(supplier.id, "refeicao", Boolean(value))
+          }
+          aria-label="Refeicao pronta"
         />
       </TableCell>
-      
+
       <TableCell>{getCreditBadge(supplier.creditavel, supplier.credito)}</TableCell>
       <TableCell className="text-right">{formatCurrency(supplier.credito)}</TableCell>
       <TableCell className="text-right font-bold">
         {formatCurrency(supplier.custoEfetivo)}
       </TableCell>
-      
       <TableCell className="text-right">
-        {supplier.custoNormalizado
-          ? formatCurrency(supplier.custoNormalizado)
-          : "-"}
+        {supplier.custoNormalizado ? formatCurrency(supplier.custoNormalizado) : "-"}
       </TableCell>
-      
+
       <TableCell>
         {supplier.degrauAplicado ? (
           <Badge variant="outline">{supplier.degrauAplicado}</Badge>
@@ -132,13 +156,13 @@ const SupplierRowComponent = ({
           "-"
         )}
       </TableCell>
-      
+
       <TableCell>
         {supplier.restricoes?.length ? (
           <div className="space-y-1">
-            {supplier.restricoes.map((r, i) => (
-              <Badge key={i} variant="warning" className="mr-1">
-                {r}
+            {supplier.restricoes.map((restriction) => (
+              <Badge key={restriction} variant="warning" className="mr-1">
+                {restriction}
               </Badge>
             ))}
           </div>
@@ -146,7 +170,7 @@ const SupplierRowComponent = ({
           "-"
         )}
       </TableCell>
-      
+
       <TableCell>
         <div className="flex space-x-1">
           <Button

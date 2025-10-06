@@ -1,157 +1,191 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import { Calendar, TrendingDown, TrendingUp } from "lucide-react";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, TrendingUp, TrendingDown } from "lucide-react";
-import { useEffect } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import type { Scenario } from "@/types/domain";
 
-const scenarios: Record<string, Scenario> = {
-  "2025": {
-    title: "Reforma Tributária - Fase 1",
-    changes: "Introdução do IBS e CBS mantendo ICMS e IPI em transição",
-    impact: "neutral"
-  },
-  "2026": {
-    title: "Período de Transição",
-    changes: "Gradual substituição dos tributos estaduais e municipais",
-    impact: "positive"
-  },
-  "2027": {
-    title: "Implementação Completa",
-    changes: "IBS e CBS substituem completamente ICMS, ISS, PIS e COFINS",
-    impact: "positive"
-  },
-  "2029": {
-    title: "Regime de Maturidade",
-    changes: "Alíquotas estabilizadas, sistema totalmente operacional",
-    impact: "positive"
-  },
-  "2033": {
-    title: "Cenário de Longo Prazo",
-    changes: "Possíveis ajustes finos e otimizações no sistema",
-    impact: "neutral"
-  }
+type ScenarioOption = {
+  year: string;
+  scenarioKey: string;
+  data: Scenario;
 };
 
+const scenarioTimeline: ScenarioOption[] = [
+  {
+    year: "2025",
+    scenarioKey: "default",
+    data: {
+      title: "Reforma tributaria - fase 1",
+      changes: "Introducao de IBS e CBS com ICMS e IPI em transicao",
+      impact: "neutral",
+    },
+  },
+  {
+    year: "2026",
+    scenarioKey: "cesta",
+    data: {
+      title: "Periodo de transicao",
+      changes: "Reducoes alinhadas a cesta basica para suavizar o periodo inicial",
+      impact: "positive",
+    },
+  },
+  {
+    year: "2027",
+    scenarioKey: "positive",
+    data: {
+      title: "Implementacao completa",
+      changes: "IBS e CBS substituem ICMS, ISS, PIS e COFINS com bonus de credito",
+      impact: "positive",
+    },
+  },
+  {
+    year: "2029",
+    scenarioKey: "positive",
+    data: {
+      title: "Regime de maturidade",
+      changes: "Aliquotas estabilizadas e ajustes finos em creditos",
+      impact: "positive",
+    },
+  },
+  {
+    year: "2033",
+    scenarioKey: "default",
+    data: {
+      title: "Cenario de longo prazo",
+      changes: "Monitoramento e eventuais calibragens na legislacao",
+      impact: "neutral",
+    },
+  },
+];
+
 export default function Cenarios() {
-  const selectedYear = useAppStore((state) => state.scenario);
+  const scenarioKey = useAppStore((state) => state.scenario);
   const setScenario = useAppStore((state) => state.setScenario);
 
-  useEffect(() => {
-    if (!(selectedYear in scenarios)) {
-      setScenario("2025");
-    }
-  }, [selectedYear, setScenario]);
+  const selectedOption = useMemo(() => {
+    return (
+      scenarioTimeline.find((option) => option.scenarioKey === scenarioKey) ??
+      scenarioTimeline[0]
+    );
+  }, [scenarioKey]);
 
-  const scenario =
-    scenarios[selectedYear as keyof typeof scenarios] ?? scenarios["2025"];
-  
-  const getImpactBadge = (impact: string) => {
-    switch(impact) {
-      case 'positive':
-        return <Badge variant="success">Impacto Positivo</Badge>;
-      case 'negative':
-        return <Badge variant="destructive">Impacto Negativo</Badge>;
+  const handleChange = (year: string) => {
+    const option = scenarioTimeline.find((item) => item.year === year);
+    if (option) {
+      setScenario(option.scenarioKey);
+    }
+  };
+
+  const getImpactBadge = (impact: Scenario["impact"]) => {
+    switch (impact) {
+      case "positive":
+        return <Badge variant="success">Impacto positivo</Badge>;
+      case "negative":
+        return <Badge variant="destructive">Impacto negativo</Badge>;
       default:
-        return <Badge variant="secondary">Neutro</Badge>;
+        return <Badge variant="secondary">Impacto neutro</Badge>;
     }
   };
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Cenários Tributários</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Cenarios tributarios</h2>
         <p className="text-muted-foreground">
-          Analise o impacto da reforma tributária em diferentes períodos
+          Analise a evolucao da reforma tributaria ao longo dos proximos anos
         </p>
       </div>
 
-      {/* Year Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Calendar className="mr-2 h-5 w-5" />
-            Seleção de Período
+            Selecione o periodo
           </CardTitle>
           <CardDescription>
-            Escolha o ano para visualizar o cenário tributário correspondente
+            Cada periodo aplica regras especificas ao calculo de aliquotas e creditos
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Select
-            value={selectedYear in scenarios ? selectedYear : "2025"}
-            onValueChange={setScenario}
+            value={selectedOption.year}
+            onValueChange={handleChange}
           >
             <SelectTrigger className="w-full max-w-xs" data-testid="scenario-select">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="2025">2025 - Início da Reforma</SelectItem>
-              <SelectItem value="2026">2026 - Transição</SelectItem>
-              <SelectItem value="2027">2027 - Implementação Completa</SelectItem>
-              <SelectItem value="2029">2029 - Maturidade</SelectItem>
-              <SelectItem value="2033">2033 - Longo Prazo</SelectItem>
+              {scenarioTimeline.map((option) => (
+                <SelectItem key={option.year} value={option.year}>
+                  {option.year} - {option.data.title}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </CardContent>
       </Card>
 
-      {/* Active Scenario Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Resumo do Cenário</CardTitle>
+          <CardTitle>Resumo do cenario</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">Ano: {selectedYear}</Badge>
-            <Badge variant="secondary">{scenario.title}</Badge>
-            {getImpactBadge(scenario.impact)}
+            <Badge variant="outline">Ano: {selectedOption.year}</Badge>
+            <Badge variant="secondary">{selectedOption.data.title}</Badge>
+            {getImpactBadge(selectedOption.data.impact)}
           </div>
         </CardContent>
       </Card>
 
-      {/* Scenario Details */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">{scenario.title}</CardTitle>
-            {getImpactBadge(scenario.impact)}
+            <CardTitle className="text-2xl">{selectedOption.data.title}</CardTitle>
+            {getImpactBadge(selectedOption.data.impact)}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <h3 className="font-semibold text-lg mb-2">Principais Mudanças</h3>
-            <p className="text-muted-foreground">{scenario.changes}</p>
+            <h3 className="mb-2 text-lg font-semibold">Principais mudancas</h3>
+            <p className="text-muted-foreground">{selectedOption.data.changes}</p>
           </div>
 
-          {selectedYear === "2025" && (
-            <div className="grid md:grid-cols-2 gap-4">
+          {selectedOption.year === "2025" && (
+            <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardContent className="pt-6">
-                  <div className="flex items-center mb-2">
+                  <div className="mb-2 flex items-center">
                     <TrendingUp className="mr-2 h-4 w-4 text-success" />
-                    <h4 className="font-medium">Benefícios Esperados</h4>
+                    <h4 className="font-medium">Beneficios esperados</h4>
                   </div>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Simplificação do sistema tributário</li>
-                    <li>• Redução da burocracia</li>
-                    <li>• Maior transparência nos custos</li>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    <li>Simplificacao do sistema tributario</li>
+                    <li>Reducao de burocracia operacional</li>
+                    <li>Melhor transpariencia nos custos ao longo da cadeia</li>
                   </ul>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
-                  <div className="flex items-center mb-2">
+                  <div className="mb-2 flex items-center">
                     <TrendingDown className="mr-2 h-4 w-4 text-warning" />
-                    <h4 className="font-medium">Desafios Iniciais</h4>
+                    <h4 className="font-medium">Pontos de atencao</h4>
                   </div>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Período de adaptação aos novos sistemas</li>
-                    <li>• Coexistência de tributos antigos e novos</li>
-                    <li>• Necessidade de ajustes operacionais</li>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    <li>Periodo de adaptacao aos novos sistemas</li>
+                    <li>Coexistencia temporaria de tributos antigos e novos</li>
+                    <li>Necessidade de ajustes em contratos e cadastros</li>
                   </ul>
                 </CardContent>
               </Card>

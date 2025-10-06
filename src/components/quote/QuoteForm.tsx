@@ -1,19 +1,43 @@
+import { memo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import type { Contexto } from "@/store/useCotacaoStore";
-import { useEffect, memo } from "react";
 
 const quoteFormSchema = z.object({
-  data: z.string().min(1, "Data é obrigatória"),
-  uf: z.string().min(1, "UF é obrigatória"),
-  destino: z.string().min(1, "Destino é obrigatório"),
-  regime: z.string().min(1, "Regime é obrigatório"),
-  produto: z.string().min(1, "Produto é obrigatório").max(100, "Produto deve ter no máximo 100 caracteres"),
+  data: z.string().min(1, "Data obrigatoria"),
+  uf: z.string().min(1, "UF obrigatoria"),
+  municipio: z.string().optional(),
+  destino: z.string().min(1, "Destino obrigatorio"),
+  regime: z.string().min(1, "Regime obrigatorio"),
+  produto: z
+    .string()
+    .min(1, "Produto obrigatorio")
+    .max(100, "Produto deve ter no maximo 100 caracteres"),
 });
 
 type QuoteFormValues = z.infer<typeof quoteFormSchema>;
@@ -25,21 +49,23 @@ interface QuoteFormProps {
 
 const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
   const form = useForm<QuoteFormValues>({
+    mode: "onBlur",
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
       data: contexto.data || "",
-      uf: contexto.uf || "",
+      uf: contexto.uf?.toUpperCase() || "",
+      municipio: contexto.municipio || "",
       destino: contexto.destino || "",
       regime: contexto.regime || "",
       produto: contexto.produto || "",
     },
   });
 
-  // Sync form with external contexto changes
   useEffect(() => {
     form.reset({
       data: contexto.data || "",
-      uf: contexto.uf || "",
+      uf: contexto.uf?.toUpperCase() || "",
+      municipio: contexto.municipio || "",
       destino: contexto.destino || "",
       regime: contexto.regime || "",
       produto: contexto.produto || "",
@@ -47,33 +73,38 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
   }, [contexto, form]);
 
   const handleFieldChange = (field: keyof Contexto, value: string) => {
-    onContextoChange(field, value);
+    const nextValue = field === "uf" ? value.toUpperCase() : value;
+    onContextoChange(field, nextValue);
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Parâmetros da Cotação</CardTitle>
+        <CardTitle>Parametros da cotacao</CardTitle>
         <CardDescription>
-          Configure os dados para análise comparativa dos fornecedores
+          Configure os dados para analisar fornecedores
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
             <FormField
               control={form.control}
               name="data"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data</FormLabel>
+                  <FormLabel htmlFor="data">Data</FormLabel>
                   <FormControl>
                     <Input
+                      id="data"
                       type="date"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleFieldChange("data", e.target.value);
+                      name={field.name}
+                      value={field.value ?? ""}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      onChange={(event) => {
+                        field.onChange(event.target.value);
+                        handleFieldChange("data", event.target.value);
                       }}
                     />
                   </FormControl>
@@ -87,26 +118,56 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="uf"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>UF</FormLabel>
+                  <FormLabel htmlFor="estado">Estado</FormLabel>
                   <Select
-                    value={field.value}
+                    value={field.value?.toUpperCase()}
                     onValueChange={(value) => {
                       field.onChange(value);
                       handleFieldChange("uf", value);
                     }}
                   >
                     <FormControl>
-                      <SelectTrigger aria-label="UF" data-testid="select-uf">
+                      <SelectTrigger
+                        id="estado"
+                        aria-label="Estado"
+                        data-testid="select-uf"
+                      >
                         <SelectValue placeholder="Selecione o estado" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="sp">SP - São Paulo</SelectItem>
-                      <SelectItem value="rj">RJ - Rio de Janeiro</SelectItem>
-                      <SelectItem value="mg">MG - Minas Gerais</SelectItem>
-                      <SelectItem value="pr">PR - Paraná</SelectItem>
+                      <SelectItem value="SP">SP - Sao Paulo</SelectItem>
+                      <SelectItem value="RJ">RJ - Rio de Janeiro</SelectItem>
+                      <SelectItem value="MG">MG - Minas Gerais</SelectItem>
+                      <SelectItem value="PR">PR - Parana</SelectItem>
+                      <SelectItem value="RS">RS - Rio Grande do Sul</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="municipio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="municipio">Municipio (IBGE)</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="municipio"
+                      placeholder="Codigo IBGE"
+                      name={field.name}
+                      value={field.value ?? ""}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      onChange={(event) => {
+                        field.onChange(event.target.value);
+                        handleFieldChange("municipio", event.target.value);
+                      }}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -117,7 +178,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="destino"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Destino</FormLabel>
+                  <FormLabel htmlFor="destinacao">Destinacao</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -126,12 +187,16 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
                     }}
                   >
                     <FormControl>
-                      <SelectTrigger aria-label="Destino" data-testid="select-destino">
+                      <SelectTrigger
+                        id="destinacao"
+                        aria-label="Destino"
+                        data-testid="select-destino"
+                      >
                         <SelectValue placeholder="Finalidade" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="A">A - Refeição</SelectItem>
+                      <SelectItem value="A">A - Refeicao</SelectItem>
                       <SelectItem value="B">B - Revenda</SelectItem>
                     </SelectContent>
                   </Select>
@@ -145,7 +210,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="regime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Seu Regime</FormLabel>
+                  <FormLabel htmlFor="regime">Regime tributario</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -154,8 +219,12 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
                     }}
                   >
                     <FormControl>
-                      <SelectTrigger aria-label="Regime" data-testid="select-regime">
-                        <SelectValue placeholder="Regime tributário" />
+                      <SelectTrigger
+                        id="regime"
+                        aria-label="Regime"
+                        data-testid="select-regime"
+                      >
+                        <SelectValue placeholder="Selecione o regime" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -174,14 +243,18 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="produto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Produto</FormLabel>
+                  <FormLabel htmlFor="produto">Produto</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="NCM ou descrição"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleFieldChange("produto", e.target.value);
+                      id="produto"
+                      placeholder="NCM ou descricao"
+                      name={field.name}
+                      value={field.value ?? ""}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      onChange={(event) => {
+                        field.onChange(event.target.value);
+                        handleFieldChange("produto", event.target.value);
                       }}
                     />
                   </FormControl>

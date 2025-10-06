@@ -1,25 +1,37 @@
 import { RefObject, memo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import {
+  BarChartHorizontal,
   Download,
+  Loader2,
   Plus,
   Upload,
-  BarChartHorizontal,
-  Loader2,
 } from "lucide-react";
-import { SupplierRow } from "./SupplierRow";
-import { OptimizationProgress } from "./OptimizationProgress";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
+
+import { OptimizationProgress } from "./OptimizationProgress";
+import { SupplierRow } from "./SupplierRow";
 
 interface SupplierTableProps {
   resultados: MixResultadoItem[];
   formatCurrency: (value: number) => string;
   onAddSupplier: () => void;
   onFieldChange: (id: string, field: keyof Supplier, value: string) => void;
-  onFlagChange: (id: string, flag: "cesta" | "reducao" | "refeicao", value: boolean) => void;
+  onFlagChange: (
+    id: string,
+    flag: "cesta" | "reducao" | "refeicao",
+    value: boolean,
+  ) => void;
   onDuplicate: (supplier: MixResultadoItem) => void;
   onRemove: (id: string) => void;
   onImportCSV: () => void;
@@ -63,14 +75,14 @@ const SupplierTableComponent = ({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <CardTitle>Comparação de Fornecedores</CardTitle>
+          <CardTitle>Comparacao de fornecedores</CardTitle>
           <CardDescription>
-            Análise de custos efetivos considerando tributação e créditos
+            Avalie custo efetivo e impacto tributario por fornecedor.
           </CardDescription>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2 md:justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -101,7 +113,7 @@ const SupplierTableComponent = ({
           </Button>
           <Button variant="outline" size="sm" onClick={onToggleChart}>
             <BarChartHorizontal className="mr-2 h-4 w-4" />
-            {showChart ? "Ocultar" : "Gráfico"}
+            {showChart ? "Ocultar grafico" : "Mostrar grafico"}
           </Button>
           <Button
             variant="outline"
@@ -116,11 +128,9 @@ const SupplierTableComponent = ({
       </CardHeader>
       <CardContent>
         {optimizing && (
-          <OptimizationProgress 
-            progress={optProgress} 
-            message={optStatusMessage} 
-          />
+          <OptimizationProgress progress={optProgress} message={optStatusMessage} />
         )}
+
         <div className="rounded-md border">
           <Table
             containerRef={containerRef}
@@ -132,21 +142,23 @@ const SupplierTableComponent = ({
                 <TableHead>Fornecedor</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Regime</TableHead>
-                <TableHead className="text-right">Preço</TableHead>
+                <TableHead className="text-right">Preco</TableHead>
                 <TableHead className="text-right">IBS%</TableHead>
                 <TableHead className="text-right">CBS%</TableHead>
                 <TableHead className="text-right">IS%</TableHead>
                 <TableHead className="text-right">Frete</TableHead>
                 <TableHead>Cesta</TableHead>
-                <TableHead>Redução</TableHead>
-                <TableHead>Refeição</TableHead>
-                <TableHead>Creditável</TableHead>
-                <TableHead className="text-right">Crédito</TableHead>
-                <TableHead className="text-right font-bold">Custo Efetivo</TableHead>
-                <TableHead className="text-right">Custo Normalizado</TableHead>
+                <TableHead>Reducao</TableHead>
+                <TableHead>Refeicao</TableHead>
+                <TableHead>Creditavel</TableHead>
+                <TableHead className="text-right">Credito</TableHead>
+                <TableHead className="text-right font-bold">
+                  Custo efetivo
+                </TableHead>
+                <TableHead className="text-right">Custo normalizado</TableHead>
                 <TableHead>Degrau</TableHead>
-                <TableHead>Restrições</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead>Restricoes</TableHead>
+                <TableHead>Acoes</TableHead>
               </TableRow>
             </TableHeader>
             <VirtualizedTableBody
