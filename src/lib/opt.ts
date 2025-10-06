@@ -51,13 +51,13 @@ const optimizePerItemInternal = (
     max = Math.floor(max / step) * step;
     if (max === 0) {
       if (remainingQty > 0) {
-        violations.push(`degrau não atendido para fornecedor ${id}`);
+        violations.push(`degrau nao atendido para fornecedor ${id}`);
       }
       if (onProgress) onProgress(((idx + 1) / sorted.length) * 100);
       return;
     }
     if (max < moq) {
-      violations.push(`MOQ não atendido para fornecedor ${id}`);
+      violations.push(`MOQ nao atendido para fornecedor ${id}`);
       if (onProgress) onProgress(((idx + 1) / sorted.length) * 100);
       return;
     }
@@ -80,14 +80,14 @@ const optimizePerItemInternal = (
       budget !== undefined &&
       remainingBudget < Math.min(...offers.map((o) => o.price))
     ) {
-      violations.push("Orçamento insuficiente");
+      violations.push("Orcamento insuficiente");
     }
     const totalShare = offers.reduce(
       (sum, o) => sum + (o.share != null ? o.share * totalQty : totalQty),
       0,
     );
     if (totalShare < totalQty) {
-      violations.push("Participação insuficiente");
+      violations.push("Participacao insuficiente");
     }
   }
 

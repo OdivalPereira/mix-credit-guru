@@ -57,7 +57,7 @@ export default function Receitas() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Receitas</h2>
         <p className="text-muted-foreground">
-          Gerencie receitas e visualize o mix de custo por porção
+          Gerencie receitas e visualize o mix de custo por porcao
         </p>
       </div>
 
@@ -77,8 +77,8 @@ export default function Receitas() {
           >
             <TableHeader>
               <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Descrição</TableHead>
+                <TableHead>Codigo</TableHead>
+                <TableHead>Descricao</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -107,7 +107,7 @@ export default function Receitas() {
                       size="icon"
                       onClick={() => handleRemove(r.codigo)}
                     >
-                      ✕
+                      x
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -120,14 +120,14 @@ export default function Receitas() {
       {vencedores.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Custos por Porção</CardTitle>
+            <CardTitle>Custos por Porcao</CardTitle>
             <CardDescription>
               Baseado nos fornecedores com menor custo efetivo
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2">
-              <Label htmlFor="porcoes">Porções</Label>
+              <Label htmlFor="porcoes">Porcoes</Label>
               <Input
                 id="porcoes"
                 type="number"
@@ -138,7 +138,7 @@ export default function Receitas() {
               />
             </div>
             <ChartContainer
-              config={{ custo: { label: "Custo normalizado por porção", color: "hsl(var(--chart-1))" } }}
+              config={{ custo: { label: "Custo normalizado por porcao", color: "hsl(var(--chart-1))" } }}
               className="h-[300px]"
             >
               <BarChart data={mixData} layout="vertical">
@@ -181,7 +181,7 @@ export default function Receitas() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>Custo efetivo: {formatCurrency(f.custoEfetivo)}</div>
                       <div>Custo normalizado: {formatCurrency(f.custoNormalizado ?? f.custoEfetivo)}</div>
-                      <div>Crédito: {formatCurrency(f.credito)}</div>
+                      <div>Credito: {formatCurrency(f.credito)}</div>
                       <div>Frete: {formatCurrency(f.frete)}</div>
                       <div>Ranking: {f.ranking}</div>
                       <div className="flex items-center gap-2">
@@ -191,13 +191,13 @@ export default function Receitas() {
                             {f.degrauAplicado}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">Não aplicado</span>
+                          <span className="text-muted-foreground">Nao aplicado</span>
                         )}
                       </div>
                     </div>
                     {f.restricoes?.length ? (
                       <div className="mt-3 space-y-1 text-sm">
-                        <div className="font-medium text-amber-800">Restrições</div>
+                        <div className="font-medium text-amber-800">Restricoes</div>
                         {f.restricoes.map((restricao) => (
                           <Badge
                             key={restricao}

@@ -12,7 +12,7 @@ function calcularMix(itens: MixResultadoItem[], porcoes: number) {
   }));
 }
 
-describe('mudança de cenário', () => {
+describe('mudanca de cenario', () => {
   beforeEach(() => {
     useAppStore.setState({ scenario: 'default', regras: [], receitas: [] });
     useCotacaoStore.setState({
@@ -29,7 +29,7 @@ describe('mudança de cenário', () => {
     });
   });
 
-  it('atualiza Cotacao e Receitas quando cenário muda', () => {
+  it('atualiza Cotacao e Receitas quando cenario muda', () => {
     const cotacao = useCotacaoStore.getState();
     cotacao.upsertFornecedor({
       id: 'f1',

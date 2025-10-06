@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,41 +7,26 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type {
-  ContractFornecedor,
-  FreightBreak,
-  PriceBreak,
-  Unit,
-  YieldConfig,
-} from "@/types/domain";
+import type { ContractFornecedor, FreightBreak, PriceBreak, Unit, YieldConfig } from "@/types/domain";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { useContractsStore, createEmptyContract } from "@/store/useContractsStore";
 
 const unidades: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
 
-function createEmptyContract(): ContractFornecedor {
-  return {
-    fornecedorId: crypto.randomUUID(),
-    produtoId: "",
-    unidade: "un",
-    precoBase: 0,
-    priceBreaks: [],
-    freightBreaks: [],
-    yield: { entrada: "kg", saida: "un", rendimento: 1 },
-    conversoes: [],
-  };
-}
-
 export default function FornecedoresContratos() {
-  const [contracts, setContracts] = useState<ContractFornecedor[]>([createEmptyContract()]);
+  const contracts = useContractsStore((state) => state.contratos);
+  const updateContracts = useContractsStore((state) => state.updateContracts);
 
   const updateContract = (id: string, data: Partial<ContractFornecedor>) => {
-    setContracts((prev) =>
-      prev.map((contract) => (contract.fornecedorId === id ? { ...contract, ...data } : contract)),
+    updateContracts((prev) =>
+      prev.map((contract) =>
+        contract.fornecedorId === id ? { ...contract, ...data } : contract,
+      ),
     );
   };
 
   const handlePriceBreakChange = (id: string, index: number, field: keyof PriceBreak, value: string) => {
-    setContracts((prev) =>
+    updateContracts((prev) =>
       prev.map((contract) => {
         if (contract.fornecedorId !== id) return contract;
         const priceBreaks = [...(contract.priceBreaks ?? [])];
@@ -59,7 +45,7 @@ export default function FornecedoresContratos() {
     field: keyof FreightBreak,
     value: string,
   ) => {
-    setContracts((prev) =>
+    updateContracts((prev) =>
       prev.map((contract) => {
         if (contract.fornecedorId !== id) return contract;
         const freightBreaks = [...(contract.freightBreaks ?? [])];
@@ -77,7 +63,7 @@ export default function FornecedoresContratos() {
     field: keyof YieldConfig,
     value: string,
   ) => {
-    setContracts((prev) =>
+    updateContracts((prev) =>
       prev.map((contract) => {
         if (contract.fornecedorId !== id) return contract;
         const yieldConfig = contract.yield ?? { entrada: "kg", saida: "un", rendimento: 1 };
@@ -93,15 +79,17 @@ export default function FornecedoresContratos() {
   };
 
   const addContract = () => {
-    setContracts((prev) => [...prev, createEmptyContract()]);
+    updateContracts((prev) => [...prev, createEmptyContract()]);
   };
 
   const removeContract = (id: string) => {
-    setContracts((prev) => prev.filter((contract) => contract.fornecedorId !== id));
+    updateContracts((prev) =>
+      prev.filter((contract) => contract.fornecedorId !== id),
+    );
   };
 
   const addPriceBreak = (id: string) => {
-    setContracts((prev) =>
+    updateContracts((prev) =>
       prev.map((contract) =>
         contract.fornecedorId === id
           ? {
@@ -114,7 +102,7 @@ export default function FornecedoresContratos() {
   };
 
   const removePriceBreak = (id: string, index: number) => {
-    setContracts((prev) =>
+    updateContracts((prev) =>
       prev.map((contract) =>
         contract.fornecedorId === id
           ? {
@@ -127,7 +115,7 @@ export default function FornecedoresContratos() {
   };
 
   const addFreightBreak = (id: string) => {
-    setContracts((prev) =>
+    updateContracts((prev) =>
       prev.map((contract) =>
         contract.fornecedorId === id
           ? {
@@ -140,7 +128,7 @@ export default function FornecedoresContratos() {
   };
 
   const removeFreightBreak = (id: string, index: number) => {
-    setContracts((prev) =>
+    updateContracts((prev) =>
       prev.map((contract) =>
         contract.fornecedorId === id
           ? {
@@ -161,9 +149,9 @@ export default function FornecedoresContratos() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Contratos de Fornecimento</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Contratos de fornecimento</h2>
         <p className="text-muted-foreground">
-          Cadastre contratos com degraus de preço, frete escalonado e rendimento aplicado por produto
+          Cadastre contratos com degraus de preco, frete escalonado e rendimento aplicado por produto
         </p>
       </div>
 
@@ -183,7 +171,7 @@ export default function FornecedoresContratos() {
                   {contract.produtoId ? `Produto ${contract.produtoId}` : `Contrato ${idx + 1}`}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  Unidade {contract.unidade.toUpperCase()} · Preço base R$ {contract.precoBase.toFixed(2)}
+                  Unidade {contract.unidade.toUpperCase()} - Preco base R$ {contract.precoBase.toFixed(2)}
                 </span>
               </div>
             </AccordionTrigger>
@@ -192,7 +180,7 @@ export default function FornecedoresContratos() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Dados principais</CardTitle>
-                    <CardDescription>Identificação do produto e parâmetros gerais</CardDescription>
+                    <CardDescription>Identificacao do produto e parametros gerais</CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
@@ -224,7 +212,7 @@ export default function FornecedoresContratos() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`preco-${contract.fornecedorId}`}>Preço base (R$)</Label>
+                      <Label htmlFor={`preco-${contract.fornecedorId}`}>Preco base (R$)</Label>
                       <Input
                         id={`preco-${contract.fornecedorId}`}
                         type="number"
@@ -260,7 +248,7 @@ export default function FornecedoresContratos() {
                           onValueChange={(value) => handleYieldChange(contract.fornecedorId, "saida", value)}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Saída" />
+                        <SelectValue placeholder="Saida" />
                           </SelectTrigger>
                           <SelectContent>
                             {unidades.map((u) => (
@@ -280,7 +268,7 @@ export default function FornecedoresContratos() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Utilize o rendimento para calcular custo normalizado por unidade de saída.
+                        Utilize o rendimento para calcular custo normalizado por unidade de saida.
                       </p>
                     </div>
                   </CardContent>
@@ -288,8 +276,8 @@ export default function FornecedoresContratos() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Degraus de preço</CardTitle>
-                    <CardDescription>Adicione faixas de quantidade com preços diferenciados</CardDescription>
+                    <CardTitle>Degraus de preco</CardTitle>
+                    <CardDescription>Adicione faixas de quantidade com precos diferenciados</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between">
@@ -304,8 +292,8 @@ export default function FornecedoresContratos() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Quantidade mínima</TableHead>
-                          <TableHead className="text-right">Preço (R$)</TableHead>
+                          <TableHead>Quantidade minima</TableHead>
+                          <TableHead className="text-right">Preco (R$)</TableHead>
                           <TableHead className="w-16"></TableHead>
                         </TableRow>
                       </TableHeader>
@@ -367,7 +355,7 @@ export default function FornecedoresContratos() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Degraus de frete</CardTitle>
-                    <CardDescription>Calcule impactos logísticos por faixa de pedido</CardDescription>
+                    <CardDescription>Calcule impactos logisticos por faixa de pedido</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between">
@@ -382,7 +370,7 @@ export default function FornecedoresContratos() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Quantidade mínima</TableHead>
+                          <TableHead>Quantidade minima</TableHead>
                           <TableHead className="text-right">Frete (R$)</TableHead>
                           <TableHead className="w-16"></TableHead>
                         </TableRow>
@@ -457,7 +445,7 @@ export default function FornecedoresContratos() {
       <Card>
         <CardHeader>
           <CardTitle>Indicadores de contratos</CardTitle>
-          <CardDescription>Acompanhe a complexidade de manutenção dos acordos</CardDescription>
+          <CardDescription>Acompanhe a complexidade de manutencao dos acordos</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="space-y-1">
@@ -465,7 +453,7 @@ export default function FornecedoresContratos() {
             <span className="text-2xl font-semibold">{contracts.length}</span>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs uppercase text-muted-foreground">Degraus de preço</Label>
+            <Label className="text-xs uppercase text-muted-foreground">Degraus de preco</Label>
             <span className="text-2xl font-semibold">{totalDegraus}</span>
           </div>
           <div className="space-y-1">
@@ -480,3 +468,4 @@ export default function FornecedoresContratos() {
     </div>
   );
 }
+

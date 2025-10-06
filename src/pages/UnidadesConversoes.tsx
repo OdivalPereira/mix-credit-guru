@@ -1,40 +1,38 @@
-import { useMemo, useRef, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
+import { useMemo, useRef } from "react";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import type { UnitConv, YieldConfig, Unit } from "@/types/domain";
+import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
+import type { Unit } from "@/types/domain";
 import { Plus, RefreshCcw, Trash2 } from "lucide-react";
+import { useUnidadesStore } from "@/store/useUnidadesStore";
 
 const unidades: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
 
-const defaultConversoes: UnitConv[] = [
-  { de: "kg", para: "g", fator: 1000 },
-  { de: "l", para: "ml", fator: 1000 },
-];
-
-const defaultYield: YieldConfig[] = [
-  { entrada: "kg", saida: "un", rendimento: 12 },
-];
-
 export default function UnidadesConversoes() {
-  const [conversoes, setConversoes] = useState<UnitConv[]>(defaultConversoes);
-  const [yieldConfigs, setYieldConfigs] = useState<YieldConfig[]>(defaultYield);
+  const conversoes = useUnidadesStore((state) => state.conversoes);
+  const yieldConfigs = useUnidadesStore((state) => state.yields);
+  const updateConversoes = useUnidadesStore((state) => state.updateConversoes);
+  const updateYields = useUnidadesStore((state) => state.updateYields);
+  const resetDefaults = useUnidadesStore((state) => state.reset);
+
   const conversoesTableRef = useRef<HTMLDivElement>(null);
   const yieldTableRef = useRef<HTMLDivElement>(null);
+
   const shouldVirtualizeConversoes = conversoes.length >= 200;
   const shouldVirtualizeYield = yieldConfigs.length >= 200;
 
   const handleConversaoChange = (
     index: number,
-    field: keyof UnitConv,
+    field: "de" | "para" | "fator",
     value: string,
   ) => {
-    setConversoes((prev) =>
+    updateConversoes((prev) =>
       prev.map((conv, i) =>
         i === index
           ? {
@@ -48,10 +46,10 @@ export default function UnidadesConversoes() {
 
   const handleYieldChange = (
     index: number,
-    field: keyof YieldConfig,
+    field: "entrada" | "saida" | "rendimento",
     value: string,
   ) => {
-    setYieldConfigs((prev) =>
+    updateYields((prev) =>
       prev.map((config, i) =>
         i === index
           ? {
@@ -64,24 +62,19 @@ export default function UnidadesConversoes() {
   };
 
   const addConversao = () => {
-    setConversoes((prev) => [...prev, { de: "kg", para: "g", fator: 1 }]);
+    updateConversoes((prev) => [...prev, { de: "kg", para: "g", fator: 1 }]);
   };
 
   const removeConversao = (index: number) => {
-    setConversoes((prev) => prev.filter((_, i) => i !== index));
+    updateConversoes((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addYield = () => {
-    setYieldConfigs((prev) => [...prev, { entrada: "kg", saida: "un", rendimento: 1 }]);
+    updateYields((prev) => [...prev, { entrada: "kg", saida: "un", rendimento: 1 }]);
   };
 
   const removeYield = (index: number) => {
-    setYieldConfigs((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const resetDefaults = () => {
-    setConversoes(defaultConversoes);
-    setYieldConfigs(defaultYield);
+    updateYields((prev) => prev.filter((_, i) => i !== index));
   };
 
   const unidadesCobertas = useMemo(
@@ -99,16 +92,16 @@ export default function UnidadesConversoes() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Unidades, Conversões e Yield</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Unidades, conversoes e yield</h2>
         <p className="text-muted-foreground">
-          Defina fatores de conversão e rendimentos para normalizar custos em diferentes unidades
+          Cadastre conversoes e rendimentos para padronizar calculos de custo em toda a cadeia
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={addConversao}>
           <Plus className="mr-2 h-4 w-4" />
-          Nova conversão
+          Nova conversao
         </Button>
         <Button size="sm" variant="secondary" onClick={addYield}>
           <Plus className="mr-2 h-4 w-4" />
@@ -116,14 +109,14 @@ export default function UnidadesConversoes() {
         </Button>
         <Button size="sm" variant="outline" onClick={resetDefaults}>
           <RefreshCcw className="mr-2 h-4 w-4" />
-          Restaurar padrões
+          Restaurar padroes
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Conversões de Unidade</CardTitle>
-          <CardDescription>Informe os fatores de conversão entre unidades cadastradas</CardDescription>
+          <CardTitle>Conversoes de unidade</CardTitle>
+          <CardDescription>Informe os fatores de conversao entre as unidades cadastradas</CardDescription>
         </CardHeader>
         <CardContent>
           <Table
@@ -146,7 +139,7 @@ export default function UnidadesConversoes() {
               emptyRow={
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                    Nenhuma conversão cadastrada.
+                    Nenhuma conversao cadastrada.
                   </TableCell>
                 </TableRow>
               }
@@ -211,10 +204,8 @@ export default function UnidadesConversoes() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Configurações de Yield</CardTitle>
-          <CardDescription>
-            Cadastre rendimentos para normalizar custo por unidade final de produção
-          </CardDescription>
+          <CardTitle>Configuracoes de yield</CardTitle>
+          <CardDescription>Normaliza rendimento entre unidade de entrada e unidade de saida</CardDescription>
         </CardHeader>
         <CardContent>
           <Table
@@ -224,7 +215,7 @@ export default function UnidadesConversoes() {
             <TableHeader>
               <TableRow>
                 <TableHead>Entrada</TableHead>
-                <TableHead>Saída</TableHead>
+                <TableHead>Saida</TableHead>
                 <TableHead className="text-right">Rendimento (%)</TableHead>
                 <TableHead className="w-16"></TableHead>
               </TableRow>
@@ -237,7 +228,7 @@ export default function UnidadesConversoes() {
               emptyRow={
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                    Nenhuma configuração de yield cadastrada.
+                    Nenhuma configuracao de yield cadastrada.
                   </TableCell>
                 </TableRow>
               }
@@ -302,9 +293,9 @@ export default function UnidadesConversoes() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Resumo de Cobertura</CardTitle>
+          <CardTitle>Resumo de cobertura</CardTitle>
           <CardDescription>
-            Verifique rapidamente as unidades já mapeadas para conversões e rendimento
+            Verifique rapidamente as unidades mapeadas para conversoes e rendimento
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -316,12 +307,14 @@ export default function UnidadesConversoes() {
                 </Badge>
               ))
             ) : (
-              <span className="text-sm text-muted-foreground">Nenhuma unidade coberta.</span>
+              <span className="text-sm text-muted-foreground">
+                Nenhuma unidade coberta.
+              </span>
             )}
           </div>
           <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
             <div>
-              <Label className="text-xs uppercase text-muted-foreground">Conversões</Label>
+              <Label className="text-xs uppercase text-muted-foreground">Conversoes</Label>
               <span className="block text-base text-foreground">{conversoes.length}</span>
             </div>
             <div>

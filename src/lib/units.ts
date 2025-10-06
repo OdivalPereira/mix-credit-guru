@@ -70,19 +70,19 @@ export function normalizeOffer(
 
   if (validYield) {
     const toEntrada = findFactor(from, validYield.entrada, validConversions);
-    if (toEntrada === null) throw new Error("Conversão inválida");
+    if (toEntrada === null) throw new Error("Conversao invalida");
     qty *= toEntrada;
 
     const entradaToSaida = findFactor(validYield.entrada, validYield.saida, validConversions);
-    if (entradaToSaida === null) throw new Error("Conversão inválida");
+    if (entradaToSaida === null) throw new Error("Conversao invalida");
     qty = qty * (validYield.rendimento / 100) * entradaToSaida;
 
     const saidaToTarget = findFactor(validYield.saida, to, validConversions);
-    if (saidaToTarget === null) throw new Error("Conversão inválida");
+    if (saidaToTarget === null) throw new Error("Conversao invalida");
     qty *= saidaToTarget;
   } else {
     const factor = findFactor(from, to, validConversions);
-    if (factor === null) throw new Error("Conversão inválida");
+    if (factor === null) throw new Error("Conversao invalida");
     qty *= factor;
   }
 

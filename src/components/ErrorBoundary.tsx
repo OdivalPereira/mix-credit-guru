@@ -70,7 +70,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <div>
                   <CardTitle>Algo deu errado</CardTitle>
                   <CardDescription>
-                    Ocorreu um erro inesperado na aplicação
+                    Ocorreu um erro inesperado na aplicacao
                   </CardDescription>
                 </div>
               </div>
@@ -107,7 +107,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   Tentar novamente
                 </Button>
                 <Button variant="outline" onClick={() => window.location.reload()}>
-                  Recarregar página
+                  Recarregar pagina
                 </Button>
               </div>
             </CardContent>

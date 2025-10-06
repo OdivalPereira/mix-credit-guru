@@ -24,6 +24,7 @@ import {
   Produto,
 } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { generateId } from "@/lib/utils";
 
 export default function Catalogo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +69,7 @@ export default function Catalogo() {
   };
 
   const handleAdd = () => {
-    const id = crypto.randomUUID();
+    const id = generateId("prod");
     addProduto({
       id,
       descricao: "",
@@ -88,9 +89,9 @@ export default function Catalogo() {
     type BadgeVariant = "success" | "default" | "warning" | "destructive";
 
     const variants: Record<keyof Produto["flags"], { variant: BadgeVariant; label: string }> = {
-      refeicao: { variant: "success", label: "Refeição" },
-      cesta: { variant: "default", label: "Cesta Básica" },
-      reducao: { variant: "warning", label: "Redução" },
+      refeicao: { variant: "success", label: "Refeicao" },
+      cesta: { variant: "default", label: "Cesta Basica" },
+      reducao: { variant: "warning", label: "Reducao" },
       is: { variant: "destructive", label: "IS" },
     };
 
@@ -107,9 +108,9 @@ export default function Catalogo() {
       {/* Page Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Catálogo de Produtos</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Catalogo de Produtos</h2>
           <p className="text-muted-foreground">
-            Gerencie produtos com classificação NCM e características tributárias
+            Gerencie produtos com classificacao NCM e caracteristicas tributarias
           </p>
         </div>
         <div className="flex space-x-2">
@@ -142,7 +143,7 @@ export default function Catalogo() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Buscar por descrição ou NCM..."
+                placeholder="Buscar por descricao ou NCM..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -160,7 +161,7 @@ export default function Catalogo() {
               {editingId === product.id ? (
                 <div className="space-y-2">
                   <Input
-                    placeholder="Descrição"
+                    placeholder="Descricao"
                     value={product.descricao}
                     onChange={(e) =>
                       updateProduto(product.id, { descricao: e.target.value })
@@ -190,7 +191,7 @@ export default function Catalogo() {
                 {/* Flags */}
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                    Características
+                    Caracteristicas
                   </h4>
                   {editingId === product.id ? (
                     <div className="space-y-2">
@@ -204,7 +205,7 @@ export default function Catalogo() {
                             })
                           }
                         />
-                        <Label htmlFor={`refeicao-${product.id}`}>Refeição</Label>
+                        <Label htmlFor={`refeicao-${product.id}`}>Refeicao</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -216,7 +217,7 @@ export default function Catalogo() {
                             })
                           }
                         />
-                        <Label htmlFor={`cesta-${product.id}`}>Cesta Básica</Label>
+                        <Label htmlFor={`cesta-${product.id}`}>Cesta Basica</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -228,7 +229,7 @@ export default function Catalogo() {
                             })
                           }
                         />
-                        <Label htmlFor={`reducao-${product.id}`}>Redução</Label>
+                        <Label htmlFor={`reducao-${product.id}`}>Reducao</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -289,7 +290,7 @@ export default function Catalogo() {
                       onClick={() => handleUsar(product)}
                     >
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Usar na Cotação
+                      Usar na Cotacao
                     </Button>
                   </div>
                 )}
@@ -305,7 +306,7 @@ export default function Catalogo() {
             <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground">Nenhum produto encontrado</h3>
             <p className="text-muted-foreground mt-1">
-              Tente ajustar os critérios de busca ou adicione novos produtos
+              Tente ajustar os criterios de busca ou adicione novos produtos
             </p>
           </CardContent>
         </Card>

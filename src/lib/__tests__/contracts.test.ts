@@ -18,19 +18,19 @@ describe('resolveUnitPrice', () => {
     ],
   };
 
-  it('usa preço base e frete zero abaixo do primeiro degrau', () => {
+  it('usa preco base e frete zero abaixo do primeiro degrau', () => {
     const res = resolveUnitPrice(3, contract);
     expect(res.preco).toBe(10);
     expect(res.frete).toBe(0);
   });
 
-  it('seleciona degraus corretos para quantidade intermediária', () => {
+  it('seleciona degraus corretos para quantidade intermediaria', () => {
     const res = resolveUnitPrice(15, contract);
     expect(res.preco).toBe(9);
     expect(res.frete).toBe(2);
   });
 
-  it('seleciona maiores degraus aplicáveis', () => {
+  it('seleciona maiores degraus aplicaveis', () => {
     const res = resolveUnitPrice(25, contract);
     expect(res.preco).toBe(8);
     expect(res.frete).toBe(1);

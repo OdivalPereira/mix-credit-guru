@@ -7,7 +7,7 @@ describe('useCotacaoStore', () => {
     useCotacaoStore.getState().limpar();
   });
 
-  it('inicializa com estado padrão', () => {
+  it('inicializa com estado padrao', () => {
     const state = useCotacaoStore.getState();
     expect(state.fornecedores).toEqual([]);
     expect(state.resultado.itens).toEqual([]);

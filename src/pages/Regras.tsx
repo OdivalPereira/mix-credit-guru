@@ -15,11 +15,11 @@ const vigenciaSchema = z
   .optional();
 
 const ruleSchema = z.object({
-  ncm: z.string().regex(/^\d{4}\.\d{2}\.\d{2}$/, "NCM inválido"),
-  descricao: z.string().min(1, "Descrição obrigatória"),
+  ncm: z.string().regex(/^\d{4}\.\d{2}\.\d{2}$/, "NCM invalido"),
+  descricao: z.string().min(1, "Descricao obrigatoria"),
   receita: z.object({
-    codigo: z.string().min(1, "Código obrigatório"),
-    descricao: z.string().min(1, "Descrição obrigatória"),
+    codigo: z.string().min(1, "Codigo obrigatorio"),
+    descricao: z.string().min(1, "Descricao obrigatoria"),
   }),
   aliquotas: z.object({
     ibs: z.number().nonnegative(),
@@ -210,14 +210,14 @@ export default function Regras() {
             <TableHeader>
               <TableRow>
                 <TableHead>NCM</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Código Receita</TableHead>
-                <TableHead>Descrição Receita</TableHead>
+                <TableHead>Descricao</TableHead>
+                <TableHead>Codigo Receita</TableHead>
+                <TableHead>Descricao Receita</TableHead>
                 <TableHead>IBS</TableHead>
                 <TableHead>CBS</TableHead>
                 <TableHead>IS</TableHead>
-                <TableHead>Início Vigência</TableHead>
-                <TableHead>Fim Vigência</TableHead>
+                <TableHead>Inicio Vigencia</TableHead>
+                <TableHead>Fim Vigencia</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead></TableHead>
               </TableRow>
@@ -338,8 +338,8 @@ export default function Regras() {
           >
             <TableHeader>
               <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Descrição</TableHead>
+                <TableHead>Codigo</TableHead>
+                <TableHead>Descricao</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>

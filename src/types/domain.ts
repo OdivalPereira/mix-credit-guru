@@ -12,6 +12,18 @@ export interface FlagsItem {
   cesta?: boolean;
 }
 
+export interface Produto {
+  id: string;
+  descricao: string;
+  ncm: string;
+  flags: {
+    refeicao: boolean;
+    cesta: boolean;
+    reducao: boolean;
+    is: boolean;
+  };
+}
+
 export interface Supplier {
   id: string;
   nome: string;

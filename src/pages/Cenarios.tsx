@@ -11,61 +11,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/store/useAppStore";
+import { scenarioTimeline } from "@/data/scenarios";
 import type { Scenario } from "@/types/domain";
-
-type ScenarioOption = {
-  year: string;
-  scenarioKey: string;
-  data: Scenario;
-};
-
-const scenarioTimeline: ScenarioOption[] = [
-  {
-    year: "2025",
-    scenarioKey: "default",
-    data: {
-      title: "Reforma tributaria - fase 1",
-      changes: "Introducao de IBS e CBS com ICMS e IPI em transicao",
-      impact: "neutral",
-    },
-  },
-  {
-    year: "2026",
-    scenarioKey: "cesta",
-    data: {
-      title: "Periodo de transicao",
-      changes: "Reducoes alinhadas a cesta basica para suavizar o periodo inicial",
-      impact: "positive",
-    },
-  },
-  {
-    year: "2027",
-    scenarioKey: "positive",
-    data: {
-      title: "Implementacao completa",
-      changes: "IBS e CBS substituem ICMS, ISS, PIS e COFINS com bonus de credito",
-      impact: "positive",
-    },
-  },
-  {
-    year: "2029",
-    scenarioKey: "positive",
-    data: {
-      title: "Regime de maturidade",
-      changes: "Aliquotas estabilizadas e ajustes finos em creditos",
-      impact: "positive",
-    },
-  },
-  {
-    year: "2033",
-    scenarioKey: "default",
-    data: {
-      title: "Cenario de longo prazo",
-      changes: "Monitoramento e eventuais calibragens na legislacao",
-      impact: "neutral",
-    },
-  },
-];
 
 export default function Cenarios() {
   const scenarioKey = useAppStore((state) => state.scenario);

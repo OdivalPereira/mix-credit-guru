@@ -19,7 +19,7 @@ interface RecipeContext {
 
 /**
  * Para cada item de receita, seleciona o fornecedor com menor custo efetivo
- * considerando alíquotas, créditos e frete.
+ * considerando aliquotas, creditos e frete.
  */
 export function computeRecipeMix(
   items: RecipeItem[],

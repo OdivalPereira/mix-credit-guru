@@ -30,6 +30,8 @@ import { toast } from "@/components/ui/use-toast";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { useContractsStore } from "@/store/useContractsStore";
+import { useUnidadesStore } from "@/store/useUnidadesStore";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
 
@@ -62,12 +64,15 @@ export default function Cotacao() {
     calcular,
     registrarOtimizacao,
   } = useCotacaoStore();
+  const contratos = useContractsStore((state) => state.contratos);
+  const conversoesGlobais = useUnidadesStore((state) => state.conversoes);
+  const yieldGlobais = useUnidadesStore((state) => state.yields);
 
   const resultados = useMemo(() => resultado.itens, [resultado.itens]);
 
   useEffect(() => {
     calcular();
-  }, [contexto, fornecedores, calcular]);
+  }, [contexto, fornecedores, contratos, conversoesGlobais, yieldGlobais, calcular]);
 
   useEffect(() => () => workerRef.current?.terminate(), []);
 

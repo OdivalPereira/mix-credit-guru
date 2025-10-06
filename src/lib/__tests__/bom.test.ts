@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeRecipeMix } from '@/lib/bom';
 import type { Supplier, MixResultadoItem } from '@/types/domain';
 
-// Estrutura básica de receita para os testes
+// Estrutura basica de receita para os testes
 interface TestRecipeItem {
   id: string;
   suppliers: Supplier[];
@@ -95,12 +95,12 @@ describe('computeRecipeMix', () => {
     expect(arroz.id).toBe('forn-2');
     expect(arroz.custoEfetivo).toBe(107);
 
-    // Para o óleo, o fornecedor Gama (forn-3) deve ser o escolhido
+    // Para o oleo, o fornecedor Gama (forn-3) deve ser o escolhido
     expect(oleo.id).toBe('forn-3');
     expect(oleo.custoEfetivo).toBe(55);
   });
 
-  it('aplica Cesta Zero e Redução 60% conforme o cenário', () => {
+  it('aplica Cesta Zero e Reducao 60% conforme o cenario', () => {
     const recipe: TestRecipeItem[] = [
       {
         id: 'feijao',
@@ -154,7 +154,7 @@ describe('computeRecipeMix', () => {
     expect(result[1].is).toBe(0);
   });
 
-  it('usa alíquotas padrão para anos 2026–2033 e calcula mix de receitas', () => {
+  it('usa aliquotas padrao para anos 2026-2033 e calcula mix de receitas', () => {
     const recipe: TestRecipeItem[] = [
       {
         id: 'item-a',
@@ -208,4 +208,6 @@ describe('computeRecipeMix', () => {
     }
   });
 });
+
+
 

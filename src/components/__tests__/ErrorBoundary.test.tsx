@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ErrorBoundary } from '../ErrorBoundary';
 
-// Component que lança erro
+// Component que lanca erro
 const ThrowError = () => {
   throw new Error('Test error');
 };
@@ -20,7 +20,7 @@ describe('ErrorBoundary', () => {
     console.error = originalError;
   });
 
-  it('renderiza children quando não há erro', () => {
+  it('renderiza children quando nao ha erro', () => {
     render(
       <ErrorBoundary>
         <WorkingComponent />
@@ -29,7 +29,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Working')).toBeInTheDocument();
   });
 
-  it('renderiza UI de erro quando child lança exceção', () => {
+  it('renderiza UI de erro quando child lanca excecao', () => {
     render(
       <ErrorBoundary>
         <ThrowError />
@@ -39,7 +39,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText(/Test error/i)).toBeInTheDocument();
   });
 
-  it('exibe botão para recarregar a página', () => {
+  it('exibe botao para recarregar a pagina', () => {
     const reloadMock = vi.fn();
     Object.defineProperty(window, 'location', {
       value: { reload: reloadMock },

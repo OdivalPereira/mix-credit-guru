@@ -16,7 +16,7 @@ describe("OptimizationProgress", () => {
     ).toBeInTheDocument();
   });
 
-  it("renderiza barra de progresso com rótulo acessivel", () => {
+  it("renderiza barra de progresso com rotulo acessivel", () => {
     const { container } = render(
       <OptimizationProgress progress={60} message="Otimizando" />,
     );

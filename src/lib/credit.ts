@@ -1,7 +1,7 @@
 import type { CreditStatus } from "@/types/domain";
 import { memoize } from "./memoize";
 
-// Regras simplificadas de creditabilidade por destinação e regime tributário
+// Regras simplificadas de creditabilidade por destinacao e regime tributario
 const creditRules: Record<string, Record<string, CreditStatus>> = {
   A: { normal: "yes", simples: "no", presumido: "limited" },
   B: { normal: "yes", simples: "no", presumido: "yes" }
@@ -14,9 +14,9 @@ export interface CreditResult {
 }
 
 /**
- * Calcula o crédito tributário conforme a destinação da mercadoria e o regime
- * tributário do comprador. Valores de IBS e CBS são utilizados como base para o
- * cálculo do crédito potencial.
+ * Calcula o credito tributario conforme a destinacao da mercadoria e o regime
+ * tributario do comprador. Valores de IBS e CBS sao utilizados como base para o
+ * calculo do credito potencial.
  */
 interface CreditOptions {
   isRefeicaoPronta?: boolean;
@@ -46,7 +46,7 @@ const computeCreditInternal = (
   if (status === "yes") {
     credito = preco * baseRate;
   } else if (status === "limited") {
-    // crédito limitado assume 50% do potencial
+    // credito limitado assume 50% do potencial
     credito = preco * baseRate * 0.5;
   }
 
@@ -54,7 +54,7 @@ const computeCreditInternal = (
     status = "no";
     credito = 0;
   } else if (scenario === "positive") {
-    credito *= 1.1; // bônus simples para cenários positivos
+    credito *= 1.1; // bonus simples para cenarios positivos
   }
 
   return {

@@ -20,9 +20,9 @@ export default function Config() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Configuracoes</h2>
         <p className="text-muted-foreground">
-          Personalize o sistema com suas preferências padrão
+          Personalize o sistema com suas preferencias padrao
         </p>
       </div>
 
@@ -31,32 +31,32 @@ export default function Config() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Settings className="mr-2 h-5 w-5" />
-            Valores Padrão
+            Valores Padrao
           </CardTitle>
           <CardDescription>
-            Configure valores que serão preenchidos automaticamente nas cotações
+            Configure valores que serao preenchidos automaticamente nas cotacoes
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="default-uf">UF Padrão</Label>
+              <Label htmlFor="default-uf">UF Padrao</Label>
               <Select value={defaultUf} onValueChange={setDefaultUf}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione seu estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sp">SP - São Paulo</SelectItem>
+                  <SelectItem value="sp">SP - Sao Paulo</SelectItem>
                   <SelectItem value="rj">RJ - Rio de Janeiro</SelectItem>
                   <SelectItem value="mg">MG - Minas Gerais</SelectItem>
-                  <SelectItem value="pr">PR - Paraná</SelectItem>
+                  <SelectItem value="pr">PR - Parana</SelectItem>
                   <SelectItem value="rs">RS - Rio Grande do Sul</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="default-regime">Regime Tributário</Label>
+              <Label htmlFor="default-regime">Regime Tributario</Label>
               <Select value={defaultRegime} onValueChange={setDefaultRegime}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seu regime" />
@@ -70,13 +70,13 @@ export default function Config() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="default-destino">Destinação Padrão</Label>
+              <Label htmlFor="default-destino">Destinacao Padrao</Label>
               <Select value={defaultDestino} onValueChange={setDefaultDestino}>
                 <SelectTrigger>
                   <SelectValue placeholder="Finalidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="A">A - Refeição</SelectItem>
+                  <SelectItem value="A">A - Refeicao</SelectItem>
                   <SelectItem value="B">B - Revenda</SelectItem>
                 </SelectContent>
               </Select>
@@ -88,9 +88,9 @@ export default function Config() {
       {/* Interface Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Aparência e Interface</CardTitle>
+          <CardTitle>Aparencia e Interface</CardTitle>
           <CardDescription>
-            Personalize a experiência visual do sistema
+            Personalize a experiencia visual do sistema
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -98,7 +98,7 @@ export default function Config() {
             <div className="space-y-0.5">
               <Label htmlFor="dark-mode">Tema Escuro</Label>
               <p className="text-sm text-muted-foreground">
-                Ativar modo escuro para reduzir o cansaço visual
+                Ativar modo escuro para reduzir o cansaco visual
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -118,7 +118,7 @@ export default function Config() {
             <div className="space-y-0.5">
               <Label htmlFor="tooltips">Tooltips Explicativos</Label>
               <p className="text-sm text-muted-foreground">
-                Mostrar dicas e explicações ao passar o mouse sobre elementos
+                Mostrar dicas e explicacoes ao passar o mouse sobre elementos
               </p>
             </div>
             <Switch
@@ -141,7 +141,7 @@ export default function Config() {
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-calculate">Cálculo Automático</Label>
+              <Label htmlFor="auto-calculate">Calculo Automatico</Label>
               <p className="text-sm text-muted-foreground">
                 Recalcular automaticamente os custos efetivos ao alterar dados
               </p>
@@ -158,18 +158,18 @@ export default function Config() {
       {/* Current Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Status da Configuração</CardTitle>
+          <CardTitle>Status da Configuracao</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <Badge variant={defaultUf ? "success" : "secondary"}>
-              UF: {defaultUf ? defaultUf.toUpperCase() : "Não definido"}
+              UF: {defaultUf ? defaultUf.toUpperCase() : "Nao definido"}
             </Badge>
             <Badge variant={defaultRegime ? "success" : "secondary"}>
-              Regime: {defaultRegime || "Não definido"}
+              Regime: {defaultRegime || "Nao definido"}
             </Badge>
             <Badge variant={defaultDestino ? "success" : "secondary"}>
-              Destinação: {defaultDestino || "Não definida"}
+              Destinacao: {defaultDestino || "Nao definida"}
             </Badge>
             <Badge variant={darkMode ? "default" : "secondary"}>
               Tema: {darkMode ? "Escuro" : "Claro"}
@@ -182,7 +182,7 @@ export default function Config() {
       <div className="flex justify-end">
         <Button size="lg" className="min-w-[120px]">
           <Save className="mr-2 h-4 w-4" />
-          Salvar Configurações
+          Salvar Configuracoes
         </Button>
       </div>
     </div>

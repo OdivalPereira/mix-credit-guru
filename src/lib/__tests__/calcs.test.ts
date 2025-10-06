@@ -3,7 +3,7 @@ import { computeEffectiveCost, rankSuppliers } from '@/lib/calcs';
 import type { Supplier } from '@/types/domain';
 
 describe('computeEffectiveCost', () => {
-  it('soma preço, frete e impostos e subtrai crédito', () => {
+  it('soma preco, frete e impostos e subtrai credito', () => {
     const custo = computeEffectiveCost(100, 10, { ibs: 10, cbs: 5, is: 2 }, 15);
     expect(custo).toBe(112);
   });

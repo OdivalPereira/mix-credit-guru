@@ -4,10 +4,11 @@ Ferramenta web que ajuda fabricantes, prestadores e revendedores brasileiros a c
 
 ## Recursos principais
 - Cadastro de produtos com NCM e indicadores fiscais.
-- Painel de cotacao com importacao/exportacao CSV ou JSON, ranking e simulacao otimizada.
+- Painel de cotacao com importacao/exportacao CSV ou JSON, ranking e simulacao otimizada (parser tolera aspas e delimitadores diferentes).
 - Linha do tempo de cenarios tributarios conectada ao motor de aliquotas.
 - Editor de regras (JSON) com vigencia, creditos e sobreposicoes por UF.
-- Telas de contratos, unidades e comparador de cenarios para normalizar custos e validar mixes.
+- Contratos e tabelas de unidades/yield persistidos alimentam precos normalizados e otimizacao.
+- Comparador de cenarios recalcula resultados reais usando o mesmo cadastro de fornecedores e contratos.
 - Relatorios impressos e memoria local persistida.
 
 ## Como executar
