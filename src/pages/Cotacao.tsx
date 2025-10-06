@@ -24,10 +24,12 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { QuoteContextSummary } from "@/components/quote/QuoteContextSummary";
 import { QuoteForm } from "@/components/quote/QuoteForm";
 import { SupplierTable } from "@/components/quote/SupplierTable";
 import { toast } from "@/components/ui/use-toast";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy } from "lucide-react";
 
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { useContractsStore } from "@/store/useContractsStore";
@@ -308,6 +310,63 @@ export default function Cotacao() {
     [resultados],
   );
 
+  const quoteInsights = useMemo(() => {
+    if (resultados.length === 0) {
+      return {
+        totalSuppliers: 0,
+        creditavelCount: 0,
+        creditavelPercent: 0,
+        avgCredit: 0,
+        bestSupplier: null as MixResultadoItem | null,
+        alertSuppliers: 0,
+      };
+    }
+
+    let bestSupplier: MixResultadoItem | null = null;
+    for (const item of resultados) {
+      if (!bestSupplier || item.ranking < bestSupplier.ranking) {
+        bestSupplier = item;
+      }
+    }
+
+    const creditavelCount = resultados.filter((item) => item.creditavel).length;
+    const totalCredit = resultados.reduce(
+      (accumulator, item) => accumulator + (item.credito ?? 0),
+      0,
+    );
+    const alertSuppliers = resultados.filter(
+      (item) => (item.restricoes?.length ?? 0) > 0,
+    ).length;
+
+    return {
+      totalSuppliers: resultados.length,
+      creditavelCount,
+      creditavelPercent: Math.round(
+        (creditavelCount / resultados.length) * 100,
+      ),
+      avgCredit: totalCredit / resultados.length,
+      bestSupplier,
+      alertSuppliers,
+    };
+  }, [resultados]);
+
+  const bestSupplierCost = quoteInsights.bestSupplier
+    ? formatCurrency(quoteInsights.bestSupplier.custoEfetivo)
+    : "--";
+  const bestSupplierName = quoteInsights.bestSupplier?.nome ?? "Sem fornecedor";
+  const averageCreditDisplay =
+    quoteInsights.totalSuppliers > 0
+      ? formatCurrency(quoteInsights.avgCredit)
+      : "--";
+  const optimizationCost = ultimaOtimizacao
+    ? formatCurrency(ultimaOtimizacao.cost)
+    : "--";
+  const optimizationMessage = ultimaOtimizacao
+    ? ultimaOtimizacao.violations.length > 0
+      ? `${ultimaOtimizacao.violations.length} alerta(s) registrados.`
+      : "Sem violacoes registradas."
+    : "Execute a otimizacao para gerar um mix sugerido.";
+
   return (
     <div className="space-y-8">
       <div>
@@ -335,6 +394,83 @@ export default function Cotacao() {
       />
 
       <QuoteForm contexto={contexto} onContextoChange={handleContextoChange} />
+
+      <QuoteContextSummary contexto={contexto} />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-muted-foreground">
+              Fornecedores avaliados
+            </span>
+            <Factory className="h-4 w-4 text-primary" aria-hidden />
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
+            {quoteInsights.totalSuppliers}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {quoteInsights.creditavelCount} creditaveis (
+            {quoteInsights.creditavelPercent}
+            %)
+          </p>
+        </div>
+
+        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-muted-foreground">
+              Melhor custo efetivo
+            </span>
+            <Trophy className="h-4 w-4 text-primary" aria-hidden />
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
+            {bestSupplierCost}
+          </p>
+          <p className="text-xs text-muted-foreground">{bestSupplierName}</p>
+        </div>
+
+        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-muted-foreground">
+              Credito medio
+            </span>
+            <PiggyBank className="h-4 w-4 text-primary" aria-hidden />
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
+            {averageCreditDisplay}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Considera fornecedores creditaveis e nao creditaveis.
+          </p>
+        </div>
+
+        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-muted-foreground">
+              Ultima otimizacao
+            </span>
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
+            {optimizationCost}
+          </p>
+          <p className="text-xs text-muted-foreground">{optimizationMessage}</p>
+        </div>
+      </div>
+
+      {quoteInsights.alertSuppliers > 0 && (
+        <div className="rounded-lg border border-dashed bg-yellow-50/40 p-4 text-sm text-yellow-900">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            <span className="font-semibold">
+              {quoteInsights.alertSuppliers} fornecedor(es) com restricoes
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Revise limites contratuais e configuracoes tributarias antes de
+            confirmar a cotacao final.
+          </p>
+        </div>
+      )}
 
       <SupplierTable
         resultados={resultados}

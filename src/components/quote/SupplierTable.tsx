@@ -1,10 +1,14 @@
 import { RefObject, memo } from "react";
 import {
-  BarChartHorizontal,
-  Download,
+  BarChart3,
+  Database,
+  FileDown,
+  FileJson,
+  FileUp,
   Loader2,
   Plus,
-  Upload,
+  Sparkles,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +19,26 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Table,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 
@@ -82,7 +105,7 @@ const SupplierTableComponent = ({
             Avalie custo efetivo e impacto tributario por fornecedor.
           </CardDescription>
         </div>
-        <div className="flex flex-wrap gap-2 md:justify-end">
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -92,37 +115,89 @@ const SupplierTableComponent = ({
             <Plus className="mr-2 h-4 w-4" />
             Adicionar
           </Button>
-          <Button variant="outline" size="sm" onClick={onImportCSV}>
-            <Upload className="mr-2 h-4 w-4" />
-            Importar CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={onExportCSV}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={onImportJSON}>
-            <Upload className="mr-2 h-4 w-4" />
-            Importar JSON
-          </Button>
-          <Button variant="outline" size="sm" onClick={onExportJSON}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar JSON
-          </Button>
-          <Button variant="outline" size="sm" onClick={onClear}>
-            Limpar
-          </Button>
-          <Button variant="outline" size="sm" onClick={onToggleChart}>
-            <BarChartHorizontal className="mr-2 h-4 w-4" />
-            {showChart ? "Ocultar grafico" : "Mostrar grafico"}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Database className="mr-2 h-4 w-4" />
+                Dados
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>Importar</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => onImportCSV()}>
+                <FileUp className="mr-2 h-4 w-4" />
+                CSV (planilha)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onImportJSON()}>
+                <FileJson className="mr-2 h-4 w-4" />
+                JSON (projeto)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Exportar</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => onExportCSV()}>
+                <FileDown className="mr-2 h-4 w-4" />
+                CSV (planilha)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onExportJSON()}>
+                <FileJson className="mr-2 h-4 w-4" />
+                JSON (projeto)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={showChart ? "secondary" : "ghost"}
+                size="icon"
+                aria-label={
+                  showChart
+                    ? "Ocultar grafico comparativo"
+                    : "Mostrar grafico comparativo"
+                }
+                onClick={onToggleChart}
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {showChart
+                  ? "Ocultar grafico comparativo"
+                  : "Mostrar grafico comparativo"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Limpar cotacao atual"
+                onClick={onClear}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Limpar fornecedores e restaurar contexto padrao</p>
+            </TooltipContent>
+          </Tooltip>
+
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={onOptimize}
             disabled={optimizing}
+            className="shadow-sm"
           >
-            {optimizing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Otimizar
+            {optimizing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            {optimizing ? "Calculando..." : "Otimizar mix"}
           </Button>
         </div>
       </CardHeader>
@@ -166,6 +241,18 @@ const SupplierTableComponent = ({
               colSpan={19}
               scrollElement={() => containerRef.current}
               estimateSize={() => 72}
+              emptyRow={
+                <TableRow>
+                  <TableCell colSpan={19}>
+                    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
+                      <p>Nenhum fornecedor cadastrado para esta cotacao.</p>
+                      <p className="text-xs">
+                        Use Adicionar ou importe um arquivo CSV/JSON para iniciar.
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              }
               renderRow={(supplier) => (
                 <SupplierRow
                   key={supplier.id}
