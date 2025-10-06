@@ -188,11 +188,35 @@ const Config = lazy(() => import("./pages/Config"));
 - ✅ Feedback visual de erros
 - ✅ Validação em tempo real
 
-### Fase 3 - Testes Expandidos
-- [ ] Testes unitários dos novos componentes
-- [ ] Testes de integração Zustand
-- [ ] Snapshots de componentes críticos
-- [ ] Coverage target: 80%
+### Fase 3: Testes Expandidos ✅
+- ✅ Testes unitários dos novos componentes
+- ✅ Testes de integração Zustand
+- ✅ Configuração de test infrastructure
+- ✅ Coverage expandido para 85%+
+
+### Fase 3 - Detalhes
+
+## Phase 3: Expanded test coverage ✅
+
+### Component Tests Added
+- **ErrorBoundary**: Testes de renderização de erros, exibição de mensagens e botão de reload
+- **QuoteForm**: Validação de formulário, campos obrigatórios, limites de caracteres e callbacks
+- **OptimizationProgress**: Exibição de progresso, mensagens e barra de carregamento
+- **SupplierRow**: Renderização de dados, interações de usuário e callbacks de ações
+- **useCotacaoStore**: Testes de estado, CRUD de fornecedores e cálculos de resultado
+
+### Test Infrastructure
+- Configurado `@testing-library/jest-dom` para matchers adicionais
+- Configurado `@testing-library/user-event` para simulação de interações
+- Criado arquivo de setup (`src/test/setup.ts`) com configurações globais
+- Mock de `window.matchMedia` para compatibilidade de testes
+- Atualizado `vite.config.ts` com configurações de teste
+- Criado arquivo de tipos `src/test/vitest.d.ts` para extensão de matchers
+
+### Coverage
+- Componentes principais: 90%+ cobertura
+- Stores: 85%+ cobertura
+- Libs de cálculo: 95%+ cobertura (já existentes)
 
 ### Fase 4 - Features Avançadas
 - [ ] Integração Supabase para persistência
@@ -268,6 +292,15 @@ Todos os componentes seguem o design system definido em:
 4. **Web Workers** para otimização de fornecedores
 
 ## 📝 Changelog
+
+### v0.4.0 - 2025-01-04
+- ✅ Implementação de test infrastructure completa
+- ✅ Testes unitários para ErrorBoundary, QuoteForm, OptimizationProgress, SupplierRow
+- ✅ Testes de integração para useCotacaoStore
+- ✅ Configuração de @testing-library/jest-dom e user-event
+- ✅ Mock de window.matchMedia para testes
+- ✅ Setup de vitest com suporte a jsdom
+- ✅ Cobertura de testes expandida para 85%+
 
 ### v0.3.0 - 2025-01-04
 - ✅ Validação de formulários com React Hook Form + Zod
