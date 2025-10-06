@@ -32,7 +32,7 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card shadow-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-screen-2xl items-center px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl font-bold text-foreground">
             Mix Credit Guru
           </h1>
@@ -40,7 +40,7 @@ export function Layout() {
       </header>
 
       <nav className="border-b border-border bg-card">
-        <div className="mx-auto flex flex-wrap gap-2 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-screen-2xl flex-wrap gap-2 px-4 py-3 sm:px-6 lg:px-8">
           {navigation.map((item) => {
             const isActive =
               item.href === "/"
@@ -65,7 +65,7 @@ export function Layout() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8">
         <Outlet />
       </main>
     </div>

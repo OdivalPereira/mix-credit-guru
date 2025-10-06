@@ -87,12 +87,12 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:[grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
             <FormField
               control={form.control}
               name="data"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="sm:max-w-[200px]">
                   <FormLabel htmlFor="data">Data</FormLabel>
                   <FormControl>
                     <Input
@@ -117,7 +117,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               control={form.control}
               name="uf"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="sm:max-w-[160px]">
                   <FormLabel htmlFor="estado">Estado</FormLabel>
                   <Select
                     value={field.value?.toUpperCase()}
@@ -152,7 +152,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               control={form.control}
               name="municipio"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="sm:max-w-[260px]">
                   <FormLabel htmlFor="municipio">Municipio (IBGE)</FormLabel>
                   <FormControl>
                     <Input
@@ -177,7 +177,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               control={form.control}
               name="destino"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="sm:max-w-[220px]">
                   <FormLabel htmlFor="destinacao">Destinacao</FormLabel>
                   <Select
                     value={field.value}
@@ -209,7 +209,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               control={form.control}
               name="regime"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="sm:max-w-[240px]">
                   <FormLabel htmlFor="regime">Regime tributario</FormLabel>
                   <Select
                     value={field.value}
