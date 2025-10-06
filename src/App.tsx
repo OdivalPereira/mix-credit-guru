@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,12 +7,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import DonationModal from "./components/DonationModal";
-import Cotacao from "./pages/Cotacao";
-import Catalogo from "./pages/Catalogo";
-import Cenarios from "./pages/Cenarios";
-import Regras from "./pages/Regras";
-import Relatorios from "./pages/Relatorios";
-import Config from "./pages/Config";
+
+// Lazy load pages for code splitting
+const Cotacao = lazy(() => import("./pages/Cotacao"));
+const Catalogo = lazy(() => import("./pages/Catalogo"));
+const Cenarios = lazy(() => import("./pages/Cenarios"));
+const Regras = lazy(() => import("./pages/Regras"));
+const Relatorios = lazy(() => import("./pages/Relatorios"));
+const Config = lazy(() => import("./pages/Config"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,16 +33,22 @@ const App = () => (
         <Sonner />
         <DonationModal />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Cotacao />} />
-              <Route path="catalogo" element={<Catalogo />} />
-              <Route path="cenarios" element={<Cenarios />} />
-              <Route path="regras" element={<Regras />} />
-              <Route path="relatorios" element={<Relatorios />} />
-              <Route path="config" element={<Config />} />
-            </Route>
-          </Routes>
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="animate-pulse text-muted-foreground">Carregando...</div>
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Cotacao />} />
+                <Route path="catalogo" element={<Catalogo />} />
+                <Route path="cenarios" element={<Cenarios />} />
+                <Route path="regras" element={<Regras />} />
+                <Route path="relatorios" element={<Relatorios />} />
+                <Route path="config" element={<Config />} />
+              </Route>
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -44,7 +44,7 @@ export default function Cotacao() {
     calcular,
   } = useCotacaoStore();
 
-  const resultados = resultado.itens;
+  const resultados = useMemo(() => resultado.itens, [resultado.itens]);
 
   useEffect(() => {
     calcular();
@@ -54,7 +54,7 @@ export default function Cotacao() {
     setContexto({ [key]: value });
   }, [setContexto]);
 
-  const numericFields: Array<keyof Supplier> = ["preco", "frete"];
+  const numericFields = useMemo<Array<keyof Supplier>>(() => ["preco", "frete"], []);
 
   const isNumericField = (
     f: keyof Supplier,
@@ -78,13 +78,13 @@ export default function Cotacao() {
     upsertFornecedor({ ...rest });
   }, [upsertFornecedor]);
 
-  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportCSV = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await file.text();
     importarCSV(text);
     e.target.value = "";
-  };
+  }, [importarCSV]);
 
   const handleExportCSV = useCallback(() => {
     const csv = exportarCSV();
@@ -97,13 +97,13 @@ export default function Cotacao() {
     URL.revokeObjectURL(url);
   }, [exportarCSV]);
 
-  const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportJSON = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await file.text();
     importarJSON(text);
     e.target.value = "";
-  };
+  }, [importarJSON]);
 
   const handleExportJSON = useCallback(() => {
     const json = exportarJSON();

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Loader2 } from "lucide-react";
 
@@ -6,7 +7,7 @@ interface OptimizationProgressProps {
   message: string | null;
 }
 
-export function OptimizationProgress({ progress, message }: OptimizationProgressProps) {
+const OptimizationProgressComponent = ({ progress, message }: OptimizationProgressProps) => {
   return (
     <div className="mb-4 space-y-3 rounded-md border border-dashed p-4">
       <div className="flex items-center gap-3">
@@ -22,4 +23,6 @@ export function OptimizationProgress({ progress, message }: OptimizationProgress
       <Progress value={progress} aria-label="Progresso da otimização" />
     </div>
   );
-}
+};
+
+export const OptimizationProgress = memo(OptimizationProgressComponent);

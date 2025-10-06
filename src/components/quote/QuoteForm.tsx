@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import type { Contexto } from "@/store/useCotacaoStore";
-import { useEffect } from "react";
+import { useEffect, memo } from "react";
 
 const quoteFormSchema = z.object({
   data: z.string().min(1, "Data é obrigatória"),
@@ -23,7 +23,7 @@ interface QuoteFormProps {
   onContextoChange: (key: keyof Contexto, value: string) => void;
 }
 
-export function QuoteForm({ contexto, onContextoChange }: QuoteFormProps) {
+const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
@@ -194,4 +194,6 @@ export function QuoteForm({ contexto, onContextoChange }: QuoteFormProps) {
       </CardContent>
     </Card>
   );
-}
+};
+
+export const QuoteForm = memo(QuoteFormComponent);
