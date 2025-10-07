@@ -11,6 +11,7 @@ import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import type { Unit } from "@/types/domain";
 import { Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
+import { useCatalogoStore } from "@/store/useCatalogoStore";
 
 const unidades: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
 
@@ -20,12 +21,17 @@ export default function UnidadesConversoes() {
   const updateConversoes = useUnidadesStore((state) => state.updateConversoes);
   const updateYields = useUnidadesStore((state) => state.updateYields);
   const resetDefaults = useUnidadesStore((state) => state.reset);
+  const produtos = useCatalogoStore((state) => state.produtos);
 
   const conversoesTableRef = useRef<HTMLDivElement>(null);
   const yieldTableRef = useRef<HTMLDivElement>(null);
 
   const shouldVirtualizeConversoes = conversoes.length >= 200;
   const shouldVirtualizeYield = yieldConfigs.length >= 200;
+
+  const produtosById = useMemo(() => {
+    return new Map(produtos.map((produto) => [produto.id, produto.descricao]));
+  }, [produtos]);
 
   const handleConversaoChange = (
     index: number,
@@ -61,6 +67,19 @@ export default function UnidadesConversoes() {
     );
   };
 
+  const handleYieldProdutoChange = (index: number, value: string) => {
+    updateYields((prev) =>
+      prev.map((config, i) =>
+        i === index
+          ? {
+              ...config,
+              produtoId: value,
+            }
+          : config,
+      ),
+    );
+  };
+
   const addConversao = () => {
     updateConversoes((prev) => [...prev, { de: "kg", para: "g", fator: 1 }]);
   };
@@ -70,7 +89,10 @@ export default function UnidadesConversoes() {
   };
 
   const addYield = () => {
-    updateYields((prev) => [...prev, { entrada: "kg", saida: "un", rendimento: 1 }]);
+    updateYields((prev) => [
+      ...prev,
+      { entrada: "kg", saida: "un", rendimento: 1 },
+    ]);
   };
 
   const removeYield = (index: number) => {
@@ -212,28 +234,57 @@ export default function UnidadesConversoes() {
             containerRef={yieldTableRef}
             containerClassName={shouldVirtualizeYield ? "max-h-[480px]" : undefined}
           >
-            <TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Produto / SKU</TableHead>
+              <TableHead>Entrada</TableHead>
+              <TableHead>Saida</TableHead>
+              <TableHead className="text-right">Rendimento (%)</TableHead>
+              <TableHead className="w-16"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <VirtualizedTableBody
+            data={yieldConfigs}
+            colSpan={5}
+            scrollElement={() => yieldTableRef.current}
+            estimateSize={() => 64}
+            emptyRow={
               <TableRow>
-                <TableHead>Entrada</TableHead>
-                <TableHead>Saida</TableHead>
-                <TableHead className="text-right">Rendimento (%)</TableHead>
-                <TableHead className="w-16"></TableHead>
+                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
+                  Nenhuma configuracao de yield cadastrada.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <VirtualizedTableBody
-              data={yieldConfigs}
-              colSpan={4}
-              scrollElement={() => yieldTableRef.current}
-              estimateSize={() => 64}
-              emptyRow={
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                    Nenhuma configuracao de yield cadastrada.
+            }
+            renderRow={(config, index) => {
+              const produtoDescricao = config.produtoId
+                ? produtosById.get(config.produtoId)
+                : undefined;
+              return (
+                <TableRow key={`${config.produtoId ?? "sem-prod"}-${config.entrada}-${config.saida}-${index}`}>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <Input
+                        value={config.produtoId ?? ""}
+                        onChange={(event) =>
+                          handleYieldProdutoChange(index, event.target.value)
+                        }
+                        placeholder="ID do produto"
+                        list={`yield-produto-${index}`}
+                      />
+                      <datalist id={`yield-produto-${index}`}>
+                        {produtos.map((produto) => (
+                          <option key={produto.id} value={produto.id}>
+                            {produto.descricao}
+                          </option>
+                        ))}
+                      </datalist>
+                      <span className="block text-xs text-muted-foreground">
+                        {produtoDescricao
+                          ? produtoDescricao
+                          : "Informe o identificador do produto"}
+                      </span>
+                    </div>
                   </TableCell>
-                </TableRow>
-              }
-              renderRow={(config, index) => (
-                <TableRow key={`${config.entrada}-${config.saida}-${index}`}>
                   <TableCell>
                     <Select
                       value={config.entrada}
@@ -285,11 +336,12 @@ export default function UnidadesConversoes() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              )}
-            />
-          </Table>
-        </CardContent>
-      </Card>
+              );
+            }}
+          />
+        </Table>
+      </CardContent>
+    </Card>
 
       <Card>
         <CardHeader>

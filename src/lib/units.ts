@@ -10,6 +10,7 @@ const ConvSchema = z.object({
 });
 
 const YieldSchema = z.object({
+  produtoId: z.string().trim().min(1).optional(),
   entrada: UnitEnum,
   saida: UnitEnum,
   rendimento: z.number().positive().max(100),

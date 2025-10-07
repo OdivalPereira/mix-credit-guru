@@ -455,6 +455,7 @@ export type Database = {
           created_at: string
           entrada: Database["public"]["Enums"]["unit_type"]
           id: string
+          produto_id: string | null
           rendimento: number
           saida: Database["public"]["Enums"]["unit_type"]
           updated_at: string
@@ -464,6 +465,7 @@ export type Database = {
           created_at?: string
           entrada: Database["public"]["Enums"]["unit_type"]
           id?: string
+          produto_id?: string | null
           rendimento: number
           saida: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
@@ -473,12 +475,21 @@ export type Database = {
           created_at?: string
           entrada?: Database["public"]["Enums"]["unit_type"]
           id?: string
+          produto_id?: string | null
           rendimento?: number
           saida?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "unidades_yield_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

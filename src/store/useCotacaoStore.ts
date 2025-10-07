@@ -88,9 +88,13 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
         ...unidadesState.conversoes,
         ...(contrato.conversoes ?? []),
       ];
+      const produtoYield =
+        contrato.produtoId?.trim() ||
+        fornecedor.produtoId?.trim() ||
+        undefined;
       const yieldConfig =
         contrato.yield ??
-        unidadesState.yields.find((item) => item.entrada === contrato.unidade);
+        unidadesState.findYield(produtoYield, contrato.unidade);
 
       if (precoContrato > 0) {
         try {

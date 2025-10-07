@@ -8,9 +8,7 @@ const defaultConversoes: UnitConv[] = [
   { de: "l", para: "ml", fator: 1000 },
 ];
 
-const defaultYields: YieldConfig[] = [
-  { entrada: "kg", saida: "un", rendimento: 1 },
-];
+const defaultYields: YieldConfig[] = [];
 
 interface UnidadesStore {
   conversoes: UnitConv[];
@@ -18,7 +16,7 @@ interface UnidadesStore {
   updateConversoes: (updater: (prev: UnitConv[]) => UnitConv[]) => void;
   updateYields: (updater: (prev: YieldConfig[]) => YieldConfig[]) => void;
   reset: () => void;
-  findYield: (entrada: Unit, saida: Unit) => YieldConfig | undefined;
+  findYield: (produtoId: string | undefined, entrada: Unit, saida?: Unit) => YieldConfig | undefined;
 }
 
 export const useUnidadesStore = create<UnidadesStore>()(
@@ -29,20 +27,104 @@ export const useUnidadesStore = create<UnidadesStore>()(
       updateConversoes: (updater) =>
         set((state) => ({ conversoes: updater(state.conversoes) })),
       updateYields: (updater) =>
-        set((state) => ({ yields: updater(state.yields) })),
+        set((state) => ({
+          yields: updater(state.yields).map((config) => {
+            const produtoId = config.produtoId?.trim();
+            return {
+              ...config,
+              produtoId: produtoId ? produtoId : undefined,
+            };
+          }),
+        })),
       reset: () =>
         set({
           conversoes: defaultConversoes,
           yields: defaultYields,
         }),
-      findYield: (entrada, saida) =>
-        get().yields.find(
-          (item) => item.entrada === entrada && item.saida === saida,
-        ),
+      findYield: (produtoId, entrada, saida) => {
+        const normalizado = produtoId?.trim().toLowerCase();
+        const yields = get().yields;
+
+        if (normalizado) {
+          const matchEstrito = yields.find((item) => {
+            if (!item.produtoId) {
+              return false;
+            }
+            if (item.produtoId.trim().toLowerCase() !== normalizado) {
+              return false;
+            }
+            if (item.entrada !== entrada) {
+              return false;
+            }
+            if (saida && item.saida !== saida) {
+              return false;
+            }
+            return true;
+          });
+          if (matchEstrito) {
+            return matchEstrito;
+          }
+
+          const matchEntrada = yields.find((item) => {
+            if (!item.produtoId) {
+              return false;
+            }
+            return (
+              item.produtoId.trim().toLowerCase() === normalizado &&
+              item.entrada === entrada
+            );
+          });
+          if (matchEntrada) {
+            return matchEntrada;
+          }
+        }
+
+        if (saida) {
+          const globalEstrito = yields.find(
+            (item) =>
+              !item.produtoId &&
+              item.entrada === entrada &&
+              item.saida === saida,
+          );
+          if (globalEstrito) {
+            return globalEstrito;
+          }
+        }
+
+        return yields.find(
+          (item) => !item.produtoId && item.entrada === entrada,
+        );
+      },
     }),
     {
       name: "cmx_v03_unidades",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persistedState, persistedVersion) => {
+        if (!persistedState) {
+          return persistedState as UnidadesStore;
+        }
+        const state = persistedState as UnidadesStore;
+        if (persistedVersion >= 1) {
+          return state;
+        }
+        const sanitizedYields = Array.isArray(state.yields)
+          ? state.yields.map((config) => {
+              const produtoId =
+                typeof config.produtoId === "string"
+                  ? config.produtoId.trim()
+                  : undefined;
+              return {
+                ...config,
+                produtoId: produtoId ? produtoId : undefined,
+              };
+            })
+          : defaultYields;
+        return {
+          ...state,
+          yields: sanitizedYields,
+        };
+      },
     },
   ),
 );

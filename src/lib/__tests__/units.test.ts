@@ -21,6 +21,7 @@ describe('normalizeOffer', () => {
 
   it('aplica yield/perdas', () => {
     const preco = normalizeOffer(20, [1000], 'g', 'kg', convs, {
+      produtoId: 'prod-1',
       entrada: 'g',
       saida: 'g',
       rendimento: 80,

@@ -143,6 +143,7 @@ export interface UnitConv {
 }
 
 export interface YieldConfig {
+  produtoId?: string;
   entrada: Unit;
   saida: Unit;
   rendimento: number;

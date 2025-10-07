@@ -18,9 +18,32 @@ export default function FornecedoresContratos() {
 
   const updateContract = (id: string, data: Partial<ContractFornecedor>) => {
     updateContracts((prev) =>
-      prev.map((contract) =>
-        contract.fornecedorId === id ? { ...contract, ...data } : contract,
-      ),
+      prev.map((contract) => {
+        if (contract.fornecedorId !== id) {
+          return contract;
+        }
+        const next: ContractFornecedor = {
+          ...contract,
+          ...data,
+        };
+        if (data.produtoId !== undefined) {
+          const trimmed = data.produtoId.trim();
+          next.produtoId = trimmed;
+          next.yield = contract.yield
+            ? {
+                ...contract.yield,
+                produtoId: trimmed || undefined,
+              }
+            : undefined;
+        } else if (next.yield && !next.yield.produtoId && next.produtoId) {
+          const trimmed = next.produtoId.trim();
+          next.yield = {
+            ...next.yield,
+            produtoId: trimmed || undefined,
+          };
+        }
+        return next;
+      }),
     );
   };
 
@@ -59,19 +82,30 @@ export default function FornecedoresContratos() {
 
   const handleYieldChange = (
     id: string,
-    field: keyof YieldConfig,
+    field: "entrada" | "saida" | "rendimento",
     value: string,
   ) => {
     updateContracts((prev) =>
       prev.map((contract) => {
         if (contract.fornecedorId !== id) return contract;
-        const yieldConfig = contract.yield ?? { entrada: "kg", saida: "un", rendimento: 1 };
+        const produtoId = contract.produtoId?.trim();
+        const baseYield: YieldConfig = contract.yield ?? {
+          produtoId: produtoId || undefined,
+          entrada: "kg",
+          saida: "un",
+          rendimento: 1,
+        };
+        const nextYield: YieldConfig = {
+          ...baseYield,
+          produtoId: produtoId || baseYield.produtoId,
+          [field]:
+            field === "rendimento"
+              ? Number(value) || 0
+              : (value as Unit),
+        };
         return {
           ...contract,
-          yield: {
-            ...yieldConfig,
-            [field]: field === "rendimento" ? Number(value) || 0 : (value as Unit),
-          },
+          yield: nextYield,
         };
       }),
     );
@@ -225,7 +259,7 @@ export default function FornecedoresContratos() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Yield aplicado</Label>
+                      <Label>Yield aplicado (por produto)</Label>
                       <div className="grid grid-cols-3 gap-2">
                         <Select
                           value={contract.yield?.entrada ?? "kg"}
@@ -267,7 +301,7 @@ export default function FornecedoresContratos() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Utilize o rendimento para calcular custo normalizado por unidade de saida.
+                        Utilize o rendimento para calcular custo normalizado por unidade de saida do produto vinculado.
                       </p>
                     </div>
                   </CardContent>
