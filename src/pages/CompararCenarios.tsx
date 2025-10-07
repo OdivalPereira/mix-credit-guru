@@ -162,7 +162,7 @@ export default function CompararCenarios() {
         <CardHeader>
           <CardTitle>Selecione os cenarios</CardTitle>
           <CardDescription>
-            Os resultados sao recalculados automaticamente considerando contratos e conversoes cadastradas.
+            Os resultados sao recalculados automaticamente considerando contratos, conversoes e yield globais ou por produto.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
@@ -240,7 +240,7 @@ export default function CompararCenarios() {
         <CardHeader>
           <CardTitle>Resumo por item</CardTitle>
           <CardDescription>
-            Custos sao calculados considerando contratos, conversoes e rendimento cadastrados.
+            Custos consideram contratos, conversoes e rendimentos globais ou especificos por produto.
           </CardDescription>
         </CardHeader>
         <CardContent>

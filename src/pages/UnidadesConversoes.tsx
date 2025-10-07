@@ -33,6 +33,13 @@ export default function UnidadesConversoes() {
     return new Map(produtos.map((produto) => [produto.id, produto.descricao]));
   }, [produtos]);
 
+  const totalYields = yieldConfigs.length;
+  const yieldsPorProduto = yieldConfigs.reduce(
+    (acc, config) => (config.produtoId ? acc + 1 : acc),
+    0,
+  );
+  const yieldsGlobais = totalYields - yieldsPorProduto;
+
   const handleConversaoChange = (
     index: number,
     field: "de" | "para" | "fator",
@@ -68,12 +75,13 @@ export default function UnidadesConversoes() {
   };
 
   const handleYieldProdutoChange = (index: number, value: string) => {
+    const trimmed = value.trim();
     updateYields((prev) =>
       prev.map((config, i) =>
         i === index
           ? {
               ...config,
-              produtoId: value,
+              produtoId: trimmed ? trimmed : undefined,
             }
           : config,
       ),
@@ -116,7 +124,7 @@ export default function UnidadesConversoes() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Unidades, conversoes e yield</h2>
         <p className="text-muted-foreground">
-          Cadastre conversoes e rendimentos para padronizar calculos de custo em toda a cadeia
+          Cadastre conversoes e rendimentos globais ou específicos por produto para padronizar calculos de custo.
         </p>
       </div>
 
@@ -227,7 +235,9 @@ export default function UnidadesConversoes() {
       <Card>
         <CardHeader>
           <CardTitle>Configuracoes de yield</CardTitle>
-          <CardDescription>Normaliza rendimento entre unidade de entrada e unidade de saida</CardDescription>
+          <CardDescription>
+            Vincule opcionalmente um produto para aplicar um rendimento dedicado; deixe em branco para usar um yield global.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table
@@ -268,7 +278,7 @@ export default function UnidadesConversoes() {
                         onChange={(event) =>
                           handleYieldProdutoChange(index, event.target.value)
                         }
-                        placeholder="ID do produto"
+                        placeholder="ID do produto (opcional)"
                         list={`yield-produto-${index}`}
                       />
                       <datalist id={`yield-produto-${index}`}>
@@ -280,8 +290,8 @@ export default function UnidadesConversoes() {
                       </datalist>
                       <span className="block text-xs text-muted-foreground">
                         {produtoDescricao
-                          ? produtoDescricao
-                          : "Informe o identificador do produto"}
+                          ? `Vinculado a: ${produtoDescricao}`
+                          : "Em branco = rendimento global"}
                       </span>
                     </div>
                   </TableCell>
@@ -364,14 +374,22 @@ export default function UnidadesConversoes() {
               </span>
             )}
           </div>
-          <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
+          <div className="mt-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
             <div>
               <Label className="text-xs uppercase text-muted-foreground">Conversoes</Label>
               <span className="block text-base text-foreground">{conversoes.length}</span>
             </div>
             <div>
               <Label className="text-xs uppercase text-muted-foreground">Yield cadastrados</Label>
-              <span className="block text-base text-foreground">{yieldConfigs.length}</span>
+              <span className="block text-base text-foreground">{totalYields}</span>
+            </div>
+            <div>
+              <Label className="text-xs uppercase text-muted-foreground">Yield por produto</Label>
+              <span className="block text-base text-foreground">{yieldsPorProduto}</span>
+            </div>
+            <div>
+              <Label className="text-xs uppercase text-muted-foreground">Yield globais</Label>
+              <span className="block text-base text-foreground">{yieldsGlobais}</span>
             </div>
           </div>
         </CardContent>

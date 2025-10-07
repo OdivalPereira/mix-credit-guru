@@ -225,6 +225,9 @@ export default function FornecedoresContratos() {
                           updateContract(contract.fornecedorId, { produtoId: event.target.value })
                         }
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Vincule o identificador do produto para aplicar automaticamente um yield dedicado quando existir.
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`unidade-${contract.fornecedorId}`}>Unidade</Label>
@@ -302,6 +305,7 @@ export default function FornecedoresContratos() {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Utilize o rendimento para calcular custo normalizado por unidade de saida do produto vinculado.
+                        Caso o contrato nao tenha yield especifico, aplicaremos o rendimento global cadastrado para a unidade.
                       </p>
                     </div>
                   </CardContent>
