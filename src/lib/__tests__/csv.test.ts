@@ -16,13 +16,14 @@ describe("CSV helpers", () => {
     expect(fornecedores).toHaveLength(2);
     expect(fornecedores[0]).toMatchObject({
       nome: "Fornecedor A",
-      tipo: "industrial",
+      tipo: "industria",
       regime: "normal",
       preco: 100.5,
       ibs: 5,
       cbs: 2,
       is: 0,
       frete: 12.3,
+      ativo: true,
     });
     expect(fornecedores[1]).toMatchObject({
       nome: "Fornecedor B",

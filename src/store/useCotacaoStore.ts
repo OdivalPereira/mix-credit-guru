@@ -59,6 +59,11 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
     return { itens: [] };
   }
 
+  const ativos = fornecedores.filter((fornecedor) => fornecedor.ativo !== false);
+  if (!ativos.length) {
+    return { itens: [] };
+  }
+
   const contractsState = useContractsStore.getState();
   const unidadesState = useUnidadesStore.getState();
 
@@ -68,7 +73,7 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
     { preco: number; frete: number; custoNormalizado?: number }
   >();
 
-  for (const fornecedor of fornecedores) {
+  for (const fornecedor of ativos) {
     const contrato = contractsState.findContract(fornecedor.id, produtoChave);
     let preco = fornecedor.preco;
     let frete = fornecedor.frete;
@@ -109,7 +114,7 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
     ajustes.set(fornecedor.id, { preco, frete, custoNormalizado });
   }
 
-  const fornecedoresAjustados = fornecedores.map((fornecedor) => {
+  const fornecedoresAjustados = ativos.map((fornecedor) => {
     const ajuste = ajustes.get(fornecedor.id);
     if (!ajuste) {
       return fornecedor;
@@ -144,6 +149,21 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
   return { itens };
 }
 
+function applyFornecedorDefaults(fornecedor: Supplier): Supplier {
+  return {
+    ...fornecedor,
+    cnpj: fornecedor.cnpj ?? "",
+    uf: fornecedor.uf ?? "",
+    ativo: fornecedor.ativo ?? true,
+    produtoDescricao: fornecedor.produtoDescricao ?? "",
+    pedidoMinimo: fornecedor.pedidoMinimo ?? 0,
+    prazoEntregaDias: fornecedor.prazoEntregaDias ?? 0,
+    prazoPagamentoDias: fornecedor.prazoPagamentoDias ?? 0,
+    flagsItem: fornecedor.flagsItem ?? undefined,
+    isRefeicaoPronta: fornecedor.isRefeicaoPronta ?? false,
+  };
+}
+
 export const useCotacaoStore = create<CotacaoStore>()(
   persist(
     (set, get) => ({
@@ -167,9 +187,9 @@ export const useCotacaoStore = create<CotacaoStore>()(
           const exists = state.fornecedores.some((f) => f.id === id);
           const fornecedores = exists
             ? state.fornecedores.map((f) =>
-                f.id === id ? { ...f, ...fornecedor, id } : f
+                f.id === id ? applyFornecedorDefaults({ ...f, ...fornecedor, id }) : f
               )
-            : [...state.fornecedores, { ...fornecedor, id }];
+            : [...state.fornecedores, applyFornecedorDefaults({ ...fornecedor, id })];
           return { fornecedores };
         }),
 
@@ -198,6 +218,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
             const fornecedor = fornecedorOriginal.id
               ? fornecedorOriginal
               : { ...fornecedorOriginal, id: generateId("fornecedor") };
+            const normalizado = applyFornecedorDefaults(fornecedor);
             const idx = combinados.findIndex(
               (item) =>
                 item.nome.toLowerCase() === fornecedor.nome.toLowerCase() &&
@@ -205,9 +226,13 @@ export const useCotacaoStore = create<CotacaoStore>()(
                 item.regime.toLowerCase() === fornecedor.regime.toLowerCase(),
             );
             if (idx >= 0) {
-              combinados[idx] = { ...combinados[idx], ...fornecedor, id: combinados[idx].id };
+              combinados[idx] = applyFornecedorDefaults({
+                ...combinados[idx],
+                ...normalizado,
+                id: combinados[idx].id,
+              });
             } else {
-              combinados.push(fornecedor);
+              combinados.push(normalizado);
             }
           }
           return { fornecedores: combinados };
@@ -238,14 +263,13 @@ export const useCotacaoStore = create<CotacaoStore>()(
           for (const fornecedor of data.fornecedores) {
             const chave = `${fornecedor.nome.toLowerCase()}|${fornecedor.tipo.toLowerCase()}|${fornecedor.regime.toLowerCase()}`;
             const existente = atual.get(chave);
-            const fornecedorFinal = fornecedor.id
+            const fornecedorComId = fornecedor.id
               ? fornecedor
               : { ...fornecedor, id: generateId("fornecedor") };
-            if (existente) {
-              atual.set(chave, { ...existente, ...fornecedorFinal, id: existente.id });
-            } else {
-              atual.set(chave, fornecedorFinal);
-            }
+            const fornecedorFinal = existente
+              ? applyFornecedorDefaults({ ...existente, ...fornecedorComId, id: existente.id })
+              : applyFornecedorDefaults(fornecedorComId);
+            atual.set(chave, fornecedorFinal);
           }
           return Array.from(atual.values());
         })()

@@ -35,8 +35,11 @@ describe("QuoteForm", () => {
 
     expect(screen.getByDisplayValue("Produto Teste")).toBeInTheDocument();
     const estadoSelect = screen.getByRole("combobox", { name: /estado/i });
-    expect(estadoSelect).toHaveTextContent(/SP - Sao Paulo/i);
-    expect(screen.getByDisplayValue("3550308")).toBeInTheDocument();
+    expect(estadoSelect).toHaveTextContent(/SP - São Paulo/i);
+    const municipioCombobox = screen.getByRole("combobox", {
+      name: /municipio/i,
+    });
+    expect(municipioCombobox).toHaveTextContent(/S[oã]o Paulo/i);
   });
 
   it("valida campo produto obrigatorio", async () => {
@@ -88,6 +91,32 @@ describe("QuoteForm", () => {
         "produto",
         "Novo Produto",
       );
+    });
+  });
+
+  it("filtra municipios conforme UF selecionada", async () => {
+    const user = userEvent.setup();
+    const onContextoChange = vi.fn();
+    render(
+      <QuoteForm
+        contexto={{ ...baseContexto, uf: "MG", municipio: "" }}
+        onContextoChange={onContextoChange}
+      />,
+    );
+
+    const municipioCombobox = screen.getByRole("combobox", {
+      name: /municipio/i,
+    });
+    await user.click(municipioCombobox);
+
+    const search = screen.getByPlaceholderText(/pesquisar municipio/i);
+    await user.type(search, "Belo");
+    await user.click(
+      await screen.findByRole("option", { name: /Belo Horizonte/i }),
+    );
+
+    await waitFor(() => {
+      expect(onContextoChange).toHaveBeenCalledWith("municipio", "3106200");
     });
   });
 });

@@ -1,4 +1,4 @@
-import { RefObject, memo } from "react";
+import { RefObject, memo, useMemo, useState } from "react";
 import {
   BarChart3,
   Database,
@@ -40,13 +40,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
-import type { MixResultadoItem, Supplier } from "@/types/domain";
+import type { MixResultadoItem, Produto, Supplier } from "@/types/domain";
 
 import { OptimizationProgress } from "./OptimizationProgress";
 import { SupplierRow } from "./SupplierRow";
+import { SupplierDetailsSheet } from "./SupplierDetailsSheet";
 
 interface SupplierTableProps {
   resultados: MixResultadoItem[];
+  fornecedoresOriginais: Supplier[];
+  produtos: Produto[];
   formatCurrency: (value: number) => string;
   onAddSupplier: () => void;
   onFieldChange: (id: string, field: keyof Supplier, value: string) => void;
@@ -65,6 +68,7 @@ interface SupplierTableProps {
   onToggleChart: () => void;
   onOptimize: () => void;
   getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
+  onPatchSupplier: (id: string, data: Partial<Supplier>) => void;
   showChart: boolean;
   optimizing: boolean;
   optProgress: number;
@@ -74,6 +78,8 @@ interface SupplierTableProps {
 
 const SupplierTableComponent = ({
   resultados,
+  fornecedoresOriginais,
+  produtos,
   formatCurrency,
   onAddSupplier,
   onFieldChange,
@@ -88,6 +94,7 @@ const SupplierTableComponent = ({
   onToggleChart,
   onOptimize,
   getCreditBadge,
+  onPatchSupplier,
   showChart,
   optimizing,
   optProgress,
@@ -95,6 +102,13 @@ const SupplierTableComponent = ({
   containerRef,
 }: SupplierTableProps) => {
   const shouldVirtualize = resultados.length >= 200;
+  const [detailsSupplierId, setDetailsSupplierId] = useState<string | null>(null);
+  const detailsSupplier = useMemo(() => {
+    if (!detailsSupplierId) {
+      return null;
+    }
+    return fornecedoresOriginais.find((item) => item.id === detailsSupplierId) ?? null;
+  }, [detailsSupplierId, fornecedoresOriginais]);
 
   return (
     <Card>
@@ -267,12 +281,22 @@ const SupplierTableComponent = ({
                   onDuplicate={onDuplicate}
                   onRemove={onRemove}
                   getCreditBadge={getCreditBadge}
+                  onOpenDetails={() => setDetailsSupplierId(supplier.id)}
                 />
               )}
             />
           </Table>
         </div>
       </CardContent>
+      {detailsSupplier ? (
+        <SupplierDetailsSheet
+          open
+          supplier={detailsSupplier}
+          produtos={produtos}
+          onClose={() => setDetailsSupplierId(null)}
+          onUpdate={onPatchSupplier}
+        />
+      ) : null}
     </Card>
   );
 };

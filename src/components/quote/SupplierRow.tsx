@@ -1,12 +1,20 @@
-import { memo } from "react";
-import { Copy, Trash } from "lucide-react";
+import { memo, useMemo } from "react";
+import { Copy, Info, Trash } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
+import { getMunicipiosByUF } from "@/data/locations";
 
 interface SupplierRowProps {
   supplier: MixResultadoItem;
@@ -20,7 +28,11 @@ interface SupplierRowProps {
   onDuplicate: (supplier: MixResultadoItem) => void;
   onRemove: (id: string) => void;
   getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
+  onOpenDetails: () => void;
 }
+
+const tipoOptions = ["industria", "distribuidor", "produtor", "atacado", "varejo"] as const;
+const regimeOptions = ["normal", "simples", "presumido"] as const;
 
 const SupplierRowComponent = ({
   supplier,
@@ -30,7 +42,30 @@ const SupplierRowComponent = ({
   onDuplicate,
   onRemove,
   getCreditBadge,
+  onOpenDetails,
 }: SupplierRowProps) => {
+  const municipioNome = useMemo(() => {
+    if (!supplier.uf || !supplier.municipio) {
+      return undefined;
+    }
+    const municipios = getMunicipiosByUF(supplier.uf.toUpperCase());
+    return municipios.find((item) => item.codigo === supplier.municipio)?.nome;
+  }, [supplier.municipio, supplier.uf]);
+
+  const locationSummary = useMemo(() => {
+    if (!supplier.uf && !municipioNome) {
+      return "Localizacao nao informada";
+    }
+    const parts: string[] = [];
+    if (supplier.uf) {
+      parts.push(supplier.uf.toUpperCase());
+    }
+    if (municipioNome) {
+      parts.push(municipioNome);
+    }
+    return parts.join(" - ") || "Localizacao nao informada";
+  }, [municipioNome, supplier.uf]);
+
   return (
     <TableRow
       data-testid="supplier-row"
@@ -46,34 +81,66 @@ const SupplierRowComponent = ({
         {supplier.ranking}
       </TableCell>
 
-      <TableCell className="min-w-[240px] font-medium">
-        <Input
-          data-testid="supplier-name"
-          value={supplier.nome}
-          onChange={(event) =>
-            onFieldChange(supplier.id, "nome", event.target.value)
-          }
-        />
+      <TableCell className="min-w-[260px] font-medium">
+        <div className="space-y-1">
+          <Input
+            data-testid="supplier-name"
+            value={supplier.nome}
+            onChange={(event) =>
+              onFieldChange(supplier.id, "nome", event.target.value)
+            }
+          />
+          <div className="text-xs text-muted-foreground">
+            {supplier.cnpj ? `CNPJ: ${supplier.cnpj}` : "CNPJ nao informado"}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {supplier.produtoDescricao && supplier.produtoDescricao.length > 0
+              ? `Produto: ${supplier.produtoDescricao}`
+              : "Produto nao vinculado"}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {locationSummary}
+          </div>
+        </div>
       </TableCell>
 
-      <TableCell className="min-w-[140px]">
-        <Input
-          data-testid="supplier-tipo"
+      <TableCell className="min-w-[160px]">
+        <Select
           value={supplier.tipo}
-          onChange={(event) =>
-            onFieldChange(supplier.id, "tipo", event.target.value)
-          }
-        />
+          onValueChange={(value) => onFieldChange(supplier.id, "tipo", value)}
+        >
+          <SelectTrigger data-testid="supplier-tipo" aria-label="Tipo de fornecedor">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            {tipoOptions.map((tipo) => (
+              <SelectItem key={tipo} value={tipo}>
+                {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </TableCell>
 
-      <TableCell className="min-w-[140px]">
-        <Input
-          data-testid="supplier-regime"
+      <TableCell className="min-w-[160px]">
+        <Select
           value={supplier.regime}
-          onChange={(event) =>
-            onFieldChange(supplier.id, "regime", event.target.value)
-          }
-        />
+          onValueChange={(value) => onFieldChange(supplier.id, "regime", value)}
+        >
+          <SelectTrigger
+            data-testid="supplier-regime"
+            aria-label="Regime tributario do fornecedor"
+          >
+            <SelectValue placeholder="Regime" />
+          </SelectTrigger>
+          <SelectContent>
+            {regimeOptions.map((regime) => (
+              <SelectItem key={regime} value={regime}>
+                {regime.charAt(0).toUpperCase() + regime.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </TableCell>
 
       <TableCell className="min-w-[140px] text-right">
@@ -177,6 +244,14 @@ const SupplierRowComponent = ({
 
       <TableCell className="w-[120px] text-center">
         <div className="flex justify-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onOpenDetails}
+            aria-label="Detalhes do fornecedor"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"

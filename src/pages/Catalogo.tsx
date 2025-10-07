@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Upload,
   Download,
@@ -21,8 +29,10 @@ import {
 } from "lucide-react";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
-import type { Produto } from "@/types/domain";
+import type { Produto, Unit } from "@/types/domain";
 import { generateId } from "@/lib/utils";
+
+const unidades: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
 
 export default function Catalogo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,11 +49,23 @@ export default function Catalogo() {
   } = useCatalogoStore();
   const setContexto = useCotacaoStore((s) => s.setContexto);
 
-  const filteredProducts = produtos.filter(
-    (product) =>
-      product.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.ncm.includes(searchTerm),
-  );
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredProducts = useMemo(() => {
+    if (normalizedSearch.length === 0) {
+      return produtos;
+    }
+    return produtos.filter((product) => {
+      const descricaoMatch = product.descricao.toLowerCase().includes(normalizedSearch);
+      const ncmMatch = product.ncm.toLowerCase().includes(normalizedSearch);
+      const codigoMatch = product.codigoInterno
+        ? product.codigoInterno.toLowerCase().includes(normalizedSearch)
+        : false;
+      const categoriaMatch = product.categoria
+        ? product.categoria.toLowerCase().includes(normalizedSearch)
+        : false;
+      return descricaoMatch || ncmMatch || codigoMatch || categoriaMatch;
+    });
+  }, [normalizedSearch, produtos]);
 
   const handleImport = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -72,6 +94,11 @@ export default function Catalogo() {
       id,
       descricao: "",
       ncm: "",
+      unidadePadrao: "un",
+      categoria: "",
+      cest: "",
+      codigoInterno: "",
+      ativo: true,
       flags: { refeicao: false, cesta: false, reducao: false, is: false },
     });
     setEditingId(id);
@@ -174,18 +201,128 @@ export default function Catalogo() {
                   />
                 </div>
               ) : (
-                <div className="flex justify-between items-start">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <CardTitle className="text-lg">
                       {product.descricao}
                     </CardTitle>
-                    <CardDescription>NCM: {product.ncm}</CardDescription>
+                    <CardDescription>
+                      NCM: {product.ncm} · Unidade: {product.unidadePadrao.toUpperCase()}
+                    </CardDescription>
+                    {product.codigoInterno ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Codigo interno: {product.codigoInterno}
+                      </p>
+                    ) : null}
+                    {product.categoria ? (
+                      <p className="text-sm text-muted-foreground">
+                        Categoria: {product.categoria}
+                      </p>
+                    ) : null}
+                    {product.cest ? (
+                      <p className="text-sm text-muted-foreground">
+                        CEST: {product.cest}
+                      </p>
+                    ) : null}
                   </div>
+                  <Badge variant={product.ativo ? "success" : "secondary"}>
+                    {product.ativo ? "Ativo" : "Inativo"}
+                  </Badge>
                 </div>
               )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                    Dados fiscais e catalogo
+                  </h4>
+                  {editingId === product.id ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label htmlFor={`categoria-${product.id}`}>Categoria</Label>
+                        <Input
+                          id={`categoria-${product.id}`}
+                          placeholder="Ex.: Alimentos, Bebidas..."
+                          value={product.categoria ?? ""}
+                          onChange={(event) =>
+                            updateProduto(product.id, { categoria: event.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`codigo-${product.id}`}>Codigo interno</Label>
+                        <Input
+                          id={`codigo-${product.id}`}
+                          placeholder="SKU ou referencia"
+                          value={product.codigoInterno ?? ""}
+                          onChange={(event) =>
+                            updateProduto(product.id, { codigoInterno: event.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`cest-${product.id}`}>CEST</Label>
+                        <Input
+                          id={`cest-${product.id}`}
+                          placeholder="0000000"
+                          value={product.cest ?? ""}
+                          onChange={(event) =>
+                            updateProduto(product.id, { cest: event.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`unidade-${product.id}`}>Unidade padrao</Label>
+                        <Select
+                          value={product.unidadePadrao}
+                          onValueChange={(value) =>
+                            updateProduto(product.id, {
+                              unidadePadrao: value as Unit,
+                            })
+                          }
+                        >
+                          <SelectTrigger id={`unidade-${product.id}`}>
+                            <SelectValue placeholder="Unidade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {unidades.map((unidade) => (
+                              <SelectItem key={`${product.id}-${unidade}`} value={unidade}>
+                                {unidade.toUpperCase()}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                        <Label htmlFor={`ativo-${product.id}`}>Status</Label>
+                        <div className="flex items-center justify-between rounded-md border border-dashed px-3 py-2">
+                          <span className="text-sm text-muted-foreground">
+                            {product.ativo ? "Produto ativo em catalogo" : "Produto desativado"}
+                          </span>
+                          <Switch
+                            id={`ativo-${product.id}`}
+                            checked={product.ativo}
+                            onCheckedChange={(checked) =>
+                              updateProduto(product.id, { ativo: Boolean(checked) })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>
+                        Categoria: {product.categoria && product.categoria.length > 0 ? product.categoria : "Nao definida"}
+                      </p>
+                      <p>Unidade padrao: {product.unidadePadrao.toUpperCase()}</p>
+                      {product.cest ? <p>CEST: {product.cest}</p> : null}
+                      {product.codigoInterno ? <p>Codigo interno: {product.codigoInterno}</p> : null}
+                      <p>Status: {product.ativo ? "Ativo" : "Inativo"}</p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Flags */}
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">

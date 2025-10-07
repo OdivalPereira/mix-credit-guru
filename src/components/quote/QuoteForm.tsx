@@ -1,7 +1,8 @@
-import { memo, useEffect } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { ChevronsUpDown, Check } from "lucide-react";
 
 import {
   Card,
@@ -10,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -26,6 +28,21 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ESTADOS, getMunicipiosByUF } from "@/data/locations";
+import { cn } from "@/lib/utils";
 import type { Contexto } from "@/store/useCotacaoStore";
 
 const quoteFormSchema = z.object({
@@ -48,6 +65,7 @@ interface QuoteFormProps {
 }
 
 const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
+  const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
   const form = useForm<QuoteFormValues>({
     mode: "onBlur",
     resolver: zodResolver(quoteFormSchema),
@@ -60,6 +78,11 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
       produto: contexto.produto || "",
     },
   });
+  const municipios = useMemo(
+    () => getMunicipiosByUF(contexto.uf?.toUpperCase() ?? ""),
+    [contexto.uf],
+  );
+  const municipioValue = form.watch("municipio");
 
   useEffect(() => {
     form.reset({
@@ -76,6 +99,10 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
     const nextValue = field === "uf" ? value.toUpperCase() : value;
     onContextoChange(field, nextValue);
   };
+  const selectedMunicipio = useMemo(
+    () => municipios.find((item) => item.codigo === municipioValue),
+    [municipios, municipioValue],
+  );
 
   return (
     <Card>
@@ -124,6 +151,8 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
                     onValueChange={(value) => {
                       field.onChange(value);
                       handleFieldChange("uf", value);
+                      form.setValue("municipio", "");
+                      handleFieldChange("municipio", "");
                     }}
                   >
                     <FormControl>
@@ -136,11 +165,11 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="SP">SP - Sao Paulo</SelectItem>
-                      <SelectItem value="RJ">RJ - Rio de Janeiro</SelectItem>
-                      <SelectItem value="MG">MG - Minas Gerais</SelectItem>
-                      <SelectItem value="PR">PR - Parana</SelectItem>
-                      <SelectItem value="RS">RS - Rio Grande do Sul</SelectItem>
+                      {ESTADOS.map((estado) => (
+                        <SelectItem key={estado.sigla} value={estado.sigla}>
+                          {estado.sigla} - {estado.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -152,63 +181,64 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               control={form.control}
               name="municipio"
               render={({ field }) => (
-                <FormItem className="sm:max-w-[260px]">
+                <FormItem className="sm:max-w-[320px]">
                   <FormLabel htmlFor="municipio">Municipio</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleFieldChange("municipio", value);
-                    }}
-                    disabled={!contexto.uf}
-                  >
-                    <FormControl>
-                      <SelectTrigger
-                        id="municipio"
-                        aria-label="Municipio"
+                  <FormControl>
+                    <Popover open={isMunicipioOpen} onOpenChange={setIsMunicipioOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          ref={field.ref}
+                          id="municipio"
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground",
+                          )}
+                          aria-expanded={isMunicipioOpen}
+                          disabled={!contexto.uf}
+                        >
+                          {selectedMunicipio ? selectedMunicipio.nome : "Selecione o municipio"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        align="start"
+                        className="w-[--radix-popover-trigger-width] p-0"
                       >
-                        <SelectValue placeholder="Selecione o municipio" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {contexto.uf === "SP" && (
-                        <>
-                          <SelectItem value="3550308">Sao Paulo</SelectItem>
-                          <SelectItem value="3509502">Campinas</SelectItem>
-                          <SelectItem value="3543402">Ribeirao Preto</SelectItem>
-                          <SelectItem value="3552205">Sorocaba</SelectItem>
-                        </>
-                      )}
-                      {contexto.uf === "RJ" && (
-                        <>
-                          <SelectItem value="3304557">Rio de Janeiro</SelectItem>
-                          <SelectItem value="3303302">Niteroi</SelectItem>
-                          <SelectItem value="3301702">Duque de Caxias</SelectItem>
-                        </>
-                      )}
-                      {contexto.uf === "MG" && (
-                        <>
-                          <SelectItem value="3106200">Belo Horizonte</SelectItem>
-                          <SelectItem value="3170206">Uberlandia</SelectItem>
-                          <SelectItem value="3118601">Contagem</SelectItem>
-                        </>
-                      )}
-                      {contexto.uf === "PR" && (
-                        <>
-                          <SelectItem value="4106902">Curitiba</SelectItem>
-                          <SelectItem value="4115200">Londrina</SelectItem>
-                          <SelectItem value="4125506">Maringa</SelectItem>
-                        </>
-                      )}
-                      {contexto.uf === "RS" && (
-                        <>
-                          <SelectItem value="4314902">Porto Alegre</SelectItem>
-                          <SelectItem value="4304606">Caxias do Sul</SelectItem>
-                          <SelectItem value="4313409">Pelotas</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
+                        <Command>
+                          <CommandInput placeholder="Pesquisar municipio..." />
+                          <CommandEmpty>Nenhum municipio encontrado.</CommandEmpty>
+                          <CommandList className="max-h-72">
+                            <CommandGroup>
+                              {municipios.map((municipio) => (
+                                <CommandItem
+                                  key={municipio.codigo}
+                                  value={`${municipio.codigo} ${municipio.nome}`}
+                                  onSelect={() => {
+                                    field.onChange(municipio.codigo);
+                                    handleFieldChange("municipio", municipio.codigo);
+                                    setIsMunicipioOpen(false);
+                                    field.onBlur();
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      municipio.codigo === field.value
+                                        ? "opacity-100"
+                                        : "opacity-0",
+                                    )}
+                                  />
+                                  {municipio.nome}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

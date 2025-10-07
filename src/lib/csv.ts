@@ -1,4 +1,4 @@
-import type { Supplier, Produto } from "@/types/domain";
+import type { Supplier, Produto, Unit, SupplierTipo, SupplierRegime } from "@/types/domain";
 import { generateId } from "@/lib/utils";
 
 export const fornecedorCsvHeaders = [
@@ -10,11 +10,26 @@ export const fornecedorCsvHeaders = [
   "cbs",
   "is",
   "frete",
+  "cnpj",
+  "uf",
+  "municipio",
+  "produto_id",
+  "produto_descricao",
+  "unidade",
+  "pedido_minimo",
+  "prazo_entrega",
+  "prazo_pagamento",
+  "ativo",
 ] as const;
 
 export const produtoCsvHeaders = [
   "descricao",
   "ncm",
+  "unidade",
+  "categoria",
+  "cest",
+  "codigo_interno",
+  "ativo",
   "refeicao",
   "cesta",
   "reducao",
@@ -89,6 +104,80 @@ function parseNumber(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function parseBoolean(value: string | undefined, fallback = false): boolean {
+  if (typeof value !== "string" || value.trim() === "") {
+    return fallback;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "sim", "ativo", "yes"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "nao", "inativo", "no"].includes(normalized)) {
+    return false;
+  }
+  return fallback;
+}
+
+function formatCsvValue(value: string | number | undefined | null): string {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  const str = typeof value === "number" ? String(value) : value;
+  if (str === "") {
+    return "";
+  }
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+const unidadesValidas: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
+
+function normalizeUnit(value: string | undefined): Unit | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  return unidadesValidas.includes(normalized as Unit)
+    ? (normalized as Unit)
+    : undefined;
+}
+
+function normalizeSupplierTipo(value: string | undefined): SupplierTipo {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (["industria", "distribuidor", "produtor", "atacado", "varejo"].includes(normalized)) {
+    return normalized as SupplierTipo;
+  }
+  switch (normalized) {
+    case "industrial":
+    case "fabricante":
+    case "importador":
+      return "industria";
+    case "atacadista":
+      return "atacado";
+    default:
+      return "distribuidor";
+  }
+}
+
+function normalizeSupplierRegime(value: string | undefined): SupplierRegime {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (["normal", "simples", "presumido"].includes(normalized)) {
+    return normalized as SupplierRegime;
+  }
+  switch (normalized) {
+    case "lucro-real":
+    case "real":
+      return "normal";
+    case "lucro-presumido":
+    case "presumido":
+      return "presumido";
+    default:
+      return "simples";
+  }
+}
+
 export function readFornecedoresCSV(csv: string): Supplier[] {
   const rows = parseCsvRows(csv);
   if (rows.length === 0) {
@@ -111,6 +200,16 @@ export function readFornecedoresCSV(csv: string): Supplier[] {
   const idxCbs = indexFor("cbs", 5);
   const idxIs = indexFor("is", 6);
   const idxFrete = indexFor("frete", 7);
+  const idxCnpj = indexFor("cnpj", -1);
+  const idxUf = indexFor("uf", -1);
+  const idxMunicipio = indexFor("municipio", -1);
+  const idxProdutoId = indexFor("produto_id", -1);
+  const idxProdutoDescricao = indexFor("produto_descricao", -1);
+  const idxUnidade = indexFor("unidade", -1);
+  const idxPedidoMinimo = indexFor("pedido_minimo", -1);
+  const idxPrazoEntrega = indexFor("prazo_entrega", -1);
+  const idxPrazoPagamento = indexFor("prazo_pagamento", -1);
+  const idxAtivo = indexFor("ativo", -1);
 
   const fornecedores: Supplier[] = [];
 
@@ -120,16 +219,39 @@ export function readFornecedoresCSV(csv: string): Supplier[] {
       continue;
     }
 
+    const tipo = normalizeSupplierTipo(cols[idxTipo]);
+    const regime = normalizeSupplierRegime(cols[idxRegime]);
+    const uf = idxUf >= 0 ? cols[idxUf]?.trim().toUpperCase() ?? "" : "";
+    const municipio = idxMunicipio >= 0 ? cols[idxMunicipio]?.trim() ?? "" : undefined;
+    const unidade = normalizeUnit(idxUnidade >= 0 ? cols[idxUnidade]?.trim() : undefined);
+    const pedidoMinimo = idxPedidoMinimo >= 0 ? parseNumber(cols[idxPedidoMinimo]) : 0;
+    const prazoEntregaDias =
+      idxPrazoEntrega >= 0 ? Math.max(0, Math.trunc(parseNumber(cols[idxPrazoEntrega]))) : 0;
+    const prazoPagamentoDias =
+      idxPrazoPagamento >= 0 ? Math.max(0, Math.trunc(parseNumber(cols[idxPrazoPagamento]))) : 0;
+    const ativo = idxAtivo >= 0 ? parseBoolean(cols[idxAtivo], true) : true;
+
     fornecedores.push({
       id: generateId("fornecedor"),
       nome,
-      tipo: cols[idxTipo]?.trim() ?? "",
-      regime: cols[idxRegime]?.trim() ?? "",
+      cnpj: idxCnpj >= 0 ? cols[idxCnpj]?.trim() ?? "" : undefined,
+      tipo,
+      regime,
+      uf,
+      municipio,
+      ativo,
+      produtoId: idxProdutoId >= 0 ? cols[idxProdutoId]?.trim() ?? "" : undefined,
+      produtoDescricao: idxProdutoDescricao >= 0 ? cols[idxProdutoDescricao]?.trim() ?? "" : undefined,
+      unidadeNegociada: unidade,
+      pedidoMinimo,
+      prazoEntregaDias,
+      prazoPagamentoDias,
       preco: parseNumber(cols[idxPreco]),
       ibs: parseNumber(cols[idxIbs]),
       cbs: parseNumber(cols[idxCbs]),
       is: parseNumber(cols[idxIs]),
       frete: parseNumber(cols[idxFrete]),
+      isRefeicaoPronta: false,
     });
   }
 
@@ -152,10 +274,15 @@ export function readProdutosCSV(csv: string): Produto[] {
 
   const idxDescricao = indexFor("descricao", 0);
   const idxNcm = indexFor("ncm", 1);
-  const idxRefeicao = indexFor("refeicao", 2);
-  const idxCesta = indexFor("cesta", 3);
-  const idxReducao = indexFor("reducao", 4);
-  const idxIs = indexFor("is", 5);
+  const idxUnidade = indexFor("unidade", 2);
+  const idxCategoria = indexFor("categoria", 3);
+  const idxCest = indexFor("cest", 4);
+  const idxCodigoInterno = indexFor("codigo_interno", 5);
+  const idxAtivo = indexFor("ativo", 6);
+  const idxRefeicao = indexFor("refeicao", 7);
+  const idxCesta = indexFor("cesta", 8);
+  const idxReducao = indexFor("reducao", 9);
+  const idxIs = indexFor("is", 10);
 
   const produtos: Produto[] = [];
 
@@ -166,10 +293,18 @@ export function readProdutosCSV(csv: string): Produto[] {
       continue;
     }
 
+    const unidade = normalizeUnit(idxUnidade >= 0 ? cols[idxUnidade]?.trim() : undefined) ?? "un";
+
     produtos.push({
       id: generateId("prod"),
       descricao,
       ncm,
+      unidadePadrao: unidade,
+      categoria: idxCategoria >= 0 ? cols[idxCategoria]?.trim() ?? "" : undefined,
+      cest: idxCest >= 0 ? cols[idxCest]?.trim() ?? "" : undefined,
+      codigoInterno:
+        idxCodigoInterno >= 0 ? cols[idxCodigoInterno]?.trim() ?? "" : undefined,
+      ativo: idxAtivo >= 0 ? parseBoolean(cols[idxAtivo], true) : true,
       flags: {
         refeicao: cols[idxRefeicao]?.trim() === "1",
         cesta: cols[idxCesta]?.trim() === "1",
@@ -186,14 +321,44 @@ export function writeFornecedoresCSV(fornecedores: Supplier[]): string {
   const header = fornecedorCsvHeaders.join(",");
   const rows = fornecedores.map((f) =>
     [
-      f.nome,
-      f.tipo,
-      f.regime,
-      f.preco,
-      f.ibs,
-      f.cbs,
-      f.is,
-      f.frete,
+      formatCsvValue(f.nome),
+      formatCsvValue(f.tipo),
+      formatCsvValue(f.regime),
+      formatCsvValue(f.preco),
+      formatCsvValue(f.ibs),
+      formatCsvValue(f.cbs),
+      formatCsvValue(f.is),
+      formatCsvValue(f.frete),
+      formatCsvValue(f.cnpj),
+      formatCsvValue(f.uf),
+      formatCsvValue(f.municipio),
+      formatCsvValue(f.produtoId),
+      formatCsvValue(f.produtoDescricao),
+      formatCsvValue(f.unidadeNegociada),
+      formatCsvValue(f.pedidoMinimo ?? 0),
+      formatCsvValue(f.prazoEntregaDias ?? 0),
+      formatCsvValue(f.prazoPagamentoDias ?? 0),
+      formatCsvValue(f.ativo ? "1" : "0"),
+    ].join(","),
+  );
+  return [header, ...rows].join("\n");
+}
+
+export function writeProdutosCSV(produtos: Produto[]): string {
+  const header = produtoCsvHeaders.join(",");
+  const rows = produtos.map((p) =>
+    [
+      formatCsvValue(p.descricao),
+      formatCsvValue(p.ncm),
+      formatCsvValue(p.unidadePadrao),
+      formatCsvValue(p.categoria),
+      formatCsvValue(p.cest),
+      formatCsvValue(p.codigoInterno),
+      formatCsvValue(p.ativo ? "1" : "0"),
+      formatCsvValue(p.flags.refeicao ? "1" : "0"),
+      formatCsvValue(p.flags.cesta ? "1" : "0"),
+      formatCsvValue(p.flags.reducao ? "1" : "0"),
+      formatCsvValue(p.flags.is ? "1" : "0"),
     ].join(","),
   );
   return [header, ...rows].join("\n");

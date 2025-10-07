@@ -12,10 +12,25 @@ export interface FlagsItem {
   cesta?: boolean;
 }
 
+export type SupplierTipo = "industria" | "distribuidor" | "produtor" | "atacado" | "varejo";
+
+export type SupplierRegime = "normal" | "simples" | "presumido";
+
+export interface SupplierContato {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+}
+
 export interface Produto {
   id: string;
   descricao: string;
   ncm: string;
+  unidadePadrao: Unit;
+  categoria?: string;
+  cest?: string;
+  codigoInterno?: string;
+  ativo: boolean;
   flags: {
     refeicao: boolean;
     cesta: boolean;
@@ -27,8 +42,19 @@ export interface Produto {
 export interface Supplier {
   id: string;
   nome: string;
-  tipo: string;
-  regime: string;
+  cnpj?: string;
+  tipo: SupplierTipo;
+  regime: SupplierRegime;
+  uf: string;
+  municipio?: string;
+  contato?: SupplierContato;
+  ativo: boolean;
+  produtoId?: string;
+  produtoDescricao?: string;
+  unidadeNegociada?: Unit;
+  pedidoMinimo?: number;
+  prazoEntregaDias?: number;
+  prazoPagamentoDias?: number;
   preco: number;
   ibs: number;
   cbs: number;

@@ -58,6 +58,11 @@ CREATE TABLE public.produtos (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   descricao TEXT NOT NULL,
   ncm TEXT NOT NULL,
+  unidade_padrao unit_type NOT NULL DEFAULT 'un',
+  categoria TEXT,
+  cest TEXT,
+  codigo_interno TEXT,
+  ativo BOOLEAN NOT NULL DEFAULT true,
   flag_refeicao BOOLEAN NOT NULL DEFAULT false,
   flag_cesta BOOLEAN NOT NULL DEFAULT false,
   flag_reducao BOOLEAN NOT NULL DEFAULT false,
@@ -70,6 +75,7 @@ ALTER TABLE public.produtos ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX idx_produtos_user_id ON public.produtos(user_id);
 CREATE INDEX idx_produtos_ncm ON public.produtos(ncm);
+CREATE INDEX idx_produtos_codigo_interno ON public.produtos(codigo_interno);
 
 CREATE POLICY "Users can view their own produtos"
   ON public.produtos FOR SELECT
@@ -208,12 +214,66 @@ CREATE POLICY "Users can delete their own cotacoes"
 -- TABELA DE FORNECEDORES DE COTAÇÃO
 -- ============================================
 
+-- ============================================
+-- TABELA DE FORNECEDORES
+-- ============================================
+
+CREATE TABLE public.fornecedores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  nome TEXT NOT NULL,
+  cnpj TEXT,
+  tipo public.supplier_tipo NOT NULL DEFAULT 'distribuidor',
+  regime public.supplier_regime NOT NULL DEFAULT 'normal',
+  uf CHAR(2) NOT NULL DEFAULT '',
+  municipio TEXT,
+  ativo BOOLEAN NOT NULL DEFAULT true,
+  contato_nome TEXT,
+  contato_email TEXT,
+  contato_telefone TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, cnpj)
+);
+
+ALTER TABLE public.fornecedores ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX idx_fornecedores_user_id ON public.fornecedores(user_id);
+CREATE INDEX idx_fornecedores_cnpj ON public.fornecedores(cnpj);
+
+CREATE POLICY "Users can view their own fornecedores"
+  ON public.fornecedores FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own fornecedores"
+  ON public.fornecedores FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own fornecedores"
+  ON public.fornecedores FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own fornecedores"
+  ON public.fornecedores FOR DELETE
+  USING (auth.uid() = user_id);
+
+
 CREATE TABLE public.cotacao_fornecedores (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cotacao_id UUID NOT NULL REFERENCES public.cotacoes(id) ON DELETE CASCADE,
+  fornecedor_id UUID REFERENCES public.fornecedores(id) ON DELETE SET NULL,
   nome TEXT NOT NULL,
+  cnpj TEXT,
   tipo supplier_tipo NOT NULL,
   regime supplier_regime NOT NULL,
+  uf CHAR(2),
+  municipio TEXT,
+  produto_id UUID REFERENCES public.produtos(id) ON DELETE SET NULL,
+  produto_descricao TEXT,
+  unidade_negociada unit_type,
+  pedido_minimo NUMERIC(12,2),
+  prazo_entrega_dias INTEGER,
+  prazo_pagamento_dias INTEGER,
   preco NUMERIC(12,2) NOT NULL,
   ibs NUMERIC(5,2) NOT NULL DEFAULT 0,
   cbs NUMERIC(5,2) NOT NULL DEFAULT 0,
@@ -222,12 +282,18 @@ CREATE TABLE public.cotacao_fornecedores (
   cadeia JSONB,
   flags_item JSONB,
   is_refeicao_pronta BOOLEAN DEFAULT false,
+  ativo BOOLEAN NOT NULL DEFAULT true,
+  contato_nome TEXT,
+  contato_email TEXT,
+  contato_telefone TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.cotacao_fornecedores ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX idx_cotacao_fornecedores_cotacao_id ON public.cotacao_fornecedores(cotacao_id);
+CREATE INDEX idx_cotacao_fornecedores_fornecedor_id ON public.cotacao_fornecedores(fornecedor_id);
+CREATE INDEX idx_cotacao_fornecedores_produto_id ON public.cotacao_fornecedores(produto_id);
 
 CREATE POLICY "Users can view fornecedores of their cotacoes"
   ON public.cotacao_fornecedores FOR SELECT
@@ -276,8 +342,8 @@ CREATE POLICY "Users can delete fornecedores of their cotacoes"
 CREATE TABLE public.contratos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  fornecedor_id TEXT NOT NULL,
-  produto_id TEXT NOT NULL,
+  fornecedor_id UUID NOT NULL REFERENCES public.fornecedores(id) ON DELETE CASCADE,
+  produto_id UUID NOT NULL REFERENCES public.produtos(id) ON DELETE CASCADE,
   unidade unit_type NOT NULL,
   preco_base NUMERIC(12,2) NOT NULL,
   price_breaks JSONB,

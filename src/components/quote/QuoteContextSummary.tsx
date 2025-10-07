@@ -3,6 +3,7 @@ import { CalendarDays, Globe2, MapPin, PackageSearch, ShieldCheck } from "lucide
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getMunicipiosByUF } from "@/data/locations";
 import type { Contexto } from "@/store/useCotacaoStore";
 
 interface QuoteContextSummaryProps {
@@ -63,10 +64,25 @@ const opportunities = [
 ];
 
 const QuoteContextSummaryComponent = ({ contexto }: QuoteContextSummaryProps) => {
-  const items = useMemo(() => opportunities.map((item) => ({
-    ...item,
-    value: item.getValue(contexto),
-  })), [contexto]);
+  const municipioNome = useMemo(() => {
+    if (!contexto.uf || !contexto.municipio) {
+      return undefined;
+    }
+    const lista = getMunicipiosByUF(contexto.uf.toUpperCase());
+    return lista.find((item) => item.codigo === contexto.municipio)?.nome;
+  }, [contexto.uf, contexto.municipio]);
+  const items = useMemo(() => opportunities.map((item) => {
+    if (item.key === "municipio") {
+      return {
+        ...item,
+        value: municipioNome ?? "Nao informado",
+      };
+    }
+    return {
+      ...item,
+      value: item.getValue(contexto),
+    };
+  }), [contexto, municipioNome]);
 
   return (
     <Card className="border-dashed bg-muted/30">
@@ -88,6 +104,7 @@ const QuoteContextSummaryComponent = ({ contexto }: QuoteContextSummaryProps) =>
         <Badge variant="secondary">{contexto.uf?.toUpperCase() || "UF"}</Badge>
         <Badge variant="outline">{getLabel(contexto.destino, destinoLabels) ?? "Destino"}</Badge>
         <Badge variant="outline">{getLabel(contexto.regime, regimeLabels) ?? "Regime"}</Badge>
+        {municipioNome ? <Badge variant="outline">{municipioNome}</Badge> : null}
       </div>
     </Card>
   );

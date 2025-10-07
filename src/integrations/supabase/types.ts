@@ -57,56 +57,113 @@ export type Database = {
           user_id?: string
           yield_config?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contratos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cotacao_fornecedores: {
         Row: {
+          ativo: boolean
           cadeia: Json | null
           cbs: number
+          cnpj: string | null
           cotacao_id: string
           created_at: string
+          fornecedor_id: string | null
           flags_item: Json | null
           frete: number
           ibs: number
           id: string
           is_aliquota: number
           is_refeicao_pronta: boolean | null
+          municipio: string | null
           nome: string
+          pedido_minimo: number | null
+          prazo_entrega_dias: number | null
+          prazo_pagamento_dias: number | null
           preco: number
+          produto_descricao: string | null
+          produto_id: string | null
           regime: Database["public"]["Enums"]["supplier_regime"]
           tipo: Database["public"]["Enums"]["supplier_tipo"]
+          uf: string | null
+          unidade_negociada: Database["public"]["Enums"]["unit_type"] | null
+          contato_nome: string | null
+          contato_email: string | null
+          contato_telefone: string | null
         }
         Insert: {
+          ativo?: boolean
           cadeia?: Json | null
           cbs?: number
+          cnpj?: string | null
           cotacao_id: string
           created_at?: string
+          fornecedor_id?: string | null
           flags_item?: Json | null
           frete?: number
           ibs?: number
           id?: string
           is_aliquota?: number
           is_refeicao_pronta?: boolean | null
+          municipio?: string | null
           nome: string
+          pedido_minimo?: number | null
+          prazo_entrega_dias?: number | null
+          prazo_pagamento_dias?: number | null
           preco: number
+          produto_descricao?: string | null
+          produto_id?: string | null
           regime: Database["public"]["Enums"]["supplier_regime"]
           tipo: Database["public"]["Enums"]["supplier_tipo"]
+          uf?: string | null
+          unidade_negociada?: Database["public"]["Enums"]["unit_type"] | null
+          contato_nome?: string | null
+          contato_email?: string | null
+          contato_telefone?: string | null
         }
         Update: {
+          ativo?: boolean
           cadeia?: Json | null
           cbs?: number
+          cnpj?: string | null
           cotacao_id?: string
           created_at?: string
+          fornecedor_id?: string | null
           flags_item?: Json | null
           frete?: number
           ibs?: number
           id?: string
           is_aliquota?: number
           is_refeicao_pronta?: boolean | null
+          municipio?: string | null
           nome?: string
+          pedido_minimo?: number | null
+          prazo_entrega_dias?: number | null
+          prazo_pagamento_dias?: number | null
           preco?: number
+          produto_descricao?: string | null
+          produto_id?: string | null
           regime?: Database["public"]["Enums"]["supplier_regime"]
           tipo?: Database["public"]["Enums"]["supplier_tipo"]
+          uf?: string | null
+          unidade_negociada?: Database["public"]["Enums"]["unit_type"] | null
+          contato_nome?: string | null
+          contato_email?: string | null
+          contato_telefone?: string | null
         }
         Relationships: [
           {
@@ -114,6 +171,20 @@ export type Database = {
             columns: ["cotacao_id"]
             isOneToOne: false
             referencedRelation: "cotacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacao_fornecedores_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacao_fornecedores_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
         ]
@@ -163,8 +234,62 @@ export type Database = {
         }
         Relationships: []
       }
+      fornecedores: {
+        Row: {
+          ativo: boolean
+          cnpj: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          created_at: string
+          id: string
+          municipio: string | null
+          nome: string
+          regime: Database["public"]["Enums"]["supplier_regime"]
+          tipo: Database["public"]["Enums"]["supplier_tipo"]
+          uf: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          cnpj?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          id?: string
+          municipio?: string | null
+          nome: string
+          regime?: Database["public"]["Enums"]["supplier_regime"]
+          tipo?: Database["public"]["Enums"]["supplier_tipo"]
+          uf?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          cnpj?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          id?: string
+          municipio?: string | null
+          nome?: string
+          regime?: Database["public"]["Enums"]["supplier_regime"]
+          tipo?: Database["public"]["Enums"]["supplier_tipo"]
+          uf?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       produtos: {
         Row: {
+          ativo: boolean
+          categoria: string | null
+          cest: string | null
           created_at: string
           descricao: string
           flag_cesta: boolean
@@ -173,10 +298,15 @@ export type Database = {
           flag_refeicao: boolean
           id: string
           ncm: string
+          codigo_interno: string | null
+          unidade_padrao: Database["public"]["Enums"]["unit_type"]
           updated_at: string
           user_id: string
         }
         Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          cest?: string | null
           created_at?: string
           descricao: string
           flag_cesta?: boolean
@@ -185,10 +315,15 @@ export type Database = {
           flag_refeicao?: boolean
           id?: string
           ncm: string
+          codigo_interno?: string | null
+          unidade_padrao?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
           user_id: string
         }
         Update: {
+          ativo?: boolean
+          categoria?: string | null
+          cest?: string | null
           created_at?: string
           descricao?: string
           flag_cesta?: boolean
@@ -197,6 +332,8 @@ export type Database = {
           flag_refeicao?: boolean
           id?: string
           ncm?: string
+          codigo_interno?: string | null
+          unidade_padrao?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
           user_id?: string
         }

@@ -32,6 +32,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy } from "lucide-react";
 
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
@@ -69,6 +70,7 @@ export default function Cotacao() {
   const contratos = useContractsStore((state) => state.contratos);
   const conversoesGlobais = useUnidadesStore((state) => state.conversoes);
   const yieldGlobais = useUnidadesStore((state) => state.yields);
+  const produtosCatalogo = useCatalogoStore((state) => state.produtos);
 
   const resultados = useMemo(() => resultado.itens, [resultado.itens]);
 
@@ -92,7 +94,7 @@ export default function Cotacao() {
   );
 
   const numericFields = useMemo<Array<keyof Supplier>>(
-    () => ["preco", "frete"],
+    () => ["preco", "frete", "pedidoMinimo", "prazoEntregaDias", "prazoPagamentoDias"],
     [],
   );
 
@@ -142,11 +144,35 @@ export default function Cotacao() {
     [upsertFornecedor],
   );
 
+  const handlePatchFornecedor = useCallback(
+    (id: string, patch: Partial<Supplier>) => {
+      const current = fornecedores.find((item) => item.id === id);
+      if (!current) return;
+      upsertFornecedor({
+        id,
+        ...current,
+        ...patch,
+      });
+    },
+    [fornecedores, upsertFornecedor],
+  );
+
   const handleAddSupplier = useCallback(() => {
     upsertFornecedor({
       nome: "",
-      tipo: "",
+      cnpj: "",
+      tipo: "distribuidor",
       regime: "normal",
+      uf: contexto.uf ?? "",
+      municipio: contexto.municipio ?? "",
+      contato: undefined,
+      ativo: true,
+      produtoId: undefined,
+      produtoDescricao: contexto.produto || "",
+      unidadeNegociada: undefined,
+      pedidoMinimo: 0,
+      prazoEntregaDias: 0,
+      prazoPagamentoDias: 0,
       preco: 0,
       frete: 0,
       ibs: 0,
@@ -155,7 +181,7 @@ export default function Cotacao() {
       flagsItem: { cesta: false, reducao: false },
       isRefeicaoPronta: false,
     });
-  }, [upsertFornecedor]);
+  }, [contexto.municipio, contexto.produto, contexto.uf, upsertFornecedor]);
 
   const handleImportCSV = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -474,6 +500,8 @@ export default function Cotacao() {
 
       <SupplierTable
         resultados={resultados}
+        fornecedoresOriginais={fornecedores}
+        produtos={produtosCatalogo}
         formatCurrency={formatCurrency}
         onAddSupplier={handleAddSupplier}
         onFieldChange={handleFornecedorChange}
@@ -488,6 +516,7 @@ export default function Cotacao() {
         onToggleChart={() => setShowChart((previous) => !previous)}
         onOptimize={handleOptimize}
         getCreditBadge={getCreditBadge}
+        onPatchSupplier={handlePatchFornecedor}
         showChart={showChart}
         optimizing={optimizing}
         optProgress={optProgress}

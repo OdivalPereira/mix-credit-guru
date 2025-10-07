@@ -9,8 +9,18 @@ import type { MixResultadoItem } from "@/types/domain";
 const mockSupplier: MixResultadoItem = {
   id: "forn-1",
   nome: "Fornecedor Teste",
-  tipo: "estadual",
+  cnpj: "12.345.678/0001-99",
+  tipo: "distribuidor",
   regime: "normal",
+  uf: "SP",
+  municipio: "3550308",
+  ativo: true,
+  produtoId: "prod-1",
+  produtoDescricao: "Produto Exemplo",
+  unidadeNegociada: "un",
+  pedidoMinimo: 10,
+  prazoEntregaDias: 5,
+  prazoPagamentoDias: 30,
   preco: 100,
   frete: 10,
   ibs: 10,
@@ -20,6 +30,8 @@ const mockSupplier: MixResultadoItem = {
   credito: 15,
   custoEfetivo: 101,
   ranking: 1,
+  flagsItem: { cesta: false, reducao: false },
+  isRefeicaoPronta: false,
 };
 
 describe("SupplierRow", () => {
@@ -37,6 +49,7 @@ describe("SupplierRow", () => {
             onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
+            onOpenDetails={vi.fn()}
           />
         </tbody>
       </table>,
@@ -45,6 +58,11 @@ describe("SupplierRow", () => {
     expect(screen.getByDisplayValue("Fornecedor Teste")).toBeInTheDocument();
     expect(screen.getByDisplayValue("100")).toBeInTheDocument();
     expect(screen.getByDisplayValue("10")).toBeInTheDocument();
+    expect(
+      screen.getByText(/CNPJ: 12\.345\.678\/0001-99/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Produto: Produto Exemplo/i)).toBeInTheDocument();
+    expect(screen.getByText(/SP.*S.o Paulo/i)).toBeInTheDocument();
   });
 
   it("apresenta ranking corretamente", () => {
@@ -59,6 +77,7 @@ describe("SupplierRow", () => {
             onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
+            onOpenDetails={vi.fn()}
           />
         </tbody>
       </table>,
@@ -82,6 +101,7 @@ describe("SupplierRow", () => {
             onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
+            onOpenDetails={vi.fn()}
           />
         </tbody>
       </table>,
@@ -109,6 +129,7 @@ describe("SupplierRow", () => {
             onFlagChange={vi.fn()}
             onDuplicate={onDuplicate}
             onRemove={vi.fn()}
+            onOpenDetails={vi.fn()}
           />
         </tbody>
       </table>,
@@ -120,6 +141,35 @@ describe("SupplierRow", () => {
     await user.click(duplicateButton);
 
     expect(onDuplicate).toHaveBeenCalledWith(mockSupplier);
+  });
+
+  it("aciona onOpenDetails ao clicar no botao de detalhes", async () => {
+    const user = userEvent.setup();
+    const onOpenDetails = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <SupplierRow
+            supplier={mockSupplier}
+            formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
+            getCreditBadge={() => <Badge>Sim</Badge>}
+            onFieldChange={vi.fn()}
+            onFlagChange={vi.fn()}
+            onDuplicate={vi.fn()}
+            onRemove={vi.fn()}
+            onOpenDetails={onOpenDetails}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const detailsButton = screen.getByRole("button", {
+      name: /detalhes do fornecedor/i,
+    });
+    await user.click(detailsButton);
+
+    expect(onOpenDetails).toHaveBeenCalled();
   });
 
   it("aciona onRemove ao clicar em remover", async () => {
@@ -137,6 +187,7 @@ describe("SupplierRow", () => {
             onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={onRemove}
+            onOpenDetails={vi.fn()}
           />
         </tbody>
       </table>,
@@ -162,6 +213,7 @@ describe("SupplierRow", () => {
             onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
+            onOpenDetails={vi.fn()}
           />
         </tbody>
       </table>,

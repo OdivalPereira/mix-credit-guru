@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Produto } from "@/types/domain";
-import { readProdutosCSV, produtoCsvHeaders } from "@/lib/csv";
+import { readProdutosCSV, writeProdutosCSV } from "@/lib/csv";
 import { generateId } from "@/lib/utils";
 
 interface CatalogoStore {
@@ -58,20 +58,7 @@ export const useCatalogoStore = create<CatalogoStore>()(
           return { produtos: Array.from(byNcm.values()) };
         });
       },
-      exportarCSV: () => {
-        const header = produtoCsvHeaders.join(",");
-        const rows = get().produtos.map((p) =>
-          [
-            p.descricao,
-            p.ncm,
-            p.flags.refeicao ? "1" : "0",
-            p.flags.cesta ? "1" : "0",
-            p.flags.reducao ? "1" : "0",
-            p.flags.is ? "1" : "0",
-          ].join(","),
-        );
-        return [header, ...rows].join("\n");
-      },
+      exportarCSV: () => writeProdutosCSV(get().produtos),
     }),
     {
       name: "cmx_v03_catalogo",
