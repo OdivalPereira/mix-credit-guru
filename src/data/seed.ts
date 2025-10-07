@@ -1,6 +1,6 @@
-import { Produto, useCatalogoStore } from "@/store/useCatalogoStore";
+import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
-import type { Supplier } from "@/types/domain";
+import type { Supplier, Produto } from "@/types/domain";
 
 export const seedProdutos: Produto[] = [
   {

@@ -19,11 +19,9 @@ import {
   ShoppingCart,
   Package,
 } from "lucide-react";
-import {
-  useCatalogoStore,
-  Produto,
-} from "@/store/useCatalogoStore";
+import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import type { Produto } from "@/types/domain";
 import { generateId } from "@/lib/utils";
 
 export default function Catalogo() {

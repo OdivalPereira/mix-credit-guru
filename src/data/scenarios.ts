@@ -8,8 +8,8 @@ export interface ScenarioOption {
 
 export const scenarioTimeline: ScenarioOption[] = [
   {
-    year: "2025",
-    scenarioKey: "default",
+    year: "2026",
+    scenarioKey: "transicao",
     data: {
       title: "Reforma tributaria - fase 1",
       changes: "Introducao de IBS e CBS mantendo ICMS e IPI em transicao",
@@ -17,7 +17,7 @@ export const scenarioTimeline: ScenarioOption[] = [
     },
   },
   {
-    year: "2026",
+    year: "2027",
     scenarioKey: "cesta",
     data: {
       title: "Periodo de transicao",
@@ -26,8 +26,8 @@ export const scenarioTimeline: ScenarioOption[] = [
     },
   },
   {
-    year: "2027",
-    scenarioKey: "positive",
+    year: "2029",
+    scenarioKey: "implementacao",
     data: {
       title: "Implementacao completa",
       changes: "IBS e CBS substituem totalmente ICMS, ISS, PIS e COFINS",
@@ -35,8 +35,8 @@ export const scenarioTimeline: ScenarioOption[] = [
     },
   },
   {
-    year: "2029",
-    scenarioKey: "positive",
+    year: "2032",
+    scenarioKey: "maturidade",
     data: {
       title: "Regime de maturidade",
       changes: "Aliquotas estabilizadas e ajustes finos de creditos",
@@ -45,7 +45,7 @@ export const scenarioTimeline: ScenarioOption[] = [
   },
   {
     year: "2033",
-    scenarioKey: "default",
+    scenarioKey: "longo-prazo",
     data: {
       title: "Cenario de longo prazo",
       changes: "Monitoramento e calibragem pontual do sistema",

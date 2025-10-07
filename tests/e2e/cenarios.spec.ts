@@ -20,15 +20,15 @@ test.describe("Comparação de cenários", () => {
     });
   });
 
-  test("alternar entre 2025 e 2033 atualiza o resumo", async ({ page }) => {
+  test("alternar entre 2026 e 2033 atualiza o resumo", async ({ page }) => {
     await page.goto("/cenarios");
     await dismissDonationModal(page);
 
     await expect(page.getByRole("heading", { name: "Reforma Tributária - Fase 1" })).toBeVisible();
-    await expect(page.getByText("Ano: 2025")).toBeVisible();
+    await expect(page.getByText("Ano: 2026")).toBeVisible();
 
     await page.getByTestId("scenario-select").click();
-    await page.getByRole("option", { name: /2033 - Longo Prazo/ }).click();
+    await page.getByRole("option", { name: /2033/ }).click();
 
     await expect(page.getByRole("heading", { name: "Cenário de Longo Prazo" })).toBeVisible();
     await expect(page.getByText("Ano: 2033")).toBeVisible();

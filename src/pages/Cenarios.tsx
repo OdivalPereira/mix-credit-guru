@@ -107,7 +107,7 @@ export default function Cenarios() {
             <p className="text-muted-foreground">{selectedOption.data.changes}</p>
           </div>
 
-          {selectedOption.year === "2025" && (
+          {selectedOption.year === "2026" && (
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardContent className="pt-6">

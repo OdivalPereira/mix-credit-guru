@@ -20,7 +20,7 @@ interface AppStore {
 export const useAppStore = create<AppStore>()(
   persist(
     (set) => ({
-      scenario: "default",
+      scenario: "transicao",
       regras: [],
       receitas: [],
       setScenario: (scenario) => set({ scenario }),
