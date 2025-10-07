@@ -180,259 +180,264 @@ export default function Catalogo() {
 
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              {editingId === product.id ? (
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Descricao"
-                    value={product.descricao}
-                    onChange={(e) =>
-                      updateProduto(product.id, { descricao: e.target.value })
-                    }
-                  />
-                  <Input
-                    placeholder="NCM"
-                    value={product.ncm}
-                    onChange={(e) =>
-                      updateProduto(product.id, { ncm: e.target.value })
-                    }
-                  />
-                </div>
-              ) : (
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">
-                      {product.descricao}
-                    </CardTitle>
-                    <CardDescription>
-                      NCM: {product.ncm} · Unidade: {product.unidadePadrao.toUpperCase()}
-                    </CardDescription>
-                    {product.codigoInterno ? (
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Codigo interno: {product.codigoInterno}
-                      </p>
-                    ) : null}
-                    {product.categoria ? (
-                      <p className="text-sm text-muted-foreground">
-                        Categoria: {product.categoria}
-                      </p>
-                    ) : null}
-                    {product.cest ? (
-                      <p className="text-sm text-muted-foreground">
-                        CEST: {product.cest}
-                      </p>
-                    ) : null}
+        {filteredProducts.map((product) => {
+          const unidadeLabel = (product.unidadePadrao ?? "un").toUpperCase();
+          const isActive = product.ativo !== false;
+
+          return (
+            <Card key={product.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                {editingId === product.id ? (
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Descricao"
+                      value={product.descricao}
+                      onChange={(e) =>
+                        updateProduto(product.id, { descricao: e.target.value })
+                      }
+                    />
+                    <Input
+                      placeholder="NCM"
+                      value={product.ncm}
+                      onChange={(e) =>
+                        updateProduto(product.id, { ncm: e.target.value })
+                      }
+                    />
                   </div>
-                  <Badge variant={product.ativo ? "success" : "secondary"}>
-                    {product.ativo ? "Ativo" : "Inativo"}
-                  </Badge>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                    Dados fiscais e catalogo
-                  </h4>
-                  {editingId === product.id ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1">
-                        <Label htmlFor={`categoria-${product.id}`}>Categoria</Label>
-                        <Input
-                          id={`categoria-${product.id}`}
-                          placeholder="Ex.: Alimentos, Bebidas..."
-                          value={product.categoria ?? ""}
-                          onChange={(event) =>
-                            updateProduto(product.id, { categoria: event.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`codigo-${product.id}`}>Codigo interno</Label>
-                        <Input
-                          id={`codigo-${product.id}`}
-                          placeholder="SKU ou referencia"
-                          value={product.codigoInterno ?? ""}
-                          onChange={(event) =>
-                            updateProduto(product.id, { codigoInterno: event.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`cest-${product.id}`}>CEST</Label>
-                        <Input
-                          id={`cest-${product.id}`}
-                          placeholder="0000000"
-                          value={product.cest ?? ""}
-                          onChange={(event) =>
-                            updateProduto(product.id, { cest: event.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`unidade-${product.id}`}>Unidade padrao</Label>
-                        <Select
-                          value={product.unidadePadrao}
-                          onValueChange={(value) =>
-                            updateProduto(product.id, {
-                              unidadePadrao: value as Unit,
-                            })
-                          }
-                        >
-                          <SelectTrigger id={`unidade-${product.id}`}>
-                            <SelectValue placeholder="Unidade" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {unidades.map((unidade) => (
-                              <SelectItem key={`${product.id}-${unidade}`} value={unidade}>
-                                {unidade.toUpperCase()}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1 sm:col-span-2">
-                        <Label htmlFor={`ativo-${product.id}`}>Status</Label>
-                        <div className="flex items-center justify-between rounded-md border border-dashed px-3 py-2">
-                          <span className="text-sm text-muted-foreground">
-                            {product.ativo ? "Produto ativo em catalogo" : "Produto desativado"}
-                          </span>
-                          <Switch
-                            id={`ativo-${product.id}`}
-                            checked={product.ativo}
-                            onCheckedChange={(checked) =>
-                              updateProduto(product.id, { ativo: Boolean(checked) })
+                ) : (
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">
+                        {product.descricao}
+                      </CardTitle>
+                      <CardDescription>
+                        NCM: {product.ncm} - Unidade: {unidadeLabel}
+                      </CardDescription>
+                      {product.codigoInterno ? (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Codigo interno: {product.codigoInterno}
+                        </p>
+                      ) : null}
+                      {product.categoria ? (
+                        <p className="text-sm text-muted-foreground">
+                          Categoria: {product.categoria}
+                        </p>
+                      ) : null}
+                      {product.cest ? (
+                        <p className="text-sm text-muted-foreground">
+                          CEST: {product.cest}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Badge variant={isActive ? "success" : "secondary"}>
+                      {isActive ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                      Dados fiscais e catalogo
+                    </h4>
+                    {editingId === product.id ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor={`categoria-${product.id}`}>Categoria</Label>
+                          <Input
+                            id={`categoria-${product.id}`}
+                            placeholder="Ex.: Alimentos, Bebidas..."
+                            value={product.categoria ?? ""}
+                            onChange={(event) =>
+                              updateProduto(product.id, { categoria: event.target.value })
                             }
                           />
                         </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`codigo-${product.id}`}>Codigo interno</Label>
+                          <Input
+                            id={`codigo-${product.id}`}
+                            placeholder="SKU ou referencia"
+                            value={product.codigoInterno ?? ""}
+                            onChange={(event) =>
+                              updateProduto(product.id, { codigoInterno: event.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`cest-${product.id}`}>CEST</Label>
+                          <Input
+                            id={`cest-${product.id}`}
+                            placeholder="0000000"
+                            value={product.cest ?? ""}
+                            onChange={(event) =>
+                              updateProduto(product.id, { cest: event.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`unidade-${product.id}`}>Unidade padrao</Label>
+                          <Select
+                            value={product.unidadePadrao ?? "un"}
+                            onValueChange={(value) =>
+                              updateProduto(product.id, {
+                                unidadePadrao: value as Unit,
+                              })
+                            }
+                          >
+                            <SelectTrigger id={`unidade-${product.id}`}>
+                              <SelectValue placeholder="Unidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {unidades.map((unidade) => (
+                                <SelectItem key={`${product.id}-${unidade}`} value={unidade}>
+                                  {unidade.toUpperCase()}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <Label htmlFor={`ativo-${product.id}`}>Status</Label>
+                          <div className="flex items-center justify-between rounded-md border border-dashed px-3 py-2">
+                            <span className="text-sm text-muted-foreground">
+                              {isActive ? "Produto ativo em catalogo" : "Produto desativado"}
+                            </span>
+                            <Switch
+                              id={`ativo-${product.id}`}
+                              checked={isActive}
+                              onCheckedChange={(checked) =>
+                                updateProduto(product.id, { ativo: Boolean(checked) })
+                              }
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <p>
-                        Categoria: {product.categoria && product.categoria.length > 0 ? product.categoria : "Nao definida"}
-                      </p>
-                      <p>Unidade padrao: {product.unidadePadrao.toUpperCase()}</p>
-                      {product.cest ? <p>CEST: {product.cest}</p> : null}
-                      {product.codigoInterno ? <p>Codigo interno: {product.codigoInterno}</p> : null}
-                      <p>Status: {product.ativo ? "Ativo" : "Inativo"}</p>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <p>
+                          Categoria: {product.categoria && product.categoria.length > 0 ? product.categoria : "Nao definida"}
+                        </p>
+                        <p>Unidade padrao: {unidadeLabel}</p>
+                        {product.cest ? <p>CEST: {product.cest}</p> : null}
+                        {product.codigoInterno ? <p>Codigo interno: {product.codigoInterno}</p> : null}
+                        <p>Status: {isActive ? "Ativo" : "Inativo"}</p>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Flags */}
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                    Caracteristicas
-                  </h4>
+                  {/* Flags */}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Caracteristicas
+                    </h4>
+                    {editingId === product.id ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`refeicao-${product.id}`}
+                            checked={product.flags.refeicao}
+                            onCheckedChange={(v) =>
+                              updateProduto(product.id, {
+                                flags: { ...product.flags, refeicao: v as boolean },
+                              })
+                            }
+                          />
+                          <Label htmlFor={`refeicao-${product.id}`}>Refeicao</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`cesta-${product.id}`}
+                            checked={product.flags.cesta}
+                            onCheckedChange={(v) =>
+                              updateProduto(product.id, {
+                                flags: { ...product.flags, cesta: v as boolean },
+                              })
+                            }
+                          />
+                          <Label htmlFor={`cesta-${product.id}`}>Cesta Basica</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`reducao-${product.id}`}
+                            checked={product.flags.reducao}
+                            onCheckedChange={(v) =>
+                              updateProduto(product.id, {
+                                flags: { ...product.flags, reducao: v as boolean },
+                              })
+                            }
+                          />
+                          <Label htmlFor={`reducao-${product.id}`}>Reducao</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`is-${product.id}`}
+                            checked={product.flags.is}
+                            onCheckedChange={(v) =>
+                              updateProduto(product.id, {
+                                flags: { ...product.flags, is: v as boolean },
+                              })
+                            }
+                          />
+                          <Label htmlFor={`is-${product.id}`}>IS</Label>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap">
+                        {getFlagBadge("refeicao", product.flags.refeicao)}
+                        {getFlagBadge("cesta", product.flags.cesta)}
+                        {getFlagBadge("reducao", product.flags.reducao)}
+                        {getFlagBadge("is", product.flags.is)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
                   {editingId === product.id ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`refeicao-${product.id}`}
-                          checked={product.flags.refeicao}
-                          onCheckedChange={(v) =>
-                            updateProduto(product.id, {
-                              flags: { ...product.flags, refeicao: v as boolean },
-                            })
-                          }
-                        />
-                        <Label htmlFor={`refeicao-${product.id}`}>Refeicao</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`cesta-${product.id}`}
-                          checked={product.flags.cesta}
-                          onCheckedChange={(v) =>
-                            updateProduto(product.id, {
-                              flags: { ...product.flags, cesta: v as boolean },
-                            })
-                          }
-                        />
-                        <Label htmlFor={`cesta-${product.id}`}>Cesta Basica</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`reducao-${product.id}`}
-                          checked={product.flags.reducao}
-                          onCheckedChange={(v) =>
-                            updateProduto(product.id, {
-                              flags: { ...product.flags, reducao: v as boolean },
-                            })
-                          }
-                        />
-                        <Label htmlFor={`reducao-${product.id}`}>Reducao</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`is-${product.id}`}
-                          checked={product.flags.is}
-                          onCheckedChange={(v) =>
-                            updateProduto(product.id, {
-                              flags: { ...product.flags, is: v as boolean },
-                            })
-                          }
-                        />
-                        <Label htmlFor={`is-${product.id}`}>IS</Label>
-                      </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setEditingId(null)}
+                      >
+                        Concluir
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={() => removeProduto(product.id)}
+                      >
+                        Excluir
+                      </Button>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap">
-                      {getFlagBadge("refeicao", product.flags.refeicao)}
-                      {getFlagBadge("cesta", product.flags.cesta)}
-                      {getFlagBadge("reducao", product.flags.reducao)}
-                      {getFlagBadge("is", product.flags.is)}
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setEditingId(product.id)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleUsar(product)}
+                      >
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Usar na Cotacao
+                      </Button>
                     </div>
                   )}
                 </div>
-
-                {/* Actions */}
-                {editingId === product.id ? (
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setEditingId(null)}
-                    >
-                      Concluir
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="flex-1"
-                      onClick={() => removeProduto(product.id)}
-                    >
-                      Excluir
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setEditingId(product.id)}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleUsar(product)}
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Usar na Cotacao
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredProducts.length === 0 && (
@@ -449,3 +454,4 @@ export default function Catalogo() {
     </div>
   );
 }
+
