@@ -6,7 +6,6 @@ import {
   FileText,
   Package,
   Settings,
-  TrendingUp,
   Boxes,
   ClipboardList,
 } from "lucide-react";
@@ -18,7 +17,6 @@ const navigation = [
   { name: "Cadastros", href: "/cadastros", icon: ClipboardList },
   { name: "Catalogo", href: "/catalogo", icon: Package },
   { name: "Cenarios", href: "/cenarios", icon: Calendar },
-  { name: "Comparar cenarios", href: "/comparar-cenarios", icon: TrendingUp },
   { name: "Unidades", href: "/unidades", icon: Boxes },
   { name: "Regras", href: "/regras", icon: BookOpen },
   { name: "Receitas", href: "/receitas", icon: FileText },
