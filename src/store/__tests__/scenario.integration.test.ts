@@ -34,8 +34,10 @@ describe('mudanca de cenario', () => {
     cotacao.upsertFornecedor({
       id: 'f1',
       nome: 'Fornecedor',
-      tipo: 'fabricante',
+      tipo: 'industria',
       regime: 'normal',
+      uf: 'SP',
+      ativo: true,
       preco: 100,
       ibs: 0,
       cbs: 0,

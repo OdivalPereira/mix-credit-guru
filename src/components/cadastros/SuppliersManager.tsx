@@ -339,7 +339,7 @@ export const SuppliersManager = () => {
                   <div className="space-y-1">
                     <Label>UF</Label>
                     <Select
-                      value={supplier.uf ? supplier.uf : EMPTY_SELECT_VALUE}
+                      value={supplier.uf && supplier.uf.trim() !== "" ? supplier.uf : EMPTY_SELECT_VALUE}
                       onValueChange={(value) =>
                         handleFieldChange(
                           supplier.id,

@@ -15,8 +15,10 @@ describe('rankSuppliers', () => {
       {
         id: '1',
         nome: 'A',
-        tipo: 'x',
+        tipo: 'distribuidor',
         regime: 'normal',
+        uf: 'SP',
+        ativo: true,
         preco: 100,
         ibs: 10,
         cbs: 5,
@@ -26,8 +28,10 @@ describe('rankSuppliers', () => {
       {
         id: '2',
         nome: 'B',
-        tipo: 'x',
+        tipo: 'distribuidor',
         regime: 'normal',
+        uf: 'SP',
+        ativo: true,
         preco: 110,
         ibs: 5,
         cbs: 5,

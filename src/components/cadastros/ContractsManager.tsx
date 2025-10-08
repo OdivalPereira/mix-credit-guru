@@ -329,7 +329,7 @@ export const ContractsManager = () => {
                       <div className="space-y-2">
                         <Label htmlFor={`supplier-${contract.id}`}>Fornecedor</Label>
                         <Select
-                          value={contract.supplierId ? contract.supplierId : EMPTY_SELECT_VALUE}
+                          value={contract.supplierId && contract.supplierId.trim() !== "" ? contract.supplierId : EMPTY_SELECT_VALUE}
                           onValueChange={(value) =>
                             handleSupplierChange(
                               contract,
@@ -355,7 +355,7 @@ export const ContractsManager = () => {
                         <Label htmlFor={`product-${contract.id}`}>Produto do catálogo</Label>
                         <Select
                           value={
-                            contract.produtoId && produtosPorNcm.has(contract.produtoId)
+                            contract.produtoId && contract.produtoId.trim() !== "" && produtosPorNcm.has(contract.produtoId)
                               ? contract.produtoId
                               : EMPTY_SELECT_VALUE
                           }
