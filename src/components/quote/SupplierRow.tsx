@@ -3,43 +3,30 @@ import { Copy, Info, Trash } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { TableCell, TableRow } from "@/components/ui/table";
-import type { MixResultadoItem, Supplier } from "@/types/domain";
+import type { ContractFornecedor, MixResultadoItem, Supplier } from "@/types/domain";
 import { getMunicipiosByUF } from "@/data/locations";
-import { SUPPLIER_TIPO_OPTIONS, SUPPLIER_TIPO_LABELS, REGIME_OPTIONS } from "@/data/lookups";
+import { REGIME_LABELS, SUPPLIER_TIPO_LABELS } from "@/data/lookups";
 
 interface SupplierRowProps {
   supplier: MixResultadoItem;
+  sourceSupplier?: Supplier;
+  contract?: ContractFornecedor;
   formatCurrency: (value: number) => string;
-  onFieldChange: (id: string, field: keyof Supplier, value: string) => void;
-  onFlagChange: (
-    id: string,
-    flag: "cesta" | "reducao" | "refeicao",
-    value: boolean,
-  ) => void;
+  getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
   onDuplicate: (supplier: MixResultadoItem) => void;
   onRemove: (id: string) => void;
-  getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
   onOpenDetails: () => void;
 }
 
 const SupplierRowComponent = ({
   supplier,
+  sourceSupplier,
+  contract,
   formatCurrency,
-  onFieldChange,
-  onFlagChange,
+  getCreditBadge,
   onDuplicate,
   onRemove,
-  getCreditBadge,
   onOpenDetails,
 }: SupplierRowProps) => {
   const municipioNome = useMemo(() => {
@@ -64,6 +51,23 @@ const SupplierRowComponent = ({
     return parts.join(" - ") || "Localizacao nao informada";
   }, [municipioNome, supplier.uf]);
 
+  const flagBadges = [
+    supplier.flagsItem?.cesta ? { key: "cesta", label: "Cesta basica", variant: "secondary" as const } : null,
+    supplier.flagsItem?.reducao ? { key: "reducao", label: "Reducao", variant: "warning" as const } : null,
+    supplier.isRefeicaoPronta ? { key: "refeicao", label: "Refeicao pronta", variant: "success" as const } : null,
+  ].filter(Boolean) as Array<{ key: string; label: string; variant: "secondary" | "warning" | "success" }>;
+
+  const priceChanged =
+    sourceSupplier && Number.isFinite(sourceSupplier.preco)
+      ? sourceSupplier.preco !== supplier.preco
+      : false;
+  const freightChanged =
+    sourceSupplier && Number.isFinite(sourceSupplier.frete)
+      ? sourceSupplier.frete !== supplier.frete
+      : false;
+
+  const restrictions = supplier.restricoes ?? [];
+
   return (
     <TableRow
       data-testid="supplier-row"
@@ -71,172 +75,124 @@ const SupplierRowComponent = ({
       className={supplier.ranking === 1 ? "bg-success/5" : ""}
     >
       <TableCell className="w-16 text-center font-medium">
-        {supplier.ranking === 1 && (
+        {supplier.ranking === 1 ? (
           <Badge variant="success" className="mr-2">
             1o
           </Badge>
-        )}
+        ) : null}
         {supplier.ranking}
       </TableCell>
 
-      <TableCell className="min-w-[260px] font-medium">
+      <TableCell className="min-w-[260px]">
         <div className="space-y-1">
-          <Input
-            data-testid="supplier-name"
-            value={supplier.nome}
-            onChange={(event) =>
-              onFieldChange(supplier.id, "nome", event.target.value)
-            }
-          />
+          <div className="text-sm font-medium text-foreground">
+            {supplier.nome.trim().length > 0 ? supplier.nome : "Fornecedor sem nome"}
+          </div>
           <div className="text-xs text-muted-foreground">
             {supplier.cnpj ? `CNPJ: ${supplier.cnpj}` : "CNPJ nao informado"}
           </div>
-          <div className="text-xs text-muted-foreground">
-            {supplier.produtoDescricao && supplier.produtoDescricao.length > 0
-              ? `Produto: ${supplier.produtoDescricao}`
-              : "Produto nao vinculado"}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {locationSummary}
+          <div className="text-xs text-muted-foreground">{locationSummary}</div>
+          {supplier.contato?.email ? (
+            <div className="text-xs text-muted-foreground">{supplier.contato.email}</div>
+          ) : null}
+          <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+            <Badge variant="outline" className="border-dashed">
+              {SUPPLIER_TIPO_LABELS[supplier.tipo]}
+            </Badge>
+            <Badge variant="outline" className="border-dashed">
+              {REGIME_LABELS[supplier.regime]}
+            </Badge>
           </div>
         </div>
       </TableCell>
 
-      <TableCell className="min-w-[160px]">
-        <Select
-          value={supplier.tipo}
-          onValueChange={(value) => onFieldChange(supplier.id, "tipo", value)}
-        >
-          <SelectTrigger data-testid="supplier-tipo" aria-label="Tipo de fornecedor">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            {SUPPLIER_TIPO_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {SUPPLIER_TIPO_LABELS[option.value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-
-      <TableCell className="min-w-[160px]">
-        <Select
-          value={supplier.regime}
-          onValueChange={(value) => onFieldChange(supplier.id, "regime", value)}
-        >
-          <SelectTrigger
-            data-testid="supplier-regime"
-            aria-label="Regime tributario do fornecedor"
-          >
-            <SelectValue placeholder="Regime" />
-          </SelectTrigger>
-          <SelectContent>
-            {REGIME_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-
-      <TableCell className="min-w-[140px] text-right">
-        <Input
-          data-testid="supplier-price"
-          type="number"
-          step="0.01"
-          value={supplier.preco}
-          onChange={(event) =>
-            onFieldChange(supplier.id, "preco", event.target.value)
-          }
-        />
-      </TableCell>
-
-      <TableCell className="w-24 text-right">
-        {supplier.ibs.toFixed(2)}%
-      </TableCell>
-      <TableCell className="w-24 text-right">
-        {supplier.cbs.toFixed(2)}%
-      </TableCell>
-      <TableCell className="w-24 text-right">
-        {supplier.is.toFixed(2)}%
-      </TableCell>
-
-      <TableCell className="min-w-[140px] text-right">
-        <Input
-          data-testid="supplier-frete"
-          type="number"
-          step="0.01"
-          value={supplier.frete}
-          onChange={(event) =>
-            onFieldChange(supplier.id, "frete", event.target.value)
-          }
-        />
-      </TableCell>
-
-      <TableCell className="w-24 text-center">
-        <Checkbox
-          checked={supplier.flagsItem?.cesta ?? false}
-          onCheckedChange={(value) =>
-            onFlagChange(supplier.id, "cesta", Boolean(value))
-          }
-          aria-label="Cesta basica"
-        />
-      </TableCell>
-
-      <TableCell className="w-28 text-center">
-        <Checkbox
-          checked={supplier.flagsItem?.reducao ?? false}
-          onCheckedChange={(value) =>
-            onFlagChange(supplier.id, "reducao", Boolean(value))
-          }
-          aria-label="Reducao"
-        />
-      </TableCell>
-
-      <TableCell className="w-28 text-center">
-        <Checkbox
-          checked={supplier.isRefeicaoPronta ?? false}
-          onCheckedChange={(value) =>
-            onFlagChange(supplier.id, "refeicao", Boolean(value))
-          }
-          aria-label="Refeicao pronta"
-        />
-      </TableCell>
-
-      <TableCell className="min-w-[160px] text-center">
-        {getCreditBadge(supplier.creditavel, supplier.credito)}
-      </TableCell>
-      <TableCell className="min-w-[140px] text-right">
-        {formatCurrency(supplier.credito)}
-      </TableCell>
-      <TableCell className="min-w-[160px] text-right font-bold">
-        {formatCurrency(supplier.custoEfetivo)}
-      </TableCell>
-      <TableCell className="min-w-[160px] text-right">
-        {supplier.custoNormalizado ? formatCurrency(supplier.custoNormalizado) : "-"}
-      </TableCell>
-
-      <TableCell className="min-w-[140px]">
-        {supplier.degrauAplicado ? (
-          <Badge variant="outline">{supplier.degrauAplicado}</Badge>
+      <TableCell className="min-w-[220px]">
+        {contract ? (
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-foreground">
+              {contract.produtoId?.trim() ? contract.produtoId : "Contrato sem produto"}
+            </div>
+            {contract.unidade ? (
+              <div className="text-xs text-muted-foreground">
+                Unidade: {contract.unidade.toUpperCase()}
+              </div>
+            ) : null}
+            <div className="text-xs text-muted-foreground">
+              Preco base: {formatCurrency(contract.precoBase)}
+            </div>
+            {supplier.degrauAplicado ? (
+              <div className="text-xs text-muted-foreground">Degrau: {supplier.degrauAplicado}</div>
+            ) : null}
+          </div>
         ) : (
-          "-"
+          <div className="text-xs text-muted-foreground">Nenhum contrato vinculado</div>
         )}
       </TableCell>
 
+      <TableCell className="min-w-[140px] text-right">
+        <div className="font-medium">{formatCurrency(supplier.preco)}</div>
+        <div className="text-[11px] text-muted-foreground">
+          {priceChanged ? "Ajustado pelo contrato" : "Valor informado"}
+        </div>
+      </TableCell>
+
+      <TableCell className="min-w-[140px] text-right">
+        <div className="font-medium">{formatCurrency(supplier.frete)}</div>
+        <div className="text-[11px] text-muted-foreground">
+          {freightChanged ? "Ajustado pelo contrato" : "Valor informado"}
+        </div>
+      </TableCell>
+
+      <TableCell className="min-w-[160px] text-center">
+        <div className="font-mono text-sm">{supplier.ibs.toFixed(2)}%</div>
+        <div className="font-mono text-xs text-muted-foreground">
+          CBS {supplier.cbs.toFixed(2)}% | IS {supplier.is.toFixed(2)}%
+        </div>
+      </TableCell>
+
       <TableCell className="min-w-[160px]">
-        {supplier.restricoes?.length ? (
-          <div className="space-y-1">
-            {supplier.restricoes.map((restriction) => (
-              <Badge key={restriction} variant="warning" className="mr-1">
+        {flagBadges.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {flagBadges.map((flag) => (
+              <Badge key={`${supplier.id}-${flag.key}`} variant={flag.variant} className="gap-1">
+                {flag.label}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">Sem flags</span>
+        )}
+      </TableCell>
+
+      <TableCell className="min-w-[160px] text-center">
+        <div className="flex flex-col items-center gap-1">
+          {getCreditBadge(supplier.creditavel, supplier.credito)}
+          <span className="text-xs text-muted-foreground">
+            {formatCurrency(supplier.credito)}
+          </span>
+        </div>
+      </TableCell>
+
+      <TableCell className="min-w-[180px] text-right">
+        <div className="font-bold text-foreground">{formatCurrency(supplier.custoEfetivo)}</div>
+        <div className="text-xs text-muted-foreground">
+          {supplier.custoNormalizado
+            ? `Normalizado: ${formatCurrency(supplier.custoNormalizado)}`
+            : "Sem normalizacao"}
+        </div>
+      </TableCell>
+
+      <TableCell className="min-w-[200px]">
+        {restrictions.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {restrictions.map((restriction) => (
+              <Badge key={restriction} variant="warning" className="gap-1 text-[11px]">
                 {restriction}
               </Badge>
             ))}
           </div>
         ) : (
-          "-"
+          <span className="text-xs text-muted-foreground">Sem restricoes</span>
         )}
       </TableCell>
 

@@ -1,43 +1,59 @@
 import { useMemo, useRef, useState } from "react";
-import { Plus, Upload, Download, FileJson, Factory, Trash2, Settings2 } from "lucide-react";
+import {
+  Plus,
+  Upload,
+  Download,
+  FileJson,
+  Factory,
+  Trash2,
+  Settings2,
+  ChevronDown,
+  MapPin,
+  Phone,
+  Mail,
+  User,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 
 import { SupplierDetailsSheet } from "@/components/quote/SupplierDetailsSheet";
-import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
+import {
+  useCotacaoStore,
+  createEmptySupplier,
+  SUPPLY_CHAIN_STAGES,
+} from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import type { Supplier } from "@/types/domain";
-import { SUPPLIER_TIPO_OPTIONS, SUPPLIER_TIPO_LABELS, REGIME_OPTIONS, REGIME_LABELS } from "@/data/lookups";
+import {
+  SUPPLIER_TIPO_OPTIONS,
+  SUPPLIER_TIPO_LABELS,
+  REGIME_OPTIONS,
+  REGIME_LABELS,
+} from "@/data/lookups";
 import { ESTADOS } from "@/data/locations";
-
-const numericFields: Array<keyof Supplier> = [
-  "preco",
-  "frete",
-  "ibs",
-  "cbs",
-  "is",
-  "pedidoMinimo",
-  "prazoEntregaDias",
-  "prazoPagamentoDias",
-];
-
-const isNumericField = (field: keyof Supplier): field is (typeof numericFields)[number] =>
-  numericFields.includes(field);
 
 const EMPTY_SELECT_VALUE = "__empty__";
 
@@ -47,6 +63,7 @@ export const SuppliersManager = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [detailsSupplierId, setDetailsSupplierId] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   const {
     fornecedores,
@@ -68,6 +85,7 @@ export const SuppliersManager = () => {
       return (
         supplier.nome.toLowerCase().includes(normalized) ||
         (supplier.cnpj ?? "").toLowerCase().includes(normalized) ||
+        (supplier.contato?.email ?? "").toLowerCase().includes(normalized) ||
         (supplier.produtoDescricao ?? "").toLowerCase().includes(normalized)
       );
     });
@@ -86,7 +104,7 @@ export const SuppliersManager = () => {
     upsertFornecedor({
       id,
       ...current,
-      [field]: isNumericField(field) ? Number(value) || 0 : value,
+      [field]: value,
     });
   };
 
@@ -116,6 +134,23 @@ export const SuppliersManager = () => {
     });
   };
 
+  const handleContatoChange = (
+    id: string,
+    field: "nome" | "email" | "telefone",
+    value: string,
+  ) => {
+    const current = fornecedores.find((item) => item.id === id);
+    if (!current) return;
+    upsertFornecedor({
+      id,
+      ...current,
+      contato: {
+        ...current.contato,
+        [field]: value,
+      },
+    });
+  };
+
   const handleCadeiaChange = (id: string, index: number, value: string) => {
     const current = fornecedores.find((item) => item.id === id);
     if (!current) return;
@@ -128,17 +163,28 @@ export const SuppliersManager = () => {
     });
   };
 
+  const handleToggleCard = (id: string, open: boolean) => {
+    setExpandedCards((prev) => ({ ...prev, [id]: open }));
+  };
+
   const handleDuplicate = (supplier: Supplier) => {
-    const { id, nome, ...rest } = supplier;
+    const newId = createEmptySupplier().id;
+    const { id, ...rest } = supplier;
     upsertFornecedor({
-      id: undefined,
-      nome: `${nome} (cópia)`,
       ...rest,
+      id: newId,
+      nome: supplier.nome ? `${supplier.nome} (copia)` : "Fornecedor (copia)",
+      contato: rest.contato ? { ...rest.contato } : undefined,
+      flagsItem: rest.flagsItem ? { ...rest.flagsItem } : undefined,
+      cadeia: rest.cadeia ? [...rest.cadeia] : undefined,
     });
+    setExpandedCards((prev) => ({ ...prev, [newId]: true }));
   };
 
   const handleAddSupplier = () => {
-    upsertFornecedor(createEmptySupplier());
+    const novo = createEmptySupplier();
+    upsertFornecedor(novo);
+    setExpandedCards((prev) => ({ ...prev, [novo.id]: true }));
   };
 
   const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +231,7 @@ export const SuppliersManager = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Cadastro de fornecedores</h2>
           <p className="text-muted-foreground">
-            Centralize dados cadastrais, tributários e operacionais dos parceiros de fornecimento.
+            Registre dados basicos, contatos e cadeia de fornecimento. Valores e tributacao ficam na aba Contratos.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -230,7 +276,7 @@ export const SuppliersManager = () => {
         <Card className="md:col-span-3">
           <CardContent className="pt-6">
             <Input
-              placeholder="Buscar por nome, CNPJ ou produto..."
+              placeholder="Buscar por nome, CNPJ ou contato..."
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
@@ -240,7 +286,7 @@ export const SuppliersManager = () => {
           <CardContent className="pt-6">
             <div className="flex flex-col space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center justify-between">
-                <span>Fornecedores</span>
+                <span>Total</span>
                 <span className="font-semibold text-foreground">{fornecedores.length}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -254,292 +300,323 @@ export const SuppliersManager = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="space-y-4">
         {filteredSuppliers.map((supplier) => {
           const ufNome = supplier.uf ? ESTADOS.find((estado) => estado.sigla === supplier.uf)?.nome : undefined;
           const cadeia = supplier.cadeia ?? Array.from({ length: SUPPLY_CHAIN_STAGES }, () => "");
+          const contato = supplier.contato ?? {};
+          const isOpen = expandedCards[supplier.id] ?? false;
+
+          const locationLabel = supplier.uf
+            ? `${supplier.uf.toUpperCase()}${ufNome ? ` - ${ufNome}` : ""}`
+            : "Localizacao nao informada";
+
+          const flagBadges = [
+            supplier.flagsItem?.cesta
+              ? { key: "cesta", label: "Cesta basica", variant: "secondary" as const }
+              : null,
+            supplier.flagsItem?.reducao
+              ? { key: "reducao", label: "Reducao de aliquota", variant: "warning" as const }
+              : null,
+            supplier.isRefeicaoPronta
+              ? { key: "refeicao", label: "Refeicao pronta", variant: "success" as const }
+              : null,
+          ].filter(Boolean) as Array<{ key: string; label: string; variant: "secondary" | "warning" | "success" }>;
 
           return (
-            <Card key={supplier.id} className="border-muted">
-              <CardHeader className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-2">
-                    <CardTitle className="flex flex-col gap-2 text-lg">
-                      <Input
-                        value={supplier.nome}
-                        onChange={(event) => handleFieldChange(supplier.id, "nome", event.target.value)}
-                      />
-                      <div className="text-xs text-muted-foreground">
-                        {supplier.cnpj ? `CNPJ: ${supplier.cnpj}` : "CNPJ não informado"}
-                      </div>
-                    </CardTitle>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Factory className="h-3 w-3" />
-                        {SUPPLIER_TIPO_LABELS[supplier.tipo]}
-                      </span>
-                      <span>{REGIME_LABELS[supplier.regime]}</span>
-                      {supplier.uf ? (
-                        <Badge variant="secondary">
-                          {supplier.uf.toUpperCase()}
-                          {ufNome ? ` - ${ufNome}` : ""}
+            <Collapsible
+              key={supplier.id}
+              open={isOpen}
+              onOpenChange={(open) => handleToggleCard(supplier.id, open)}
+            >
+              <Card className="border-muted/70">
+                <CardHeader className="space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Factory className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-lg font-semibold text-foreground">
+                          {supplier.nome.trim().length > 0 ? supplier.nome : "Fornecedor sem nome"}
+                        </span>
+                        <Badge variant={supplier.ativo !== false ? "secondary" : "outline"}>
+                          {supplier.ativo !== false ? "Ativo" : "Inativo"}
                         </Badge>
-                      ) : null}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {supplier.cnpj && supplier.cnpj.trim().length > 0
+                          ? `CNPJ: ${supplier.cnpj}`
+                          : "CNPJ nao informado"}
+                      </p>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          {SUPPLIER_TIPO_LABELS[supplier.tipo]}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          {REGIME_LABELS[supplier.regime]}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {locationLabel}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                        {contato.nome ? (
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {contato.nome}
+                          </span>
+                        ) : null}
+                        {contato.email ? (
+                          <span className="flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {contato.email}
+                          </span>
+                        ) : null}
+                        {contato.telefone ? (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {contato.telefone}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="gap-1">
+                        {isOpen ? "Recolher" : "Editar"}
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      </Button>
+                    </CollapsibleTrigger>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={supplier.ativo !== false}
-                      onCheckedChange={(checked) => handleToggleAtivo(supplier.id, Boolean(checked))}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      {supplier.ativo !== false ? "Ativo" : "Inativo"}
-                    </span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <section className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label>Tipo</Label>
-                    <Select
-                      value={supplier.tipo}
-                      onValueChange={(value) => handleFieldChange(supplier.id, "tipo", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SUPPLIER_TIPO_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Regime tributário</Label>
-                    <Select
-                      value={supplier.regime}
-                      onValueChange={(value) => handleFieldChange(supplier.id, "regime", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {REGIME_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>UF</Label>
-                    <Select
-                      value={supplier.uf && supplier.uf.trim() !== "" ? supplier.uf : EMPTY_SELECT_VALUE}
-                      onValueChange={(value) =>
-                        handleFieldChange(
-                          supplier.id,
-                          "uf",
-                          value === EMPTY_SELECT_VALUE ? "" : value,
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={EMPTY_SELECT_VALUE}>Não informado</SelectItem>
-                        {ESTADOS.map((estado) => (
-                          <SelectItem key={estado.sigla} value={estado.sigla}>
-                            {estado.sigla} - {estado.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Município</Label>
-                    <Input
-                      value={supplier.municipio ?? ""}
-                      onChange={(event) => handleFieldChange(supplier.id, "municipio", event.target.value)}
-                    />
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <Label className="text-sm font-medium text-muted-foreground">Condições comerciais</Label>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label>Preço (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={supplier.preco}
-                        onChange={(event) => handleFieldChange(supplier.id, "preco", event.target.value)}
-                      />
+                  {flagBadges.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {flagBadges.map((badge) => (
+                        <Badge key={`${supplier.id}-${badge.key}`} variant={badge.variant} className="gap-1">
+                          {badge.label}
+                        </Badge>
+                      ))}
                     </div>
-                    <div className="space-y-1">
-                      <Label>Frete (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={supplier.frete}
-                        onChange={(event) => handleFieldChange(supplier.id, "frete", event.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>IBS (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={supplier.ibs}
-                        onChange={(event) => handleFieldChange(supplier.id, "ibs", event.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>CBS (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={supplier.cbs}
-                        onChange={(event) => handleFieldChange(supplier.id, "cbs", event.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>IS (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={supplier.is}
-                        onChange={(event) => handleFieldChange(supplier.id, "is", event.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Produto negociado</Label>
-                      <Textarea
-                        value={supplier.produtoDescricao ?? ""}
-                        onChange={(event) =>
-                          handleFieldChange(supplier.id, "produtoDescricao", event.target.value)
-                        }
-                        placeholder="Referência do item ou descrição comercial"
-                        className="resize-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="space-y-1">
-                      <Label>Pedido mínimo</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={supplier.pedidoMinimo ?? 0}
-                        onChange={(event) => handleFieldChange(supplier.id, "pedidoMinimo", event.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Prazo de entrega (dias)</Label>
-                      <Input
-                        type="number"
-                        value={supplier.prazoEntregaDias ?? 0}
-                        onChange={(event) =>
-                          handleFieldChange(supplier.id, "prazoEntregaDias", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Prazo de pagamento (dias)</Label>
-                      <Input
-                        type="number"
-                        value={supplier.prazoPagamentoDias ?? 0}
-                        onChange={(event) =>
-                          handleFieldChange(supplier.id, "prazoPagamentoDias", event.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <Label className="text-sm font-medium text-muted-foreground">Flags tributárias e operacionais</Label>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={supplier.flagsItem?.cesta ?? false}
-                        onCheckedChange={(checked) => handleFlagChange(supplier.id, "cesta", Boolean(checked))}
-                      />
-                      <span>Cesta básica</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={supplier.flagsItem?.reducao ?? false}
-                        onCheckedChange={(checked) => handleFlagChange(supplier.id, "reducao", Boolean(checked))}
-                      />
-                      <span>Redução de alíquota</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={supplier.isRefeicaoPronta ?? false}
-                        onCheckedChange={(checked) => handleFlagChange(supplier.id, "refeicao", Boolean(checked))}
-                      />
-                      <span>Refeição pronta / Benefícios</span>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <Label className="text-sm font-medium text-muted-foreground">Etapas da cadeia de fornecimento</Label>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {Array.from({ length: SUPPLY_CHAIN_STAGES }).map((_, index) => (
-                      <Input
-                        key={`${supplier.id}-chain-${index}`}
-                        placeholder={`Etapa ${index + 1}`}
-                        value={cadeia[index] ?? ""}
-                        onChange={(event) => handleCadeiaChange(supplier.id, index, event.target.value)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              </CardContent>
-              <CardFooter className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-2">
-                  {supplier.produtoId ? (
-                    <Badge variant="outline">Produto ID: {supplier.produtoId}</Badge>
                   ) : null}
-                  {supplier.unidadeNegociada ? (
-                    <Badge variant="outline">Unidade: {supplier.unidadeNegociada.toUpperCase()}</Badge>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDetailsSupplierId(supplier.id)}
-                  >
-                    <Settings2 className="mr-2 h-4 w-4" />
-                    Detalhes
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDuplicate(supplier)}
-                  >
-                    Duplicar
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => removeFornecedor(supplier.id)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Remover
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="space-y-6 pt-0">
+                    <section className="space-y-3">
+                      <Label className="text-sm font-medium text-muted-foreground">Identificacao</Label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor={`supplier-name-${supplier.id}`}>Nome</Label>
+                          <Input
+                            id={`supplier-name-${supplier.id}`}
+                            value={supplier.nome}
+                            onChange={(event) => handleFieldChange(supplier.id, "nome", event.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`supplier-cnpj-${supplier.id}`}>CNPJ</Label>
+                          <Input
+                            id={`supplier-cnpj-${supplier.id}`}
+                            value={supplier.cnpj ?? ""}
+                            onChange={(event) => handleFieldChange(supplier.id, "cnpj", event.target.value)}
+                            placeholder="00.000.000/0000-00"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Tipo</Label>
+                          <Select
+                            value={supplier.tipo}
+                            onValueChange={(value) => handleFieldChange(supplier.id, "tipo", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SUPPLIER_TIPO_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Regime tributario</Label>
+                          <Select
+                            value={supplier.regime}
+                            onValueChange={(value) => handleFieldChange(supplier.id, "regime", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {REGIME_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between rounded-md border border-dashed px-3 py-2">
+                        <span className="text-sm text-muted-foreground">
+                          {supplier.ativo !== false ? "Fornecedor ativo" : "Fornecedor inativo"}
+                        </span>
+                        <Switch
+                          checked={supplier.ativo !== false}
+                          onCheckedChange={(checked) => handleToggleAtivo(supplier.id, Boolean(checked))}
+                        />
+                      </div>
+                    </section>
+
+                    <section className="space-y-3">
+                      <Label className="text-sm font-medium text-muted-foreground">Localizacao</Label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label>UF</Label>
+                          <Select
+                            value={supplier.uf && supplier.uf.trim().length > 0 ? supplier.uf : EMPTY_SELECT_VALUE}
+                            onValueChange={(value) =>
+                              handleFieldChange(
+                                supplier.id,
+                                "uf",
+                                value === EMPTY_SELECT_VALUE ? "" : value,
+                              )
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Estado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={EMPTY_SELECT_VALUE}>Nao informado</SelectItem>
+                              {ESTADOS.map((estado) => (
+                                <SelectItem key={estado.sigla} value={estado.sigla}>
+                                  {estado.sigla} - {estado.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Municipio (IBGE)</Label>
+                          <Input
+                            value={supplier.municipio ?? ""}
+                            onChange={(event) => handleFieldChange(supplier.id, "municipio", event.target.value)}
+                            placeholder="Codigo ou nome"
+                          />
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="space-y-3">
+                      <Label className="text-sm font-medium text-muted-foreground">Contato principal</Label>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="space-y-1">
+                          <Label htmlFor={`supplier-contact-name-${supplier.id}`}>Nome</Label>
+                          <Input
+                            id={`supplier-contact-name-${supplier.id}`}
+                            value={contato.nome ?? ""}
+                            onChange={(event) =>
+                              handleContatoChange(supplier.id, "nome", event.target.value)
+                            }
+                            placeholder="Responsavel"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`supplier-contact-email-${supplier.id}`}>E-mail</Label>
+                          <Input
+                            id={`supplier-contact-email-${supplier.id}`}
+                            type="email"
+                            value={contato.email ?? ""}
+                            onChange={(event) =>
+                              handleContatoChange(supplier.id, "email", event.target.value)
+                            }
+                            placeholder="contato@empresa.com"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`supplier-contact-phone-${supplier.id}`}>Telefone</Label>
+                          <Input
+                            id={`supplier-contact-phone-${supplier.id}`}
+                            value={contato.telefone ?? ""}
+                            onChange={(event) =>
+                              handleContatoChange(supplier.id, "telefone", event.target.value)
+                            }
+                            placeholder="(11) 90000-0000"
+                          />
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="space-y-3">
+                      <Label className="text-sm font-medium text-muted-foreground">Classificacoes e flags</Label>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={supplier.flagsItem?.cesta ?? false}
+                            onCheckedChange={(checked) =>
+                              handleFlagChange(supplier.id, "cesta", Boolean(checked))
+                            }
+                          />
+                          <span>Cesta basica</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={supplier.flagsItem?.reducao ?? false}
+                            onCheckedChange={(checked) =>
+                              handleFlagChange(supplier.id, "reducao", Boolean(checked))
+                            }
+                          />
+                          <span>Reducao de aliquota</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={supplier.isRefeicaoPronta ?? false}
+                            onCheckedChange={(checked) =>
+                              handleFlagChange(supplier.id, "refeicao", Boolean(checked))
+                            }
+                          />
+                          <span>Refeicao pronta / Beneficios</span>
+                        </label>
+                      </div>
+                    </section>
+
+                    <section className="space-y-3">
+                      <Label className="text-sm font-medium text-muted-foreground">
+                        Etapas da cadeia de fornecimento
+                      </Label>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {Array.from({ length: SUPPLY_CHAIN_STAGES }).map((_, index) => (
+                          <Input
+                            key={`${supplier.id}-chain-${index}`}
+                            placeholder={`Etapa ${index + 1}`}
+                            value={cadeia[index] ?? ""}
+                            onChange={(event) => handleCadeiaChange(supplier.id, index, event.target.value)}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  </CardContent>
+                  <CardFooter className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDetailsSupplierId(supplier.id)}
+                    >
+                      <Settings2 className="mr-2 h-4 w-4" />
+                      Detalhes
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDuplicate(supplier)}>
+                      Duplicar
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => removeFornecedor(supplier.id)}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remover
+                    </Button>
+                  </CardFooter>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           );
         })}
       </div>

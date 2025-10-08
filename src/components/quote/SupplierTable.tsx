@@ -40,7 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
-import type { MixResultadoItem, Produto, Supplier } from "@/types/domain";
+import type { ContractFornecedor, MixResultadoItem, Produto, Supplier } from "@/types/domain";
 
 import { OptimizationProgress } from "./OptimizationProgress";
 import { SupplierRow } from "./SupplierRow";
@@ -50,14 +50,10 @@ interface SupplierTableProps {
   resultados: MixResultadoItem[];
   fornecedoresOriginais: Supplier[];
   produtos: Produto[];
+  contextProductKey: string;
+  findContract: (supplierId: string, produtoKey?: string) => ContractFornecedor | undefined;
   formatCurrency: (value: number) => string;
   onAddSupplier: () => void;
-  onFieldChange: (id: string, field: keyof Supplier, value: string) => void;
-  onFlagChange: (
-    id: string,
-    flag: "cesta" | "reducao" | "refeicao",
-    value: boolean,
-  ) => void;
   onDuplicate: (supplier: MixResultadoItem) => void;
   onRemove: (id: string) => void;
   onImportCSV: () => void;
@@ -80,10 +76,10 @@ const SupplierTableComponent = ({
   resultados,
   fornecedoresOriginais,
   produtos,
+  contextProductKey,
+  findContract,
   formatCurrency,
   onAddSupplier,
-  onFieldChange,
-  onFlagChange,
   onDuplicate,
   onRemove,
   onImportCSV,
@@ -103,6 +99,10 @@ const SupplierTableComponent = ({
 }: SupplierTableProps) => {
   const shouldVirtualize = resultados.length >= 200;
   const [detailsSupplierId, setDetailsSupplierId] = useState<string | null>(null);
+  const supplierIndex = useMemo(
+    () => new Map(fornecedoresOriginais.map((item) => [item.id, item])),
+    [fornecedoresOriginais],
+  );
   const detailsSupplier = useMemo(() => {
     if (!detailsSupplierId) {
       return null;
@@ -116,7 +116,7 @@ const SupplierTableComponent = ({
         <div>
           <CardTitle>Comparacao de fornecedores</CardTitle>
           <CardDescription>
-            Avalie custo efetivo e impacto tributario por fornecedor.
+            Resultados refletem contratos ativos, tributos configurados e otimizacoes recentes.
           </CardDescription>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
@@ -228,40 +228,26 @@ const SupplierTableComponent = ({
             <TableHeader>
               <TableRow className="whitespace-nowrap">
                 <TableHead className="w-16 text-center">#</TableHead>
-                <TableHead className="min-w-[240px]">Fornecedor</TableHead>
-                <TableHead className="min-w-[140px]">Tipo</TableHead>
-                <TableHead className="min-w-[140px]">Regime</TableHead>
+                <TableHead className="min-w-[260px]">Fornecedor</TableHead>
+                <TableHead className="min-w-[220px]">Contrato vinculado</TableHead>
                 <TableHead className="min-w-[140px] text-right">Preco</TableHead>
-                <TableHead className="w-24 text-right">IBS%</TableHead>
-                <TableHead className="w-24 text-right">CBS%</TableHead>
-                <TableHead className="w-24 text-right">IS%</TableHead>
                 <TableHead className="min-w-[140px] text-right">Frete</TableHead>
-                <TableHead className="w-24 text-center">Cesta</TableHead>
-                <TableHead className="w-28 text-center">Reducao</TableHead>
-                <TableHead className="w-28 text-center">Refeicao</TableHead>
-                <TableHead className="min-w-[160px] text-center">
-                  Creditavel
-                </TableHead>
-                <TableHead className="min-w-[140px] text-right">Credito</TableHead>
-                <TableHead className="min-w-[160px] text-right font-bold">
-                  Custo efetivo
-                </TableHead>
-                <TableHead className="min-w-[160px] text-right">
-                  Custo normalizado
-                </TableHead>
-                <TableHead className="min-w-[140px]">Degrau</TableHead>
-                <TableHead className="min-w-[160px]">Restricoes</TableHead>
+                <TableHead className="min-w-[160px] text-center">Tributos</TableHead>
+                <TableHead className="min-w-[160px]">Flags</TableHead>
+                <TableHead className="min-w-[160px] text-center">Credito</TableHead>
+                <TableHead className="min-w-[180px] text-right">Custos</TableHead>
+                <TableHead className="min-w-[200px]">Restricoes</TableHead>
                 <TableHead className="w-[120px] text-center">Acoes</TableHead>
               </TableRow>
             </TableHeader>
             <VirtualizedTableBody
               data={resultados}
-              colSpan={19}
+              colSpan={11}
               scrollElement={() => containerRef.current}
-              estimateSize={() => 72}
+              estimateSize={() => 88}
               emptyRow={
                 <TableRow>
-                  <TableCell colSpan={19}>
+                  <TableCell colSpan={11}>
                     <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
                       <p>Nenhum fornecedor cadastrado para esta cotacao.</p>
                       <p className="text-xs">
@@ -275,12 +261,12 @@ const SupplierTableComponent = ({
                 <SupplierRow
                   key={supplier.id}
                   supplier={supplier}
+                  sourceSupplier={supplierIndex.get(supplier.id)}
+                  contract={findContract(supplier.id, contextProductKey)}
                   formatCurrency={formatCurrency}
-                  onFieldChange={onFieldChange}
-                  onFlagChange={onFlagChange}
+                  getCreditBadge={getCreditBadge}
                   onDuplicate={onDuplicate}
                   onRemove={onRemove}
-                  getCreditBadge={getCreditBadge}
                   onOpenDetails={() => setDetailsSupplierId(supplier.id)}
                 />
               )}

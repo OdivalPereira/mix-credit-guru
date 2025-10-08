@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -26,12 +26,15 @@ import {
   Plus,
   ShoppingCart,
   Package,
+  Trash2,
 } from "lucide-react";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
-import type { Produto, Unit } from "@/types/domain";
+import type { Produto, ProdutoComponente, Unit } from "@/types/domain";
 import { generateId } from "@/lib/utils";
 import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
+
+const EMPTY_COMPONENT_VALUE = "__component_empty__";
 
 export default function Catalogo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -99,6 +102,7 @@ export default function Catalogo() {
       codigoInterno: "",
       ativo: true,
       flags: { refeicao: false, cesta: false, reducao: false, is: false },
+      componentes: [],
     });
     setEditingId(id);
   };
@@ -106,6 +110,48 @@ export default function Catalogo() {
   const handleUsar = (product: Produto) => {
     setContexto({ produto: `${product.ncm} - ${product.descricao}` });
   };
+
+  const handleAddComponent = useCallback(
+    (productId: string) => {
+      const product = produtos.find((item) => item.id === productId);
+      if (!product) return;
+      const componentes = product.componentes ?? [];
+      const fallbackUnit = (product.unidadePadrao ?? "un") as Unit;
+      const next: ProdutoComponente[] = [
+        ...componentes,
+        {
+          id: generateId("comp"),
+          produtoId: "",
+          quantidade: 1,
+          unidade: fallbackUnit,
+        },
+      ];
+      updateProduto(productId, { componentes: next });
+    },
+    [produtos, updateProduto],
+  );
+
+  const handleUpdateComponent = useCallback(
+    (productId: string, componentId: string, patch: Partial<ProdutoComponente>) => {
+      const product = produtos.find((item) => item.id === productId);
+      if (!product) return;
+      const componentes = (product.componentes ?? []).map((component) =>
+        component.id === componentId ? { ...component, ...patch } : component,
+      );
+      updateProduto(productId, { componentes });
+    },
+    [produtos, updateProduto],
+  );
+
+  const handleRemoveComponent = useCallback(
+    (productId: string, componentId: string) => {
+      const product = produtos.find((item) => item.id === productId);
+      if (!product) return;
+      const componentes = (product.componentes ?? []).filter((component) => component.id !== componentId);
+      updateProduto(productId, { componentes });
+    },
+    [produtos, updateProduto],
+  );
 
   const getFlagBadge = (flag: keyof Produto["flags"], active: boolean) => {
     if (!active) return null;
@@ -229,9 +275,14 @@ export default function Catalogo() {
                         </p>
                       ) : null}
                     </div>
-                    <Badge variant={isActive ? "success" : "secondary"}>
-                      {isActive ? "Ativo" : "Inativo"}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge variant={isActive ? "success" : "secondary"}>
+                        {isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                      {product.componentes && product.componentes.length > 0 ? (
+                        <Badge variant="outline">Composto</Badge>
+                      ) : null}
+                    </div>
                   </div>
                 )}
               </CardHeader>
@@ -390,6 +441,147 @@ export default function Catalogo() {
                         {getFlagBadge("reducao", product.flags.reducao)}
                         {getFlagBadge("is", product.flags.is)}
                       </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Composicao do produto
+                    </h4>
+                    {editingId === product.id ? (
+                      <div className="space-y-3">
+                        {(product.componentes ?? []).map((component) => {
+                          const componentOptions = produtos.filter((item) => item.id !== product.id);
+                          const hasSelection = componentOptions.some((item) => item.id === component.produtoId);
+                          const selectValue = hasSelection ? component.produtoId : EMPTY_COMPONENT_VALUE;
+                          const defaultUnit = (
+                            component.unidade ??
+                            componentOptions.find((option) => option.id === component.produtoId)?.unidadePadrao ??
+                            product.unidadePadrao ??
+                            "un"
+                          ) as Unit;
+                          return (
+                            <div
+                              key={component.id}
+                              className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+                            >
+                              <div className="space-y-1">
+                                <Label>Produto base</Label>
+                                <Select
+                                  value={selectValue}
+                                  onValueChange={(value) =>
+                                    handleUpdateComponent(product.id, component.id, {
+                                      produtoId: value === EMPTY_COMPONENT_VALUE ? "" : value,
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um produto" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={EMPTY_COMPONENT_VALUE}>
+                                      Selecionar produto
+                                    </SelectItem>
+                                    {componentOptions.map((option) => (
+                                      <SelectItem key={option.id} value={option.id}>
+                                        {option.descricao} ({option.ncm})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label>Quantidade</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={component.quantidade}
+                                  onChange={(event) =>
+                                    handleUpdateComponent(product.id, component.id, {
+                                      quantidade: Number(event.target.value) || 0,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label>Unidade</Label>
+                                <Select
+                                  value={defaultUnit}
+                                  onValueChange={(value) =>
+                                    handleUpdateComponent(product.id, component.id, {
+                                      unidade: value as Unit,
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {UNIT_OPTIONS.map((unit) => (
+                                      <SelectItem key={unit} value={unit}>
+                                        {UNIT_LABELS[unit]}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveComponent(product.id, component.id)}
+                                aria-label="Remover componente"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                        {(product.componentes ?? []).length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            Nenhum componente adicionado. Use o botao abaixo para montar a combinacao.
+                          </p>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddComponent(product.id)}
+                          className="sm:w-fit"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar componente
+                        </Button>
+                      </div>
+                    ) : product.componentes && product.componentes.length > 0 ? (
+                      <div className="space-y-2 rounded-md border border-dashed p-3 text-xs">
+                        <p className="font-semibold text-muted-foreground">Composto por</p>
+                        <ul className="space-y-1">
+                          {product.componentes.map((component) => {
+                            const componentProduct = produtos.find((item) => item.id === component.produtoId);
+                            const unitKey = (
+                              component.unidade ??
+                              componentProduct?.unidadePadrao ??
+                              "un"
+                            ) as Unit;
+                            const unitLabel = UNIT_LABELS[unitKey];
+                            return (
+                              <li key={component.id} className="flex items-center justify-between gap-2">
+                                <span className="text-muted-foreground">
+                                  {component.quantidade} {unitLabel}
+                                </span>
+                                <span className="font-medium text-foreground">
+                                  {componentProduct ? componentProduct.descricao : "Item removido"}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Produto simples. Nenhuma composicao registrada.
+                      </p>
                     )}
                   </div>
 

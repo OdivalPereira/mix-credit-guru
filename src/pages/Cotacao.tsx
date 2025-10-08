@@ -65,7 +65,10 @@ export default function Cotacao() {
     calcular,
     registrarOtimizacao,
   } = useCotacaoStore();
-  const contratos = useContractsStore((state) => state.contratos);
+  const { contratos, findContract } = useContractsStore((state) => ({
+    contratos: state.contratos,
+    findContract: state.findContract,
+  }));
   const conversoesGlobais = useUnidadesStore((state) => state.conversoes);
   const yieldGlobais = useUnidadesStore((state) => state.yields);
   const produtosCatalogo = useCatalogoStore((state) => state.produtos);
@@ -89,49 +92,6 @@ export default function Cotacao() {
       setContexto({ [key]: value });
     },
     [setContexto],
-  );
-
-  const numericFields = useMemo<Array<keyof Supplier>>(
-    () => ["preco", "frete", "pedidoMinimo", "prazoEntregaDias", "prazoPagamentoDias"],
-    [],
-  );
-
-  const isNumericField = useCallback(
-    (field: keyof Supplier): field is (typeof numericFields)[number] =>
-      numericFields.includes(field),
-    [numericFields],
-  );
-
-  const handleFornecedorChange = useCallback(
-    (id: string, field: keyof Supplier, value: string) => {
-      const current = fornecedores.find((item) => item.id === id);
-      if (!current) return;
-      upsertFornecedor({
-        id,
-        ...current,
-        [field]: isNumericField(field) ? parseFloat(value) || 0 : value,
-      });
-    },
-    [fornecedores, isNumericField, upsertFornecedor],
-  );
-
-  const handleFlagChange = useCallback(
-    (id: string, flag: "cesta" | "reducao" | "refeicao", value: boolean) => {
-      const current = fornecedores.find((item) => item.id === id);
-      if (!current) {
-        return;
-      }
-      if (flag === "refeicao") {
-        upsertFornecedor({ id, ...current, isRefeicaoPronta: value });
-        return;
-      }
-      upsertFornecedor({
-        id,
-        ...current,
-        flagsItem: { ...current.flagsItem, [flag]: value },
-      });
-    },
-    [fornecedores, upsertFornecedor],
   );
 
   const handleDuplicate = useCallback(
@@ -478,10 +438,10 @@ export default function Cotacao() {
         resultados={resultados}
         fornecedoresOriginais={fornecedores}
         produtos={produtosCatalogo}
+        contextProductKey={contexto.produto}
+        findContract={findContract}
         formatCurrency={formatCurrency}
         onAddSupplier={handleAddSupplier}
-        onFieldChange={handleFornecedorChange}
-        onFlagChange={handleFlagChange}
         onDuplicate={handleDuplicate}
         onRemove={removeFornecedor}
         onImportCSV={() => csvInputRef.current?.click()}

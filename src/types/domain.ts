@@ -22,6 +22,14 @@ export interface SupplierContato {
   telefone?: string;
 }
 
+export interface ProdutoComponente {
+  id: string;
+  produtoId: string;
+  quantidade: number;
+  unidade?: Unit;
+  observacao?: string;
+}
+
 export interface Produto {
   id: string;
   descricao: string;
@@ -37,6 +45,7 @@ export interface Produto {
     reducao: boolean;
     is: boolean;
   };
+  componentes?: ProdutoComponente[];
 }
 
 export interface Supplier {

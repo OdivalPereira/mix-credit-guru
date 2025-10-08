@@ -18,7 +18,15 @@ export const useCatalogoStore = create<CatalogoStore>()(
     (set, get) => ({
       produtos: [],
       addProduto: (produto) =>
-        set((state) => ({ produtos: [...state.produtos, produto] })),
+        set((state) => ({
+          produtos: [
+            ...state.produtos,
+            {
+              ...produto,
+              componentes: produto.componentes ?? [],
+            },
+          ],
+        })),
       updateProduto: (id, data) =>
         set((state) => ({
           produtos: state.produtos.map((p) =>
@@ -27,6 +35,8 @@ export const useCatalogoStore = create<CatalogoStore>()(
                   ...p,
                   ...data,
                   flags: { ...p.flags, ...(data.flags ?? {}) },
+                  componentes:
+                    data.componentes !== undefined ? data.componentes : p.componentes ?? [],
                 }
               : p,
           ),
@@ -50,9 +60,13 @@ export const useCatalogoStore = create<CatalogoStore>()(
                 ...current,
                 ...produto,
                 id: current.id,
+                componentes: produto.componentes ?? current.componentes ?? [],
               });
             } else {
-              byNcm.set(produto.ncm, produto);
+              byNcm.set(produto.ncm, {
+                ...produto,
+                componentes: produto.componentes ?? [],
+              });
             }
           }
           return { produtos: Array.from(byNcm.values()) };
