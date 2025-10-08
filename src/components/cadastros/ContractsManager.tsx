@@ -42,6 +42,7 @@ import type { ContractFornecedor, FreightBreak, PriceBreak, Unit, YieldConfig } 
 type ContractUpdate = Partial<ContractFornecedor>;
 
 const MAX_BREAK_ITEMS = 50;
+const EMPTY_SELECT_VALUE = "__empty__";
 
 export const ContractsManager = () => {
   const contracts = useContractsStore((state) => state.contratos);
@@ -328,14 +329,19 @@ export const ContractsManager = () => {
                       <div className="space-y-2">
                         <Label htmlFor={`supplier-${contract.id}`}>Fornecedor</Label>
                         <Select
-                          value={contract.supplierId ?? ""}
-                          onValueChange={(value) => handleSupplierChange(contract, value)}
+                          value={contract.supplierId ? contract.supplierId : EMPTY_SELECT_VALUE}
+                          onValueChange={(value) =>
+                            handleSupplierChange(
+                              contract,
+                              value === EMPTY_SELECT_VALUE ? "" : value,
+                            )
+                          }
                         >
                           <SelectTrigger id={`supplier-${contract.id}`}>
                             <SelectValue placeholder="Selecione o fornecedor" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Sem vínculo</SelectItem>
+                            <SelectItem value={EMPTY_SELECT_VALUE}>Sem vínculo</SelectItem>
                             {fornecedores.map((supplierOption) => (
                               <SelectItem key={supplierOption.id} value={supplierOption.id}>
                                 {supplierOption.nome}
@@ -348,14 +354,23 @@ export const ContractsManager = () => {
                       <div className="space-y-2">
                         <Label htmlFor={`product-${contract.id}`}>Produto do catálogo</Label>
                         <Select
-                          value={contract.produtoId && produtosPorNcm.has(contract.produtoId) ? contract.produtoId : ""}
-                          onValueChange={(value) => handleProdutoCatalogoChange(contract, value)}
+                          value={
+                            contract.produtoId && produtosPorNcm.has(contract.produtoId)
+                              ? contract.produtoId
+                              : EMPTY_SELECT_VALUE
+                          }
+                          onValueChange={(value) =>
+                            handleProdutoCatalogoChange(
+                              contract,
+                              value === EMPTY_SELECT_VALUE ? "" : value,
+                            )
+                          }
                         >
                           <SelectTrigger id={`product-${contract.id}`}>
                             <SelectValue placeholder="Selecione um produto" />
                           </SelectTrigger>
                           <SelectContent className="max-h-64">
-                            <SelectItem value="">Não utilizar catálogo</SelectItem>
+                            <SelectItem value={EMPTY_SELECT_VALUE}>Não utilizar catálogo</SelectItem>
                             {produtoOptions.map((option) => (
                               <SelectItem key={`${contract.id}-${option.value}`} value={option.value}>
                                 {option.label}

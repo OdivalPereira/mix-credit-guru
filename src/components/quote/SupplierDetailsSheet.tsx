@@ -39,6 +39,8 @@ import {
   REGIME_OPTIONS,
 } from "@/data/lookups";
 
+const EMPTY_SELECT_VALUE = "__empty__";
+
 interface SupplierDetailsSheetProps {
   supplier: Supplier;
   produtos: Produto[];
@@ -257,14 +259,16 @@ export const SupplierDetailsSheet = ({
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-produto">Produto</Label>
                 <Select
-                  value={supplier.produtoId ?? ""}
-                  onValueChange={(value) => handleProductChange(value || undefined)}
+                  value={supplier.produtoId ? supplier.produtoId : EMPTY_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    handleProductChange(value === EMPTY_SELECT_VALUE ? undefined : value)
+                  }
                 >
                   <SelectTrigger id="fornecedor-produto">
                     <SelectValue placeholder="Selecione um produto" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem vinculo</SelectItem>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>Sem vinculo</SelectItem>
                     {produtos.map((produto) => (
                       <SelectItem key={produto.id} value={produto.id}>
                         {produto.descricao} ({produto.ncm})

@@ -39,6 +39,8 @@ const numericFields: Array<keyof Supplier> = [
 const isNumericField = (field: keyof Supplier): field is (typeof numericFields)[number] =>
   numericFields.includes(field);
 
+const EMPTY_SELECT_VALUE = "__empty__";
+
 export const SuppliersManager = () => {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
@@ -337,14 +339,20 @@ export const SuppliersManager = () => {
                   <div className="space-y-1">
                     <Label>UF</Label>
                     <Select
-                      value={supplier.uf ?? ""}
-                      onValueChange={(value) => handleFieldChange(supplier.id, "uf", value)}
+                      value={supplier.uf ? supplier.uf : EMPTY_SELECT_VALUE}
+                      onValueChange={(value) =>
+                        handleFieldChange(
+                          supplier.id,
+                          "uf",
+                          value === EMPTY_SELECT_VALUE ? "" : value,
+                        )
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Estado" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Não informado</SelectItem>
+                        <SelectItem value={EMPTY_SELECT_VALUE}>Não informado</SelectItem>
                         {ESTADOS.map((estado) => (
                           <SelectItem key={estado.sigla} value={estado.sigla}>
                             {estado.sigla} - {estado.nome}
