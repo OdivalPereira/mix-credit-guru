@@ -4,24 +4,14 @@ import { CalendarDays, Globe2, MapPin, PackageSearch, ShieldCheck } from "lucide
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getMunicipiosByUF } from "@/data/locations";
+import { DESTINO_LABELS, REGIME_LABELS } from "@/data/lookups";
 import type { Contexto } from "@/store/useCotacaoStore";
 
 interface QuoteContextSummaryProps {
   contexto: Contexto;
 }
 
-const destinoLabels: Record<string, string> = {
-  A: "Refeicao",
-  B: "Revenda",
-};
-
-const regimeLabels: Record<string, string> = {
-  normal: "Regime Normal",
-  simples: "Simples Nacional",
-  presumido: "Lucro Presumido",
-};
-
-const getLabel = (value: string | undefined, map: Record<string, string>) => {
+const getLabel = <T extends string>(value: T | undefined, map: Partial<Record<T, string>>) => {
   if (!value) {
     return undefined;
   }
@@ -52,14 +42,14 @@ const opportunities = [
     label: "Destino",
     icon: PackageSearch,
     getValue: (ctx: Contexto) =>
-      getLabel(ctx.destino, destinoLabels) ?? "Defina a finalidade",
+      getLabel(ctx.destino, DESTINO_LABELS) ?? "Defina a finalidade",
   },
   {
     key: "regime",
     label: "Regime tributario",
     icon: ShieldCheck,
     getValue: (ctx: Contexto) =>
-      getLabel(ctx.regime, regimeLabels) ?? "Selecione o regime",
+      getLabel(ctx.regime, REGIME_LABELS) ?? "Selecione o regime",
   },
 ];
 
@@ -102,8 +92,8 @@ const QuoteContextSummaryComponent = ({ contexto }: QuoteContextSummaryProps) =>
       <div className="flex flex-wrap gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
         <span>Contexto aplicado:</span>
         <Badge variant="secondary">{contexto.uf?.toUpperCase() || "UF"}</Badge>
-        <Badge variant="outline">{getLabel(contexto.destino, destinoLabels) ?? "Destino"}</Badge>
-        <Badge variant="outline">{getLabel(contexto.regime, regimeLabels) ?? "Regime"}</Badge>
+        <Badge variant="outline">{getLabel(contexto.destino, DESTINO_LABELS) ?? "Destino"}</Badge>
+        <Badge variant="outline">{getLabel(contexto.regime, REGIME_LABELS) ?? "Regime"}</Badge>
         {municipioNome ? <Badge variant="outline">{municipioNome}</Badge> : null}
       </div>
     </Card>

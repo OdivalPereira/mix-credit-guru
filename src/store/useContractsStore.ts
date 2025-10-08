@@ -4,21 +4,9 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { ContractFornecedor } from "@/types/domain";
 import { generateId } from "@/lib/utils";
 
-const defaultContracts: ContractFornecedor[] = [
-  {
-    fornecedorId: generateId("contract"),
-    produtoId: "",
-    unidade: "un",
-    precoBase: 0,
-    priceBreaks: [],
-    freightBreaks: [],
-    yield: undefined,
-    conversoes: [],
-  },
-];
-
-export const createEmptyContract = (): ContractFornecedor => ({
-  fornecedorId: generateId("contract"),
+const createContractDefaults = (): ContractFornecedor => ({
+  id: generateId("contract"),
+  supplierId: undefined,
   produtoId: "",
   unidade: "un",
   precoBase: 0,
@@ -28,13 +16,31 @@ export const createEmptyContract = (): ContractFornecedor => ({
   conversoes: [],
 });
 
+const normalizeContract = (contract: ContractFornecedor): ContractFornecedor => ({
+  id: contract.id ?? contract.fornecedorId ?? generateId("contract"),
+  supplierId: contract.supplierId,
+  produtoId: contract.produtoId ?? "",
+  unidade: contract.unidade ?? "un",
+  precoBase: contract.precoBase ?? 0,
+  priceBreaks: contract.priceBreaks ?? [],
+  freightBreaks: contract.freightBreaks ?? [],
+  yield: contract.yield,
+  conversoes: contract.conversoes ?? [],
+  fornecedorId: contract.fornecedorId,
+});
+
+const defaultContracts: ContractFornecedor[] = [createContractDefaults()];
+
+export const createEmptyContract = (): ContractFornecedor =>
+  normalizeContract(createContractDefaults());
+
 interface ContractsStore {
   contratos: ContractFornecedor[];
   updateContracts: (
     updater: (prev: ContractFornecedor[]) => ContractFornecedor[],
   ) => void;
   reset: () => void;
-  findContract: (fornecedorId: string, produtoKey?: string) => ContractFornecedor | undefined;
+  findContract: (supplierId: string, produtoKey?: string) => ContractFornecedor | undefined;
 }
 
 export const useContractsStore = create<ContractsStore>()(
@@ -42,32 +48,76 @@ export const useContractsStore = create<ContractsStore>()(
     (set, get) => ({
       contratos: defaultContracts,
       updateContracts: (updater) =>
-        set((state) => ({ contratos: updater(state.contratos) })),
-      reset: () => set({ contratos: defaultContracts }),
-      findContract: (fornecedorId: string, produtoKey?: string) => {
+        set((state) => ({
+          contratos: updater(state.contratos).map(normalizeContract),
+        })),
+      reset: () => set({ contratos: [createContractDefaults()] }),
+      findContract: (supplierId: string, produtoKey?: string) => {
         const lowerProduto = produtoKey?.toLowerCase().trim();
-        const matches = get().contratos.filter(
-          (contract) => contract.fornecedorId === fornecedorId,
-        );
-        if (matches.length === 0) {
+        const contratos = get().contratos.map(normalizeContract);
+
+        const directMatches = contratos.filter((contract) => {
+          if (!supplierId) {
+            return false;
+          }
+          if (contract.supplierId && contract.supplierId === supplierId) {
+            return true;
+          }
+          if (contract.fornecedorId && contract.fornecedorId === supplierId) {
+            return true;
+          }
+          return false;
+        });
+
+        const fallbackMatches =
+          directMatches.length > 0
+            ? directMatches
+            : contratos.filter(
+                (contract) => !contract.supplierId && !contract.fornecedorId,
+              );
+
+        if (fallbackMatches.length === 0) {
           return undefined;
         }
         if (!lowerProduto) {
-          return matches[0];
+          return fallbackMatches[0];
         }
         return (
-          matches.find((contract) => {
+          fallbackMatches.find((contract) => {
             if (!contract.produtoId) {
               return false;
             }
             return lowerProduto.includes(contract.produtoId.toLowerCase());
-          }) ?? matches[0]
+          }) ?? fallbackMatches[0]
         );
       },
     }),
     {
       name: "cmx_v03_contracts",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persistedState, version) => {
+        if (!persistedState || version >= 1) {
+          return persistedState;
+        }
+        const state = persistedState as {
+          contratos?: ContractFornecedor[];
+        };
+        if (!state.contratos) {
+          return {
+            contratos: [createContractDefaults()],
+          };
+        }
+        return {
+          ...state,
+          contratos: state.contratos.map((contract) =>
+            normalizeContract({
+              ...contract,
+              supplierId: contract.supplierId ?? undefined,
+            }),
+          ),
+        };
+      },
     },
   ),
 );

@@ -7,12 +7,15 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Settings, Save, Moon, Sun } from "lucide-react";
+import { ESTADOS } from "@/data/locations";
+import { DESTINO_OPTIONS, DESTINO_LABELS, REGIME_OPTIONS, REGIME_LABELS } from "@/data/lookups";
+import type { DestinoTipo, SupplierRegime } from "@/types/domain";
 
 export default function Config() {
   const [darkMode, setDarkMode] = useState(false);
   const [defaultUf, setDefaultUf] = useState("");
-  const [defaultRegime, setDefaultRegime] = useState("");
-  const [defaultDestino, setDefaultDestino] = useState("");
+  const [defaultRegime, setDefaultRegime] = useState<SupplierRegime | "">("");
+  const [defaultDestino, setDefaultDestino] = useState<DestinoTipo | "">("");
   const [autoCalculate, setAutoCalculate] = useState(true);
   const [showTooltips, setShowTooltips] = useState(true);
 
@@ -41,43 +44,61 @@ export default function Config() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="default-uf">UF Padrao</Label>
-              <Select value={defaultUf} onValueChange={setDefaultUf}>
+              <Select value={defaultUf} onValueChange={(value) => setDefaultUf(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione seu estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sp">SP - Sao Paulo</SelectItem>
-                  <SelectItem value="rj">RJ - Rio de Janeiro</SelectItem>
-                  <SelectItem value="mg">MG - Minas Gerais</SelectItem>
-                  <SelectItem value="pr">PR - Parana</SelectItem>
-                  <SelectItem value="rs">RS - Rio Grande do Sul</SelectItem>
+                  {ESTADOS.map((estado) => (
+                    <SelectItem key={estado.sigla} value={estado.sigla}>
+                      {estado.sigla} - {estado.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="default-regime">Regime Tributario</Label>
-              <Select value={defaultRegime} onValueChange={setDefaultRegime}>
+              <Select value={defaultRegime} onValueChange={(value) => setDefaultRegime(value as SupplierRegime)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seu regime" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="normal">Regime Normal</SelectItem>
-                  <SelectItem value="simples">Simples Nacional</SelectItem>
-                  <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                  {REGIME_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="default-destino">Destinacao Padrao</Label>
-              <Select value={defaultDestino} onValueChange={setDefaultDestino}>
+              <Select value={defaultDestino} onValueChange={(value) => setDefaultDestino(value as DestinoTipo)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Finalidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="A">A - Refeicao</SelectItem>
-                  <SelectItem value="B">B - Revenda</SelectItem>
+                  {DESTINO_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      textValue={`${option.value} - ${option.label}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {option.value} - {option.label}
+                        </span>
+                        {option.description ? (
+                          <span className="text-xs text-muted-foreground">
+                            {option.description}
+                          </span>
+                        ) : null}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -166,10 +187,10 @@ export default function Config() {
               UF: {defaultUf ? defaultUf.toUpperCase() : "Nao definido"}
             </Badge>
             <Badge variant={defaultRegime ? "success" : "secondary"}>
-              Regime: {defaultRegime || "Nao definido"}
+              Regime: {defaultRegime ? REGIME_LABELS[defaultRegime] ?? defaultRegime : "Nao definido"}
             </Badge>
             <Badge variant={defaultDestino ? "success" : "secondary"}>
-              Destinacao: {defaultDestino || "Nao definida"}
+              Destinacao: {defaultDestino ? `${defaultDestino} - ${DESTINO_LABELS[defaultDestino] ?? ""}`.trim() : "Nao definida"}
             </Badge>
             <Badge variant={darkMode ? "default" : "secondary"}>
               Tema: {darkMode ? "Escuro" : "Claro"}

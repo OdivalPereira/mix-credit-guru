@@ -31,14 +31,12 @@ import { toast } from "@/components/ui/use-toast";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy } from "lucide-react";
 
-import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
-
-const SUPPLY_CHAIN_STAGES = 4;
 
 export default function Cotacao() {
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -158,30 +156,8 @@ export default function Cotacao() {
   );
 
   const handleAddSupplier = useCallback(() => {
-    upsertFornecedor({
-      nome: "",
-      cnpj: "",
-      tipo: "distribuidor",
-      regime: "normal",
-      uf: contexto.uf ?? "",
-      municipio: contexto.municipio ?? "",
-      contato: undefined,
-      ativo: true,
-      produtoId: undefined,
-      produtoDescricao: contexto.produto || "",
-      unidadeNegociada: undefined,
-      pedidoMinimo: 0,
-      prazoEntregaDias: 0,
-      prazoPagamentoDias: 0,
-      preco: 0,
-      frete: 0,
-      ibs: 0,
-      cbs: 0,
-      is: 0,
-      flagsItem: { cesta: false, reducao: false },
-      isRefeicaoPronta: false,
-    });
-  }, [contexto.municipio, contexto.produto, contexto.uf, upsertFornecedor]);
+    upsertFornecedor(createEmptySupplier(contexto));
+  }, [contexto, upsertFornecedor]);
 
   const handleImportCSV = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {

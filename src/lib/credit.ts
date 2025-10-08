@@ -1,11 +1,15 @@
-import type { CreditStatus } from "@/types/domain";
+import type { CreditStatus, DestinoTipo, SupplierRegime } from "@/types/domain";
+import { DESTINO_OPTIONS, REGIME_OPTIONS } from "@/data/lookups";
 import { memoize } from "./memoize";
 
 // Regras simplificadas de creditabilidade por destinacao e regime tributario
-const creditRules: Record<string, Record<string, CreditStatus>> = {
+const creditRules: Partial<Record<DestinoTipo, Partial<Record<SupplierRegime, CreditStatus>>>> = {
   A: { normal: "yes", simples: "no", presumido: "limited" },
-  B: { normal: "yes", simples: "no", presumido: "yes" }
+  B: { normal: "yes", simples: "no", presumido: "yes" },
 };
+
+const validDestinos = new Set<DestinoTipo>(DESTINO_OPTIONS.map((option) => option.value));
+const validRegimes = new Set<SupplierRegime>(REGIME_OPTIONS.map((option) => option.value));
 
 export interface CreditResult {
   status: CreditStatus;
@@ -37,9 +41,14 @@ const computeCreditInternal = (
     return { status: "no", creditavel: false, credito: 0 };
   }
 
-  const destinoKey = destino.toUpperCase();
-  const regimeKey = regime.toLowerCase();
-  let status: CreditStatus = creditRules[destinoKey]?.[regimeKey] ?? "no";
+  const destinoKey = destino.toUpperCase() as DestinoTipo;
+  const regimeKey = regime.toLowerCase() as SupplierRegime;
+  const normalizedDestino = validDestinos.has(destinoKey) ? destinoKey : undefined;
+  const normalizedRegime = validRegimes.has(regimeKey) ? regimeKey : undefined;
+  let status: CreditStatus =
+    (normalizedDestino && normalizedRegime
+      ? creditRules[normalizedDestino]?.[normalizedRegime]
+      : undefined) ?? "no";
 
   const baseRate = (ibs + cbs) / 100;
   let credito = 0;

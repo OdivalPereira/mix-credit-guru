@@ -4,7 +4,8 @@ import type { ContractFornecedor } from '@/types/domain';
 
 describe('resolveUnitPrice', () => {
   const contract: ContractFornecedor = {
-    fornecedorId: 'f1',
+    id: 'contract-f1',
+    supplierId: 'forn-1',
     produtoId: 'p1',
     unidade: 'un',
     precoBase: 10,

@@ -31,10 +31,13 @@ import { Switch } from "@/components/ui/switch";
 import { ESTADOS, getMunicipiosByUF } from "@/data/locations";
 import type { Produto, Supplier, SupplierRegime, SupplierTipo, Unit } from "@/types/domain";
 import { cn } from "@/lib/utils";
-
-const unidades: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
-const supplierTipos: SupplierTipo[] = ["industria", "distribuidor", "produtor", "atacado", "varejo"];
-const supplierRegimes: SupplierRegime[] = ["normal", "simples", "presumido"];
+import {
+  UNIT_OPTIONS,
+  UNIT_LABELS,
+  SUPPLIER_TIPO_OPTIONS,
+  SUPPLIER_TIPO_LABELS,
+  REGIME_OPTIONS,
+} from "@/data/lookups";
 
 interface SupplierDetailsSheetProps {
   supplier: Supplier;
@@ -127,9 +130,9 @@ export const SupplierDetailsSheet = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {supplierTipos.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+                    {SUPPLIER_TIPO_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {SUPPLIER_TIPO_LABELS[option.value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -145,9 +148,9 @@ export const SupplierDetailsSheet = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {supplierRegimes.map((regime) => (
-                      <SelectItem key={regime} value={regime}>
-                        {regime.charAt(0).toUpperCase() + regime.slice(1)}
+                    {REGIME_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -282,9 +285,9 @@ export const SupplierDetailsSheet = ({
                     <SelectValue placeholder="Selecione a unidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    {unidades.map((unidade) => (
+                    {UNIT_OPTIONS.map((unidade) => (
                       <SelectItem key={unidade} value={unidade}>
-                        {unidade.toUpperCase()}
+                        {UNIT_LABELS[unidade]}
                       </SelectItem>
                     ))}
                   </SelectContent>

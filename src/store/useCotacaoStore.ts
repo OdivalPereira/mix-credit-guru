@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { readFornecedoresCSV, writeFornecedoresCSV } from "../lib/csv";
-import type { Supplier, MixResultado } from "@/types/domain";
+import type { Supplier, MixResultado, DestinoTipo, SupplierRegime } from "@/types/domain";
 import { rankSuppliers } from "@/lib/calcs";
 import { useAppStore } from "./useAppStore";
 import type { OptimizePerItemResult } from "@/lib/opt";
@@ -15,8 +15,8 @@ export interface Contexto {
   data: string;
   uf: string;
   municipio?: string;
-  destino: string;
-  regime: string;
+  destino: DestinoTipo;
+  regime: SupplierRegime;
   produto: string;
 }
 
@@ -47,6 +47,36 @@ const initialContexto: Contexto = {
   regime: "normal",
   produto: "",
 };
+
+const supplyChainLength = 4;
+export const SUPPLY_CHAIN_STAGES = supplyChainLength;
+
+export const createEmptySupplier = (context?: Partial<Contexto>): Supplier =>
+  applyFornecedorDefaults({
+    id: generateId("fornecedor"),
+    nome: "",
+    cnpj: "",
+    tipo: "distribuidor",
+    regime: context?.regime ?? "normal",
+    uf: (context?.uf ?? "").toUpperCase(),
+    municipio: context?.municipio ?? "",
+    contato: undefined,
+    ativo: true,
+    produtoId: undefined,
+    produtoDescricao: context?.produto ?? "",
+    unidadeNegociada: undefined,
+    pedidoMinimo: 0,
+    prazoEntregaDias: 0,
+    prazoPagamentoDias: 0,
+    preco: 0,
+    ibs: 0,
+    cbs: 0,
+    is: 0,
+    frete: 0,
+    flagsItem: { cesta: false, reducao: false },
+    isRefeicaoPronta: false,
+    cadeia: Array.from({ length: supplyChainLength }, () => ""),
+  });
 
 interface BuildResultadoParams {
   fornecedores: Supplier[];
@@ -154,17 +184,38 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
 }
 
 function applyFornecedorDefaults(fornecedor: Supplier): Supplier {
+  const flagsItem =
+    fornecedor.flagsItem !== undefined
+      ? { ...fornecedor.flagsItem }
+      : { cesta: false, reducao: false };
+  const cadeia = Array.isArray(fornecedor.cadeia)
+    ? fornecedor.cadeia.map((etapa) => etapa ?? "")
+    : [];
+  if (cadeia.length < supplyChainLength) {
+    cadeia.push(...Array.from({ length: supplyChainLength - cadeia.length }, () => ""));
+  }
   return {
     ...fornecedor,
+    nome: fornecedor.nome ?? "",
     cnpj: fornecedor.cnpj ?? "",
-    uf: fornecedor.uf ?? "",
+    tipo: fornecedor.tipo ?? "distribuidor",
+    regime: fornecedor.regime ?? "normal",
+    uf: fornecedor.uf?.toUpperCase() ?? "",
     ativo: fornecedor.ativo ?? true,
+    produtoId: fornecedor.produtoId ?? undefined,
     produtoDescricao: fornecedor.produtoDescricao ?? "",
+    unidadeNegociada: fornecedor.unidadeNegociada ?? undefined,
     pedidoMinimo: fornecedor.pedidoMinimo ?? 0,
     prazoEntregaDias: fornecedor.prazoEntregaDias ?? 0,
     prazoPagamentoDias: fornecedor.prazoPagamentoDias ?? 0,
-    flagsItem: fornecedor.flagsItem ?? undefined,
+    preco: fornecedor.preco ?? 0,
+    ibs: fornecedor.ibs ?? 0,
+    cbs: fornecedor.cbs ?? 0,
+    is: fornecedor.is ?? 0,
+    frete: fornecedor.frete ?? 0,
+    flagsItem,
     isRefeicaoPronta: fornecedor.isRefeicaoPronta ?? false,
+    cadeia,
   };
 }
 
@@ -336,6 +387,40 @@ export const useCotacaoStore = create<CotacaoStore>()(
         contexto: state.contexto,
         fornecedores: state.fornecedores,
       }),
+      version: 1,
+      migrate: (persistedState, version) => {
+        if (!persistedState || version >= 1) {
+          return persistedState;
+        }
+        const state = persistedState as {
+          contexto?: Partial<Contexto>;
+          fornecedores?: Supplier[];
+        };
+        const destinoMap: Record<string, DestinoTipo> = {
+          consumo: "C",
+          revenda: "B",
+          imobilizado: "D",
+          producao: "E",
+          comercializacao: "E",
+        };
+        const contextoMigrado: Contexto = {
+          ...initialContexto,
+          ...state.contexto,
+          uf: state.contexto?.uf ? state.contexto.uf.toUpperCase() : initialContexto.uf,
+          destino: (() => {
+            const bruto = state.contexto?.destino;
+            if (!bruto) {
+              return initialContexto.destino;
+            }
+            const normalizado = bruto.trim().toLowerCase();
+            return destinoMap[normalizado] ?? (bruto.toUpperCase() as DestinoTipo);
+          })(),
+        };
+        return {
+          contexto: contextoMigrado,
+          fornecedores: state.fornecedores ?? [],
+        };
+      },
     },
   ),
 );

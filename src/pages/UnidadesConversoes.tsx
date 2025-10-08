@@ -12,8 +12,7 @@ import type { Unit } from "@/types/domain";
 import { Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
-
-const unidades: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
+import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
 
 export default function UnidadesConversoes() {
   const conversoes = useUnidadesStore((state) => state.conversoes);
@@ -107,17 +106,27 @@ export default function UnidadesConversoes() {
     updateYields((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const unidadesCobertas = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          conversoes.flatMap((c) => [c.de, c.para]).concat(
-            yieldConfigs.flatMap((y) => [y.entrada, y.saida]),
-          ),
-        ),
-      ),
-    [conversoes, yieldConfigs],
-  );
+  const unidadesCobertas = useMemo(() => {
+    const valid = new Set<Unit>(UNIT_OPTIONS);
+    const result = new Set<Unit>();
+    for (const conv of conversoes) {
+      if (valid.has(conv.de)) {
+        result.add(conv.de);
+      }
+      if (valid.has(conv.para)) {
+        result.add(conv.para);
+      }
+    }
+    for (const y of yieldConfigs) {
+      if (valid.has(y.entrada)) {
+        result.add(y.entrada);
+      }
+      if (valid.has(y.saida)) {
+        result.add(y.saida);
+      }
+    }
+    return Array.from(result);
+  }, [conversoes, yieldConfigs]);
 
   return (
     <div className="space-y-8">
@@ -184,9 +193,9 @@ export default function UnidadesConversoes() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {unidades.map((u) => (
+                        {UNIT_OPTIONS.map((u) => (
                           <SelectItem key={`de-${u}`} value={u}>
-                            {u.toUpperCase()}
+                            {UNIT_LABELS[u]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -201,9 +210,9 @@ export default function UnidadesConversoes() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {unidades.map((u) => (
+                        {UNIT_OPTIONS.map((u) => (
                           <SelectItem key={`para-${u}`} value={u}>
-                            {u.toUpperCase()}
+                            {UNIT_LABELS[u]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -304,9 +313,9 @@ export default function UnidadesConversoes() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {unidades.map((u) => (
+                        {UNIT_OPTIONS.map((u) => (
                           <SelectItem key={`entrada-${u}`} value={u}>
-                            {u.toUpperCase()}
+                            {UNIT_LABELS[u]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -321,9 +330,9 @@ export default function UnidadesConversoes() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {unidades.map((u) => (
+                        {UNIT_OPTIONS.map((u) => (
                           <SelectItem key={`saida-${u}`} value={u}>
-                            {u.toUpperCase()}
+                            {UNIT_LABELS[u]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -363,11 +372,14 @@ export default function UnidadesConversoes() {
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {unidadesCobertas.length ? (
-              unidadesCobertas.map((unidade) => (
-                <Badge key={`covered-${unidade}`} variant="secondary">
-                  {unidade.toUpperCase()}
-                </Badge>
-              ))
+              unidadesCobertas.map((unidade) => {
+                const label = UNIT_LABELS[unidade] ?? unidade.toUpperCase();
+                return (
+                  <Badge key={`covered-${unidade}`} variant="secondary">
+                    {label}
+                  </Badge>
+                );
+              })
             ) : (
               <span className="text-sm text-muted-foreground">
                 Nenhuma unidade coberta.

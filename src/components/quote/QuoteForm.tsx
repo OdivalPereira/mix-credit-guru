@@ -42,6 +42,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { ESTADOS, getMunicipiosByUF } from "@/data/locations";
+import { DESTINO_OPTIONS, REGIME_OPTIONS } from "@/data/lookups";
 import { cn } from "@/lib/utils";
 import type { Contexto } from "@/store/useCotacaoStore";
 
@@ -267,11 +268,22 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="consumo">Uso e consumo</SelectItem>
-                      <SelectItem value="revenda">Revenda</SelectItem>
-                      <SelectItem value="imobilizado">Imobilizado</SelectItem>
-                      <SelectItem value="producao">Producao</SelectItem>
-                      <SelectItem value="comercializacao">Comercializacao</SelectItem>
+                      {DESTINO_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          textValue={`${option.value} - ${option.label}`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{option.label}</span>
+                            {option.description ? (
+                              <span className="text-xs text-muted-foreground">
+                                {option.description}
+                              </span>
+                            ) : null}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -302,9 +314,11 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="normal">Regime Normal</SelectItem>
-                      <SelectItem value="simples">Simples Nacional</SelectItem>
-                      <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                      {REGIME_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

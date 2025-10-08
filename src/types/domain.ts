@@ -83,6 +83,8 @@ export interface VigenciaRegra {
   fim?: string;
 }
 
+export type DestinoTipo = "A" | "B" | "C" | "D" | "E";
+
 export interface NcmRule {
   ncm: string;
   descricao: string;
@@ -160,7 +162,8 @@ export interface FreightBreak {
 }
 
 export interface ContractFornecedor {
-  fornecedorId: string;
+  id: string;
+  supplierId?: string;
   produtoId: string;
   unidade: Unit;
   precoBase: number;
@@ -168,6 +171,10 @@ export interface ContractFornecedor {
   freightBreaks?: FreightBreak[];
   yield?: YieldConfig;
   conversoes?: UnitConv[];
+  /**
+   * @deprecated Mantido apenas para migrar dados antigos que armazenavam o ID do contrato em `fornecedorId`.
+   */
+  fornecedorId?: string;
 }
 
 export interface SupplierConstraints {

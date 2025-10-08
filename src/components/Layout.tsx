@@ -6,19 +6,19 @@ import {
   FileText,
   Package,
   Settings,
-  Shuffle,
   TrendingUp,
   Boxes,
+  ClipboardList,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Cotacao", href: "/", icon: Calculator },
+  { name: "Cadastros", href: "/cadastros", icon: ClipboardList },
   { name: "Catalogo", href: "/catalogo", icon: Package },
   { name: "Cenarios", href: "/cenarios", icon: Calendar },
   { name: "Comparar cenarios", href: "/comparar-cenarios", icon: TrendingUp },
-  { name: "Contratos", href: "/contratos", icon: Shuffle },
   { name: "Unidades", href: "/unidades", icon: Boxes },
   { name: "Regras", href: "/regras", icon: BookOpen },
   { name: "Receitas", href: "/receitas", icon: FileText },

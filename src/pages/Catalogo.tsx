@@ -31,8 +31,7 @@ import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import type { Produto, Unit } from "@/types/domain";
 import { generateId } from "@/lib/utils";
-
-const unidades: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
+import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
 
 export default function Catalogo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -181,7 +180,8 @@ export default function Catalogo() {
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((product) => {
-          const unidadeLabel = (product.unidadePadrao ?? "un").toUpperCase();
+        const unidadePadrao = (product.unidadePadrao ?? "un") as Unit;
+        const unidadeLabel = UNIT_LABELS[unidadePadrao];
           const isActive = product.ativo !== false;
 
           return (
@@ -290,9 +290,9 @@ export default function Catalogo() {
                               <SelectValue placeholder="Unidade" />
                             </SelectTrigger>
                             <SelectContent>
-                              {unidades.map((unidade) => (
+                              {UNIT_OPTIONS.map((unidade) => (
                                 <SelectItem key={`${product.id}-${unidade}`} value={unidade}>
-                                  {unidade.toUpperCase()}
+                                  {UNIT_LABELS[unidade]}
                                 </SelectItem>
                               ))}
                             </SelectContent>

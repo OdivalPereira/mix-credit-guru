@@ -15,6 +15,7 @@ import {
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import { getMunicipiosByUF } from "@/data/locations";
+import { SUPPLIER_TIPO_OPTIONS, SUPPLIER_TIPO_LABELS, REGIME_OPTIONS } from "@/data/lookups";
 
 interface SupplierRowProps {
   supplier: MixResultadoItem;
@@ -30,9 +31,6 @@ interface SupplierRowProps {
   getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
   onOpenDetails: () => void;
 }
-
-const tipoOptions = ["industria", "distribuidor", "produtor", "atacado", "varejo"] as const;
-const regimeOptions = ["normal", "simples", "presumido"] as const;
 
 const SupplierRowComponent = ({
   supplier,
@@ -113,9 +111,9 @@ const SupplierRowComponent = ({
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            {tipoOptions.map((tipo) => (
-              <SelectItem key={tipo} value={tipo}>
-                {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+            {SUPPLIER_TIPO_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {SUPPLIER_TIPO_LABELS[option.value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -134,9 +132,9 @@ const SupplierRowComponent = ({
             <SelectValue placeholder="Regime" />
           </SelectTrigger>
           <SelectContent>
-            {regimeOptions.map((regime) => (
-              <SelectItem key={regime} value={regime}>
-                {regime.charAt(0).toUpperCase() + regime.slice(1)}
+            {REGIME_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>

@@ -1,5 +1,6 @@
 import type { Supplier, Produto, Unit, SupplierTipo, SupplierRegime } from "@/types/domain";
 import { generateId } from "@/lib/utils";
+import { UNIT_OPTIONS, SUPPLIER_TIPO_OPTIONS, REGIME_OPTIONS } from "@/data/lookups";
 
 export const fornecedorCsvHeaders = [
   "nome",
@@ -20,6 +21,13 @@ export const fornecedorCsvHeaders = [
   "prazo_entrega",
   "prazo_pagamento",
   "ativo",
+  "flag_cesta",
+  "flag_reducao",
+  "refeicao_pronta",
+  "cadeia_1",
+  "cadeia_2",
+  "cadeia_3",
+  "cadeia_4",
 ] as const;
 
 export const produtoCsvHeaders = [
@@ -132,21 +140,27 @@ function formatCsvValue(value: string | number | undefined | null): string {
   return str;
 }
 
-const unidadesValidas: Unit[] = ["un", "kg", "g", "l", "ml", "ton"];
+const unidadesValidas = new Set<Unit>(UNIT_OPTIONS);
+const supplierTipoValues = new Set<SupplierTipo>(
+  SUPPLIER_TIPO_OPTIONS.map((option) => option.value),
+);
+const regimeValues = new Set<SupplierRegime>(
+  REGIME_OPTIONS.map((option) => option.value),
+);
 
 function normalizeUnit(value: string | undefined): Unit | undefined {
   if (!value) {
     return undefined;
   }
   const normalized = value.trim().toLowerCase();
-  return unidadesValidas.includes(normalized as Unit)
+  return unidadesValidas.has(normalized as Unit)
     ? (normalized as Unit)
     : undefined;
 }
 
 function normalizeSupplierTipo(value: string | undefined): SupplierTipo {
   const normalized = (value ?? "").trim().toLowerCase();
-  if (["industria", "distribuidor", "produtor", "atacado", "varejo"].includes(normalized)) {
+  if (supplierTipoValues.has(normalized as SupplierTipo)) {
     return normalized as SupplierTipo;
   }
   switch (normalized) {
@@ -163,7 +177,7 @@ function normalizeSupplierTipo(value: string | undefined): SupplierTipo {
 
 function normalizeSupplierRegime(value: string | undefined): SupplierRegime {
   const normalized = (value ?? "").trim().toLowerCase();
-  if (["normal", "simples", "presumido"].includes(normalized)) {
+  if (regimeValues.has(normalized as SupplierRegime)) {
     return normalized as SupplierRegime;
   }
   switch (normalized) {
@@ -210,6 +224,13 @@ export function readFornecedoresCSV(csv: string): Supplier[] {
   const idxPrazoEntrega = indexFor("prazo_entrega", -1);
   const idxPrazoPagamento = indexFor("prazo_pagamento", -1);
   const idxAtivo = indexFor("ativo", -1);
+  const idxFlagCesta = indexFor("flag_cesta", -1);
+  const idxFlagReducao = indexFor("flag_reducao", -1);
+  const idxRefPronta = indexFor("refeicao_pronta", -1);
+  const idxCadeia1 = indexFor("cadeia_1", -1);
+  const idxCadeia2 = indexFor("cadeia_2", -1);
+  const idxCadeia3 = indexFor("cadeia_3", -1);
+  const idxCadeia4 = indexFor("cadeia_4", -1);
 
   const fornecedores: Supplier[] = [];
 
@@ -231,6 +252,31 @@ export function readFornecedoresCSV(csv: string): Supplier[] {
       idxPrazoPagamento >= 0 ? Math.max(0, Math.trunc(parseNumber(cols[idxPrazoPagamento]))) : 0;
     const ativo = idxAtivo >= 0 ? parseBoolean(cols[idxAtivo], true) : true;
 
+    const flagsItem: Supplier["flagsItem"] = {};
+    if (idxFlagCesta >= 0) {
+      flagsItem.cesta = parseBoolean(cols[idxFlagCesta], false);
+    }
+    if (idxFlagReducao >= 0) {
+      flagsItem.reducao = parseBoolean(cols[idxFlagReducao], false);
+    }
+    if (idxProdutoId >= 0) {
+      const ncmValue = cols[idxProdutoId]?.trim();
+      if (ncmValue) {
+        flagsItem.ncm = ncmValue;
+      }
+    }
+    const hasFlags = Object.keys(flagsItem).length > 0;
+
+    const cadeiaRaw = [
+      idxCadeia1 >= 0 ? cols[idxCadeia1]?.trim() ?? "" : "",
+      idxCadeia2 >= 0 ? cols[idxCadeia2]?.trim() ?? "" : "",
+      idxCadeia3 >= 0 ? cols[idxCadeia3]?.trim() ?? "" : "",
+      idxCadeia4 >= 0 ? cols[idxCadeia4]?.trim() ?? "" : "",
+    ];
+    const cadeia = cadeiaRaw.every((value) => value.length === 0)
+      ? []
+      : cadeiaRaw;
+
     fornecedores.push({
       id: generateId("fornecedor"),
       nome,
@@ -251,7 +297,10 @@ export function readFornecedoresCSV(csv: string): Supplier[] {
       cbs: parseNumber(cols[idxCbs]),
       is: parseNumber(cols[idxIs]),
       frete: parseNumber(cols[idxFrete]),
-      isRefeicaoPronta: false,
+      isRefeicaoPronta:
+        idxRefPronta >= 0 ? parseBoolean(cols[idxRefPronta], false) : false,
+      flagsItem: hasFlags ? flagsItem : undefined,
+      cadeia,
     });
   }
 
@@ -320,26 +369,37 @@ export function readProdutosCSV(csv: string): Produto[] {
 export function writeFornecedoresCSV(fornecedores: Supplier[]): string {
   const header = fornecedorCsvHeaders.join(",");
   const rows = fornecedores.map((f) =>
-    [
-      formatCsvValue(f.nome),
-      formatCsvValue(f.tipo),
-      formatCsvValue(f.regime),
-      formatCsvValue(f.preco),
-      formatCsvValue(f.ibs),
-      formatCsvValue(f.cbs),
-      formatCsvValue(f.is),
-      formatCsvValue(f.frete),
-      formatCsvValue(f.cnpj),
-      formatCsvValue(f.uf),
-      formatCsvValue(f.municipio),
-      formatCsvValue(f.produtoId),
-      formatCsvValue(f.produtoDescricao),
-      formatCsvValue(f.unidadeNegociada),
-      formatCsvValue(f.pedidoMinimo ?? 0),
-      formatCsvValue(f.prazoEntregaDias ?? 0),
-      formatCsvValue(f.prazoPagamentoDias ?? 0),
-      formatCsvValue(f.ativo ? "1" : "0"),
-    ].join(","),
+    (() => {
+      const flags = f.flagsItem ?? {};
+      const cadeia = Array.isArray(f.cadeia) ? f.cadeia : [];
+      const cadeiaValores = Array.from({ length: 4 }, (_, index) =>
+        formatCsvValue(cadeia[index] ?? ""),
+      );
+      return [
+        formatCsvValue(f.nome),
+        formatCsvValue(f.tipo),
+        formatCsvValue(f.regime),
+        formatCsvValue(f.preco),
+        formatCsvValue(f.ibs),
+        formatCsvValue(f.cbs),
+        formatCsvValue(f.is),
+        formatCsvValue(f.frete),
+        formatCsvValue(f.cnpj),
+        formatCsvValue(f.uf),
+        formatCsvValue(f.municipio),
+        formatCsvValue(f.produtoId),
+        formatCsvValue(f.produtoDescricao),
+        formatCsvValue(f.unidadeNegociada),
+        formatCsvValue(f.pedidoMinimo ?? 0),
+        formatCsvValue(f.prazoEntregaDias ?? 0),
+        formatCsvValue(f.prazoPagamentoDias ?? 0),
+        formatCsvValue(f.ativo ? "1" : "0"),
+        formatCsvValue(flags.cesta ? "1" : "0"),
+        formatCsvValue(flags.reducao ? "1" : "0"),
+        formatCsvValue(f.isRefeicaoPronta ? "1" : "0"),
+        ...cadeiaValores,
+      ].join(",");
+    })(),
   );
   return [header, ...rows].join("\n");
 }
