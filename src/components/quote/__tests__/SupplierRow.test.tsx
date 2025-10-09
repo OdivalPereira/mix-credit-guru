@@ -36,8 +36,6 @@ const mockSupplier: MixResultadoItem = {
 
 describe("SupplierRow", () => {
   it("exibe dados do fornecedor", () => {
-    const onFieldChange = vi.fn();
-
     render(
       <table>
         <tbody>
@@ -45,8 +43,6 @@ describe("SupplierRow", () => {
             supplier={mockSupplier}
             formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
             getCreditBadge={() => <Badge>Sim</Badge>}
-            onFieldChange={onFieldChange}
-            onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
             onOpenDetails={vi.fn()}
@@ -55,14 +51,12 @@ describe("SupplierRow", () => {
       </table>,
     );
 
-    expect(screen.getByDisplayValue("Fornecedor Teste")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("100")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("10")).toBeInTheDocument();
+    expect(screen.getByText("Fornecedor Teste")).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 100\.00/i)).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 10\.00/i)).toBeInTheDocument();
     expect(
       screen.getByText(/CNPJ: 12\.345\.678\/0001-99/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Produto: Produto Exemplo/i)).toBeInTheDocument();
-    expect(screen.getByText(/SP.*S.o Paulo/i)).toBeInTheDocument();
   });
 
   it("apresenta ranking corretamente", () => {
@@ -73,8 +67,6 @@ describe("SupplierRow", () => {
             supplier={{ ...mockSupplier, ranking: 3 }}
             formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
             getCreditBadge={() => <Badge>Sim</Badge>}
-            onFieldChange={vi.fn()}
-            onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
             onOpenDetails={vi.fn()}
@@ -86,19 +78,14 @@ describe("SupplierRow", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
   });
 
-  it("aciona onFieldChange ao editar nome", async () => {
-    const user = userEvent.setup();
-    const onFieldChange = vi.fn();
-
+  it("exibe flags do item quando presentes", () => {
     render(
       <table>
         <tbody>
           <SupplierRow
-            supplier={mockSupplier}
+            supplier={{ ...mockSupplier, flagsItem: { cesta: true, reducao: true } }}
             formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
             getCreditBadge={() => <Badge>Sim</Badge>}
-            onFieldChange={onFieldChange}
-            onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
             onOpenDetails={vi.fn()}
@@ -107,11 +94,8 @@ describe("SupplierRow", () => {
       </table>,
     );
 
-    const nomeInput = screen.getByDisplayValue("Fornecedor Teste");
-    await user.clear(nomeInput);
-    await user.type(nomeInput, "Novo Nome");
-
-    expect(onFieldChange).toHaveBeenCalled();
+    expect(screen.getByText("Cesta basica")).toBeInTheDocument();
+    expect(screen.getByText("Reducao")).toBeInTheDocument();
   });
 
   it("aciona onDuplicate ao clicar no botao correspondente", async () => {
@@ -125,8 +109,6 @@ describe("SupplierRow", () => {
             supplier={mockSupplier}
             formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
             getCreditBadge={() => <Badge>Sim</Badge>}
-            onFieldChange={vi.fn()}
-            onFlagChange={vi.fn()}
             onDuplicate={onDuplicate}
             onRemove={vi.fn()}
             onOpenDetails={vi.fn()}
@@ -154,8 +136,6 @@ describe("SupplierRow", () => {
             supplier={mockSupplier}
             formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
             getCreditBadge={() => <Badge>Sim</Badge>}
-            onFieldChange={vi.fn()}
-            onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
             onOpenDetails={onOpenDetails}
@@ -183,8 +163,6 @@ describe("SupplierRow", () => {
             supplier={mockSupplier}
             formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
             getCreditBadge={() => <Badge>Sim</Badge>}
-            onFieldChange={vi.fn()}
-            onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={onRemove}
             onOpenDetails={vi.fn()}
@@ -209,8 +187,6 @@ describe("SupplierRow", () => {
             supplier={mockSupplier}
             formatCurrency={(value) => `R$ ${value.toFixed(2)}`}
             getCreditBadge={() => <Badge variant="secondary">Creditavel</Badge>}
-            onFieldChange={vi.fn()}
-            onFlagChange={vi.fn()}
             onDuplicate={vi.fn()}
             onRemove={vi.fn()}
             onOpenDetails={vi.fn()}
