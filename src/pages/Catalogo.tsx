@@ -178,9 +178,9 @@ export default function Catalogo() {
       {/* Page Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Catalogo de Produtos</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Catálogo de Produtos</h2>
           <p className="text-muted-foreground">
-            Gerencie produtos com classificacao NCM e caracteristicas tributarias
+            Gerencie produtos com classificação NCM e características tributárias
           </p>
         </div>
         <div className="flex space-x-2">
@@ -621,7 +621,7 @@ export default function Catalogo() {
                         onClick={() => handleUsar(product)}
                       >
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Usar na Cotacao
+                        Usar na Cotação
                       </Button>
                     </div>
                   )}

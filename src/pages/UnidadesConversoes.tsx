@@ -243,7 +243,7 @@ export default function UnidadesConversoes() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Configuracoes de yield</CardTitle>
+          <CardTitle>Configurações de yield</CardTitle>
           <CardDescription>
             Vincule opcionalmente um produto para aplicar um rendimento dedicado; deixe em branco para usar um yield global.
           </CardDescription>

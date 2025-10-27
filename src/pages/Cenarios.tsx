@@ -188,9 +188,9 @@ export default function Cenarios() {
   return (
     <div className="space-y-10">
       <section>
-        <h2 className="text-3xl font-bold tracking-tight">Cenarios tributarios</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Cenários tributários</h2>
         <p className="text-muted-foreground">
-          Configure o cenario ativo para as simulacoes de custo e compare diferentes marcos da reforma.
+          Configure o cenário ativo para as simulações de custo e compare diferentes marcos da reforma.
         </p>
       </section>
 
@@ -198,16 +198,16 @@ export default function Cenarios() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Calendar className="mr-2 h-5 w-5" />
-            Configuracao dos cenarios
+            Configuração dos cenários
           </CardTitle>
           <CardDescription>
-            O cenario base e aplicado em Cotacao, Relatorios e regras fiscais. Use a comparacao para testar alternativas.
+            O cenário base é aplicado em Cotação, Relatórios e regras fiscais. Use a comparação para testar alternativas.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Cenario base (ativo)</label>
+              <label className="text-sm font-medium">Cenário base (ativo)</label>
               <Select
                 value={baseOption.year}
                 onValueChange={handleBaseYearChange}
@@ -268,12 +268,12 @@ export default function Cenarios() {
                 <CardContent className="pt-6">
                   <div className="mb-2 flex items-center">
                     <TrendingUp className="mr-2 h-4 w-4 text-success" />
-                    <h4 className="font-medium">Beneficios esperados</h4>
+                    <h4 className="font-medium">Benefícios esperados</h4>
                   </div>
                   <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>Simplificacao do sistema tributario</li>
-                    <li>Reducao de burocracia operacional</li>
-                    <li>Melhor transpariencia nos custos ao longo da cadeia</li>
+                    <li>Simplificação do sistema tributário</li>
+                    <li>Redução de burocracia operacional</li>
+                    <li>Melhor transparência nos custos ao longo da cadeia</li>
                   </ul>
                 </CardContent>
               </Card>
@@ -298,20 +298,20 @@ export default function Cenarios() {
 
       <section className="space-y-6">
         <div>
-          <h3 className="text-2xl font-semibold">Analise de impacto entre cenarios</h3>
+          <h3 className="text-2xl font-semibold">Análise de impacto entre cenários</h3>
           <p className="text-muted-foreground">
-            Resultados consideram fornecedores ativos, contratos registrados e conversoes ou yields configurados.
+            Resultados consideram fornecedores ativos, contratos registrados e conversões ou yields configurados.
           </p>
         </div>
 
         {!hasDados ? (
           <Card>
             <CardHeader>
-              <CardTitle>Comparar cenarios</CardTitle>
+              <CardTitle>Comparar cenários</CardTitle>
             </CardHeader>
             <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
               <AlertTriangle className="h-4 w-4" />
-              Cadastre fornecedores e execute uma cotacao para habilitar o comparador de cenarios.
+              Cadastre fornecedores e execute uma cotação para habilitar o comparador de cenários.
             </CardContent>
           </Card>
         ) : (

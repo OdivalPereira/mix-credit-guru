@@ -188,7 +188,7 @@ const SupplierTableComponent = ({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Limpar cotacao atual"
+                aria-label="Limpar cotação atual"
                 onClick={onClear}
               >
                 <Trash2 className="h-4 w-4" />
@@ -249,7 +249,7 @@ const SupplierTableComponent = ({
                 <TableRow>
                   <TableCell colSpan={11}>
                     <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
-                      <p>Nenhum fornecedor cadastrado para esta cotacao.</p>
+                      <p>Nenhum fornecedor cadastrado para esta cotação.</p>
                       <p className="text-xs">
                         Use Adicionar ou importe um arquivo CSV/JSON para iniciar.
                       </p>

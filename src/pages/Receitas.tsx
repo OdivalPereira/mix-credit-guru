@@ -77,8 +77,8 @@ export default function Receitas() {
           >
             <TableHeader>
               <TableRow>
-                <TableHead>Codigo</TableHead>
-                <TableHead>Descricao</TableHead>
+                <TableHead>Código</TableHead>
+                <TableHead>Descrição</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>

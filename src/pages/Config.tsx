@@ -23,9 +23,9 @@ export default function Config() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Configuracoes</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
         <p className="text-muted-foreground">
-          Personalize o sistema com suas preferencias padrao
+          Personalize o sistema com suas preferências padrão
         </p>
       </div>
 
@@ -34,10 +34,10 @@ export default function Config() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Settings className="mr-2 h-5 w-5" />
-            Valores Padrao
+            Valores Padrão
           </CardTitle>
           <CardDescription>
-            Configure valores que serao preenchidos automaticamente nas cotacoes
+            Configure valores que serão preenchidos automaticamente nas cotações
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -59,7 +59,7 @@ export default function Config() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="default-regime">Regime Tributario</Label>
+              <Label htmlFor="default-regime">Regime Tributário</Label>
               <Select value={defaultRegime} onValueChange={(value) => setDefaultRegime(value as SupplierRegime)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seu regime" />
@@ -139,7 +139,7 @@ export default function Config() {
             <div className="space-y-0.5">
               <Label htmlFor="tooltips">Tooltips Explicativos</Label>
               <p className="text-sm text-muted-foreground">
-                Mostrar dicas e explicacoes ao passar o mouse sobre elementos
+                Mostrar dicas e explicações ao passar o mouse sobre elementos
               </p>
             </div>
             <Switch
@@ -179,18 +179,18 @@ export default function Config() {
       {/* Current Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Status da Configuracao</CardTitle>
+          <CardTitle>Status da Configuração</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <Badge variant={defaultUf ? "success" : "secondary"}>
-              UF: {defaultUf ? defaultUf.toUpperCase() : "Nao definido"}
+              UF: {defaultUf ? defaultUf.toUpperCase() : "Não definido"}
             </Badge>
             <Badge variant={defaultRegime ? "success" : "secondary"}>
-              Regime: {defaultRegime ? REGIME_LABELS[defaultRegime] ?? defaultRegime : "Nao definido"}
+              Regime: {defaultRegime ? REGIME_LABELS[defaultRegime] ?? defaultRegime : "Não definido"}
             </Badge>
             <Badge variant={defaultDestino ? "success" : "secondary"}>
-              Destinacao: {defaultDestino ? `${defaultDestino} - ${DESTINO_LABELS[defaultDestino] ?? ""}`.trim() : "Nao definida"}
+              Destinação: {defaultDestino ? `${defaultDestino} - ${DESTINO_LABELS[defaultDestino] ?? ""}`.trim() : "Não definida"}
             </Badge>
             <Badge variant={darkMode ? "default" : "secondary"}>
               Tema: {darkMode ? "Escuro" : "Claro"}
@@ -203,7 +203,7 @@ export default function Config() {
       <div className="flex justify-end">
         <Button size="lg" className="min-w-[120px]">
           <Save className="mr-2 h-4 w-4" />
-          Salvar Configuracoes
+          Salvar Configurações
         </Button>
       </div>
     </div>

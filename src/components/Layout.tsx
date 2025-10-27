@@ -12,13 +12,13 @@ import {
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Inicio", href: "/", icon: Home },
-  { name: "Cotacao", href: "/cotacao", icon: Calculator },
+  { name: "Início", href: "/", icon: Home },
+  { name: "Cotação", href: "/cotacao", icon: Calculator },
   { name: "Cadastros", href: "/cadastros", icon: ClipboardList },
-  { name: "Cenarios", href: "/cenarios", icon: Calendar },
+  { name: "Cenários", href: "/cenarios", icon: Calendar },
   { name: "Regras", href: "/regras", icon: BookOpen },
   { name: "Receitas", href: "/receitas", icon: FileText },
-  { name: "Relatorios", href: "/relatorios", icon: FileText },
+  { name: "Relatórios", href: "/relatorios", icon: FileText },
   { name: "Config", href: "/config", icon: Settings },
 ];
 

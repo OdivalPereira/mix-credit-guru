@@ -177,7 +177,7 @@ export default function Cotacao() {
     workerRef.current = worker;
     setOptimizing(true);
     setOptProgress(0);
-    setOptStatusMessage("Processando combinacoes otimizadas...");
+    setOptStatusMessage("Processando combinações otimizadas...");
 
     worker.postMessage({
       quantity: 100,
@@ -215,8 +215,8 @@ export default function Cotacao() {
             ? ` Alertas: ${message.result.violations.join(", ")}.`
             : " Nenhum alerta encontrado.";
         const summary = `Custo total ${total}.${alerts}`;
-        setOptStatusMessage(`Otimizacao concluida. ${summary}`);
-        toast({ title: "Otimizacao concluida", description: summary });
+        setOptStatusMessage(`Otimização concluída. ${summary}`);
+        toast({ title: "Otimização concluída", description: summary });
         workerRef.current?.terminate();
         workerRef.current = null;
         return;
@@ -227,9 +227,9 @@ export default function Cotacao() {
       setOptStatusMessage("Falha ao otimizar fornecedores.");
       toast({
         variant: "destructive",
-        title: "Erro na otimizacao",
+        title: "Erro na otimização",
         description:
-          message.message || "Nao foi possivel concluir a otimizacao.",
+          message.message || "Não foi possível concluir a otimização.",
       });
       workerRef.current?.terminate();
       workerRef.current = null;
@@ -241,8 +241,8 @@ export default function Cotacao() {
       setOptStatusMessage("Falha ao otimizar fornecedores.");
       toast({
         variant: "destructive",
-        title: "Erro na otimizacao",
-        description: error.message || "Nao foi possivel concluir a otimizacao.",
+        title: "Erro na otimização",
+        description: error.message || "Não foi possível concluir a otimização.",
       });
       workerRef.current?.terminate();
       workerRef.current = null;
@@ -326,17 +326,17 @@ export default function Cotacao() {
   const optimizationMessage = ultimaOtimizacao
     ? ultimaOtimizacao.violations.length > 0
       ? `${ultimaOtimizacao.violations.length} alerta(s) registrados.`
-      : "Sem violacoes registradas."
-    : "Execute a otimizacao para gerar um mix sugerido.";
+      : "Sem violações registradas."
+    : "Execute a otimização para gerar um mix sugerido.";
 
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">
-          Cotacao de fornecedores
+          Cotação de fornecedores
         </h2>
         <p className="text-muted-foreground">
-          Compare custos efetivos e creditos tributarios por fornecedor.
+          Compare custos efetivos e créditos tributários por fornecedor.
         </p>
       </div>
 
@@ -408,7 +408,7 @@ export default function Cotacao() {
         <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-muted-foreground">
-              Ultima otimizacao
+              Última otimização
             </span>
             <Sparkles className="h-4 w-4 text-primary" aria-hidden />
           </div>
@@ -424,12 +424,12 @@ export default function Cotacao() {
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" aria-hidden />
             <span className="font-semibold">
-              {quoteInsights.alertSuppliers} fornecedor(es) com restricoes
+              {quoteInsights.alertSuppliers} fornecedor(es) com restrições
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Revise limites contratuais e configuracoes tributarias antes de
-            confirmar a cotacao final.
+            Revise limites contratuais e configurações tributárias antes de
+            confirmar a cotação final.
           </p>
         </div>
       )}
@@ -463,7 +463,7 @@ export default function Cotacao() {
       {ultimaOtimizacao && (
         <Card>
           <CardHeader>
-            <CardTitle>Resultado da ultima otimizacao</CardTitle>
+            <CardTitle>Resultado da última otimização</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <div>
@@ -473,7 +473,7 @@ export default function Cotacao() {
               </span>
             </div>
             <div>
-              Violacoes:{" "}
+              Violações:{" "}
               {ultimaOtimizacao.violations.length > 0 ? (
                 <ul className="list-disc pl-5">
                   {ultimaOtimizacao.violations.map((violation) => (

@@ -24,7 +24,7 @@ export default function Relatorios() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Relatorio</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Relatório</h2>
           <p className="text-muted-foreground">
             Resumo de fornecedores vencedores e custos
           </p>
@@ -38,7 +38,7 @@ export default function Relatorios() {
         <Card>
           <CardHeader>
             <CardTitle>Fornecedores Vencedores</CardTitle>
-            <CardDescription>Com base na cotacao atual</CardDescription>
+            <CardDescription>Com base na cotação atual</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -46,9 +46,9 @@ export default function Relatorios() {
                 <TableRow>
                   <TableHead>Fornecedor</TableHead>
                   <TableHead className="text-right">Mix %</TableHead>
-                  <TableHead className="text-right">Credito (R$)</TableHead>
+                  <TableHead className="text-right">Crédito (R$)</TableHead>
                   <TableHead className="text-right">Custo Efetivo (R$)</TableHead>
-                  <TableHead className="text-right">Custo por Porcao (R$)</TableHead>
+                  <TableHead className="text-right">Custo por Porção (R$)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -122,8 +122,8 @@ export default function Relatorios() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Codigo</TableHead>
-                  <TableHead>Descricao</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Descrição</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

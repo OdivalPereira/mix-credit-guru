@@ -108,7 +108,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Parametros da cotacao</CardTitle>
+        <CardTitle>Parâmetros da cotação</CardTitle>
         <CardDescription>
           Configure os dados para analisar fornecedores
         </CardDescription>

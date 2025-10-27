@@ -210,14 +210,14 @@ export default function Regras() {
             <TableHeader>
               <TableRow>
                 <TableHead>NCM</TableHead>
-                <TableHead>Descricao</TableHead>
-                <TableHead>Codigo Receita</TableHead>
-                <TableHead>Descricao Receita</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Código Receita</TableHead>
+                <TableHead>Descrição Receita</TableHead>
                 <TableHead>IBS</TableHead>
                 <TableHead>CBS</TableHead>
                 <TableHead>IS</TableHead>
-                <TableHead>Inicio Vigencia</TableHead>
-                <TableHead>Fim Vigencia</TableHead>
+                <TableHead>Início Vigência</TableHead>
+                <TableHead>Fim Vigência</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead></TableHead>
               </TableRow>
