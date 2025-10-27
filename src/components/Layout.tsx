@@ -15,9 +15,7 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { name: "Cotacao", href: "/", icon: Calculator },
   { name: "Cadastros", href: "/cadastros", icon: ClipboardList },
-  { name: "Catalogo", href: "/catalogo", icon: Package },
   { name: "Cenarios", href: "/cenarios", icon: Calendar },
-  { name: "Unidades", href: "/unidades", icon: Boxes },
   { name: "Regras", href: "/regras", icon: BookOpen },
   { name: "Receitas", href: "/receitas", icon: FileText },
   { name: "Relatorios", href: "/relatorios", icon: FileText },
