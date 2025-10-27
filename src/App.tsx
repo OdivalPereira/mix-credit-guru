@@ -9,6 +9,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import DonationModal from "./components/DonationModal";
 
 // Lazy load pages for code splitting
+const Index = lazy(() => import("./pages/Index"));
 const Cotacao = lazy(() => import("./pages/Cotacao"));
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Regras = lazy(() => import("./pages/Regras"));
@@ -44,16 +45,17 @@ const App = () => (
           }>
             <Routes>
               <Route path="/" element={<Layout />}>
-                <Route index element={<Cotacao />} />
-              <Route path="catalogo" element={<Catalogo />} />
-              <Route path="cadastros" element={<Cadastros />} />
-              <Route path="cenarios" element={<Cenarios />} />
-              <Route path="regras" element={<Regras />} />
-              <Route path="receitas" element={<Receitas />} />
-              <Route path="relatorios" element={<Relatorios />} />
-              <Route path="contratos" element={<FornecedoresContratos />} />
-              <Route path="unidades" element={<UnidadesConversoes />} />
-              <Route path="config" element={<Config />} />
+                <Route index element={<Index />} />
+                <Route path="cotacao" element={<Cotacao />} />
+                <Route path="catalogo" element={<Catalogo />} />
+                <Route path="cadastros" element={<Cadastros />} />
+                <Route path="cenarios" element={<Cenarios />} />
+                <Route path="regras" element={<Regras />} />
+                <Route path="receitas" element={<Receitas />} />
+                <Route path="relatorios" element={<Relatorios />} />
+                <Route path="contratos" element={<FornecedoresContratos />} />
+                <Route path="unidades" element={<UnidadesConversoes />} />
+                <Route path="config" element={<Config />} />
               </Route>
             </Routes>
           </Suspense>

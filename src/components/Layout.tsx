@@ -4,16 +4,16 @@ import {
   Calendar,
   Calculator,
   FileText,
-  Package,
   Settings,
-  Boxes,
   ClipboardList,
+  Home,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Cotacao", href: "/", icon: Calculator },
+  { name: "Inicio", href: "/", icon: Home },
+  { name: "Cotacao", href: "/cotacao", icon: Calculator },
   { name: "Cadastros", href: "/cadastros", icon: ClipboardList },
   { name: "Cenarios", href: "/cenarios", icon: Calendar },
   { name: "Regras", href: "/regras", icon: BookOpen },
