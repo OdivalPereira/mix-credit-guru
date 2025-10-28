@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ChevronsUpDown, Check } from "lucide-react";
+import { ChevronsUpDown, Check, HelpCircle } from "lucide-react";
 
 import {
   Card,
@@ -41,6 +41,12 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ESTADOS, getMunicipiosByUF } from "@/data/locations";
 import { DESTINO_OPTIONS, REGIME_OPTIONS } from "@/data/lookups";
 import { cn } from "@/lib/utils";
@@ -114,14 +120,25 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
+        <TooltipProvider>
+          <Form {...form}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:[grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
             <FormField
               control={form.control}
               name="data"
               render={({ field }) => (
                 <FormItem className="sm:max-w-[200px]">
-                  <FormLabel htmlFor="data">Data</FormLabel>
+                  <div className="flex items-center gap-1">
+                    <FormLabel htmlFor="data">Data</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Data de referência para cálculo de alíquotas e contratos vigentes</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <FormControl>
                     <Input
                       id="data"
@@ -146,7 +163,17 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="uf"
               render={({ field }) => (
                 <FormItem className="sm:max-w-[160px]">
-                  <FormLabel htmlFor="estado">Estado</FormLabel>
+                  <div className="flex items-center gap-1">
+                    <FormLabel htmlFor="estado">Estado</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Estado de destino impacta ICMS e créditos tributários</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Select
                     value={field.value?.toUpperCase()}
                     onValueChange={(value) => {
@@ -183,7 +210,17 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="municipio"
               render={({ field }) => (
                 <FormItem className="sm:max-w-[320px]">
-                  <FormLabel htmlFor="municipio">Municipio</FormLabel>
+                  <div className="flex items-center gap-1">
+                    <FormLabel htmlFor="municipio">Município</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Município de destino pode ter alíquotas específicas de ICMS</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <FormControl>
                     <Popover open={isMunicipioOpen} onOpenChange={setIsMunicipioOpen}>
                       <PopoverTrigger asChild>
@@ -250,7 +287,17 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="destino"
               render={({ field }) => (
                 <FormItem className="sm:max-w-[220px]">
-                  <FormLabel htmlFor="destinacao">Destinacao</FormLabel>
+                  <div className="flex items-center gap-1">
+                    <FormLabel htmlFor="destinacao">Destinação</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Revenda, industrialização ou uso/consumo afetam a creditabilidade do ICMS</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -296,7 +343,17 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="regime"
               render={({ field }) => (
                 <FormItem className="sm:max-w-[240px]">
-                  <FormLabel htmlFor="regime">Regime tributario</FormLabel>
+                  <div className="flex items-center gap-1">
+                    <FormLabel htmlFor="regime">Regime tributário</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Lucro real permite crédito de PIS/COFINS, presumido e MEI não</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -331,7 +388,17 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
               name="produto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="produto">Produto</FormLabel>
+                  <div className="flex items-center gap-1">
+                    <FormLabel htmlFor="produto">Produto</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">NCM ou descrição do produto para buscar alíquotas e regras específicas</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <FormControl>
                     <Input
                       id="produto"
@@ -352,6 +419,7 @@ const QuoteFormComponent = ({ contexto, onContextoChange }: QuoteFormProps) => {
             />
           </div>
         </Form>
+        </TooltipProvider>
       </CardContent>
     </Card>
   );

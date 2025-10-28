@@ -28,8 +28,14 @@ import { QuoteContextSummary } from "@/components/quote/QuoteContextSummary";
 import { QuoteForm } from "@/components/quote/QuoteForm";
 import { SupplierTable } from "@/components/quote/SupplierTable";
 import { toast } from "@/components/ui/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy } from "lucide-react";
+import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle } from "lucide-react";
 
 import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
@@ -359,14 +365,25 @@ export default function Cotacao() {
 
       <QuoteContextSummary contexto={contexto} />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-muted-foreground">
-              Fornecedores avaliados
-            </span>
-            <Factory className="h-4 w-4 text-primary" aria-hidden />
-          </div>
+      <TooltipProvider>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-1">
+                <span className="font-medium text-muted-foreground">
+                  Fornecedores avaliados
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Total de fornecedores cadastrados e percentual com crédito tributário disponível</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Factory className="h-4 w-4 text-primary" aria-hidden />
+            </div>
           <p className="mt-2 text-2xl font-semibold text-foreground">
             {quoteInsights.totalSuppliers}
           </p>
@@ -377,26 +394,46 @@ export default function Cotacao() {
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-muted-foreground">
-              Melhor custo efetivo
-            </span>
-            <Trophy className="h-4 w-4 text-primary" aria-hidden />
-          </div>
+          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-1">
+                <span className="font-medium text-muted-foreground">
+                  Melhor custo efetivo
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Menor custo após aplicar impostos e descontar créditos tributários disponíveis</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Trophy className="h-4 w-4 text-primary" aria-hidden />
+            </div>
           <p className="mt-2 text-2xl font-semibold text-foreground">
             {bestSupplierCost}
           </p>
           <p className="text-xs text-muted-foreground">{bestSupplierName}</p>
         </div>
 
-        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-muted-foreground">
-              Credito medio
-            </span>
-            <PiggyBank className="h-4 w-4 text-primary" aria-hidden />
-          </div>
+          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-1">
+                <span className="font-medium text-muted-foreground">
+                  Crédito médio
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Média dos créditos de ICMS e PIS/COFINS que podem ser aproveitados na compra</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <PiggyBank className="h-4 w-4 text-primary" aria-hidden />
+            </div>
           <p className="mt-2 text-2xl font-semibold text-foreground">
             {averageCreditDisplay}
           </p>
@@ -405,19 +442,30 @@ export default function Cotacao() {
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-muted-foreground">
-              Última otimização
-            </span>
-            <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-          </div>
+          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-1">
+                <span className="font-medium text-muted-foreground">
+                  Última otimização
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Combinação otimizada de fornecedores respeitando limites contratuais e minimizando custos</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+            </div>
           <p className="mt-2 text-2xl font-semibold text-foreground">
             {optimizationCost}
           </p>
-          <p className="text-xs text-muted-foreground">{optimizationMessage}</p>
+            <p className="text-xs text-muted-foreground">{optimizationMessage}</p>
+          </div>
         </div>
-      </div>
+      </TooltipProvider>
 
       {quoteInsights.alertSuppliers > 0 && (
         <div className="rounded-lg border border-dashed bg-yellow-50/40 p-4 text-sm text-yellow-900">
