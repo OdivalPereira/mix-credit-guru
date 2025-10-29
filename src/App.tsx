@@ -16,8 +16,6 @@ const Regras = lazy(() => import("./pages/Regras"));
 const ImpactoReforma = lazy(() => import("./pages/ImpactoReforma"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Config = lazy(() => import("./pages/Config"));
-const FornecedoresContratos = lazy(() => import("./pages/FornecedoresContratos"));
-const UnidadesConversoes = lazy(() => import("./pages/UnidadesConversoes"));
 const Cadastros = lazy(() => import("./pages/Cadastros"));
 const Cenarios = lazy(() => import("./pages/Cenarios"));
 
@@ -53,8 +51,6 @@ const App = () => (
                 <Route path="regras" element={<Regras />} />
                 <Route path="impacto-reforma" element={<ImpactoReforma />} />
                 <Route path="relatorios" element={<Relatorios />} />
-                <Route path="contratos" element={<FornecedoresContratos />} />
-                <Route path="unidades" element={<UnidadesConversoes />} />
                 <Route path="config" element={<Config />} />
               </Route>
             </Routes>
