@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
@@ -30,34 +31,36 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <DonationModal />
-        <BrowserRouter>
-          <Suspense fallback={
-            <div className="flex items-center justify-center min-h-screen">
-              <div className="animate-pulse text-muted-foreground">Carregando...</div>
-            </div>
-          }>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Index />} />
-                <Route path="cotacao" element={<Cotacao />} />
-                <Route path="catalogo" element={<Catalogo />} />
-                <Route path="cadastros" element={<Cadastros />} />
-                <Route path="cenarios" element={<Cenarios />} />
-                <Route path="regras" element={<Regras />} />
-                <Route path="impacto-reforma" element={<ImpactoReforma />} />
-                <Route path="relatorios" element={<Relatorios />} />
-                <Route path="config" element={<Config />} />
-              </Route>
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <DonationModal />
+          <BrowserRouter>
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-pulse text-muted-foreground">Carregando...</div>
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Index />} />
+                  <Route path="cotacao" element={<Cotacao />} />
+                  <Route path="catalogo" element={<Catalogo />} />
+                  <Route path="cadastros" element={<Cadastros />} />
+                  <Route path="cenarios" element={<Cenarios />} />
+                  <Route path="regras" element={<Regras />} />
+                  <Route path="impacto-reforma" element={<ImpactoReforma />} />
+                  <Route path="relatorios" element={<Relatorios />} />
+                  <Route path="config" element={<Config />} />
+                </Route>
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );
 

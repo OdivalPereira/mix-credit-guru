@@ -41,6 +41,7 @@ import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/sto
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
+import { useConfigStore } from "@/store/useConfigStore";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
 
@@ -78,12 +79,27 @@ export default function Cotacao() {
   const conversoesGlobais = useUnidadesStore((state) => state.conversoes);
   const yieldGlobais = useUnidadesStore((state) => state.yields);
   const produtosCatalogo = useCatalogoStore((state) => state.produtos);
+  const config = useConfigStore();
 
   const resultados = useMemo(() => resultado.itens, [resultado.itens]);
 
+  // Apply default config values on mount
   useEffect(() => {
-    calcular();
-  }, [contexto, fornecedores, contratos, conversoesGlobais, yieldGlobais, calcular]);
+    const hasEmptyContext = !contexto.uf || !contexto.regime || !contexto.destino;
+    if (hasEmptyContext && (config.defaultUf || config.defaultRegime || config.defaultDestino)) {
+      setContexto({
+        ...(config.defaultUf && !contexto.uf ? { uf: config.defaultUf } : {}),
+        ...(config.defaultRegime && !contexto.regime ? { regime: config.defaultRegime } : {}),
+        ...(config.defaultDestino && !contexto.destino ? { destino: config.defaultDestino } : {}),
+      });
+    }
+  }, [config.defaultUf, config.defaultRegime, config.defaultDestino, contexto, setContexto]);
+
+  useEffect(() => {
+    if (config.autoCalculate) {
+      calcular();
+    }
+  }, [contexto, fornecedores, contratos, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate]);
 
   useEffect(() => () => workerRef.current?.terminate(), []);
 
@@ -373,14 +389,16 @@ export default function Cotacao() {
                 <span className="font-medium text-muted-foreground">
                   Fornecedores avaliados
                 </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Total de fornecedores cadastrados e percentual com crédito tributário disponível</p>
-                  </TooltipContent>
-                </Tooltip>
+                {config.showTooltips && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Total de fornecedores cadastrados e percentual com crédito tributário disponível</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
               <Factory className="h-4 w-4 text-primary" aria-hidden />
             </div>
@@ -400,14 +418,16 @@ export default function Cotacao() {
                 <span className="font-medium text-muted-foreground">
                   Melhor custo efetivo
                 </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Menor custo após aplicar impostos e descontar créditos tributários disponíveis</p>
-                  </TooltipContent>
-                </Tooltip>
+                {config.showTooltips && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Menor custo após aplicar impostos e descontar créditos tributários disponíveis</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
               <Trophy className="h-4 w-4 text-primary" aria-hidden />
             </div>
@@ -423,14 +443,16 @@ export default function Cotacao() {
                 <span className="font-medium text-muted-foreground">
                   Crédito médio
                 </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Média dos créditos de ICMS e PIS/COFINS que podem ser aproveitados na compra</p>
-                  </TooltipContent>
-                </Tooltip>
+                {config.showTooltips && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Média dos créditos de ICMS e PIS/COFINS que podem ser aproveitados na compra</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
               <PiggyBank className="h-4 w-4 text-primary" aria-hidden />
             </div>
@@ -448,14 +470,16 @@ export default function Cotacao() {
                 <span className="font-medium text-muted-foreground">
                   Última otimização
                 </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Combinação otimizada de fornecedores respeitando limites contratuais e minimizando custos</p>
-                  </TooltipContent>
-                </Tooltip>
+                {config.showTooltips && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Combinação otimizada de fornecedores respeitando limites contratuais e minimizando custos</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
               <Sparkles className="h-4 w-4 text-primary" aria-hidden />
             </div>
