@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -19,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   ChartContainer,
   ChartTooltip,
@@ -27,7 +29,7 @@ import {
 import { QuoteContextSummary } from "@/components/quote/QuoteContextSummary";
 import { QuoteForm } from "@/components/quote/QuoteForm";
 import { SupplierTable } from "@/components/quote/SupplierTable";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import {
   Tooltip,
   TooltipContent,
@@ -35,17 +37,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle } from "lucide-react";
+import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle, FileText, ArrowRight } from "lucide-react";
 
 import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { useConfigStore } from "@/store/useConfigStore";
+import { validateEssentialData } from "@/lib/validation";
+import { NextStepButton } from "@/components/quote/NextStepButton";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
 
 export default function Cotacao() {
+  const navigate = useNavigate();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -82,6 +87,27 @@ export default function Cotacao() {
   const config = useConfigStore();
 
   const resultados = useMemo(() => resultado.itens, [resultado.itens]);
+
+  // Validate essential data and show warnings
+  useEffect(() => {
+    const validation = validateEssentialData({
+      hasProdutos: produtosCatalogo.length > 0,
+      hasFornecedores: fornecedores.length > 0,
+      hasContratos: contratos.length > 0,
+      contextoUf: contexto.uf,
+      contextoRegime: contexto.regime,
+    });
+
+    if (!validation.isValid && fornecedores.length > 0) {
+      // Only show warnings if user has started adding data
+      validation.warnings.forEach((warning) => {
+        toast({
+          title: "Aviso",
+          description: warning,
+        });
+      });
+    }
+  }, [produtosCatalogo.length, fornecedores.length, contratos.length, contexto.uf, contexto.regime]);
 
   // Apply default config values on mount
   useEffect(() => {
@@ -138,7 +164,12 @@ export default function Cotacao() {
   );
 
   const handleAddSupplier = useCallback(() => {
-    upsertFornecedor(createEmptySupplier(contexto));
+    const supplier = createEmptySupplier(contexto);
+    upsertFornecedor(supplier);
+    toast({
+      title: "Fornecedor adicionado",
+      description: "Preencha os dados do novo fornecedor",
+    });
   }, [contexto, upsertFornecedor]);
 
   const handleImportCSV = useCallback(
@@ -148,6 +179,10 @@ export default function Cotacao() {
       const text = await file.text();
       importarCSV(text);
       event.target.value = "";
+      toast({
+        title: "CSV importado",
+        description: "Fornecedores importados com sucesso",
+      });
     },
     [importarCSV],
   );
@@ -159,6 +194,10 @@ export default function Cotacao() {
       const text = await file.text();
       importarJSON(text);
       event.target.value = "";
+      toast({
+        title: "JSON importado",
+        description: "Cotação importada com sucesso",
+      });
     },
     [importarJSON],
   );
@@ -172,6 +211,10 @@ export default function Cotacao() {
     element.download = "fornecedores.csv";
     element.click();
     URL.revokeObjectURL(url);
+    toast({
+      title: "CSV exportado",
+      description: "Arquivo fornecedores.csv baixado",
+    });
   }, [exportarCSV]);
 
   const handleExportJSON = useCallback(() => {
@@ -183,9 +226,39 @@ export default function Cotacao() {
     element.download = "cotacao.json";
     element.click();
     URL.revokeObjectURL(url);
+    toast({
+      title: "JSON exportado",
+      description: "Arquivo cotacao.json baixado",
+    });
   }, [exportarJSON]);
 
   const handleOptimize = useCallback(() => {
+    // Validate essential data before optimization
+    if (fornecedores.length === 0) {
+      toast({
+        title: "Erro de validação",
+        description: "Adicione pelo menos um fornecedor antes de otimizar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!contexto.uf || !contexto.regime) {
+      toast({
+        title: "Erro de validação",
+        description: "Configure UF e Regime Tributário antes de otimizar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (produtosCatalogo.length === 0) {
+      toast({
+        title: "Aviso",
+        description: "Nenhum produto cadastrado no catálogo. Isso pode afetar os cálculos.",
+      });
+    }
+
     if (workerRef.current) {
       workerRef.current.terminate();
     }
@@ -535,7 +608,14 @@ export default function Cotacao() {
       {ultimaOtimizacao && (
         <Card>
           <CardHeader>
-            <CardTitle>Resultado da última otimização</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Resultado da última otimização</CardTitle>
+              <Button onClick={() => navigate("/relatorios")} size="sm" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Ver Relatório Completo
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <div>

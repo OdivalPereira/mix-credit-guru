@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,10 @@ import {
   PieChart as PieChartIcon,
   BarChart3,
   History,
-  FileText
+  FileText,
+  Settings,
+  ArrowLeft,
+  Calculator
 } from "lucide-react";
 import {
   ChartContainer,
@@ -52,7 +56,8 @@ const CHART_COLORS = [
   "hsl(var(--chart-5))",
 ];
 
-export default function Relatorios() {
+const RelatoriosComponent = () => {
+  const navigate = useNavigate();
   const resultado = useCotacaoStore((s) => s.resultado);
   const contexto = useCotacaoStore((s) => s.contexto);
   const fornecedores = useCotacaoStore((s) => s.fornecedores);
@@ -167,21 +172,27 @@ export default function Relatorios() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Relatório Consolidado</h2>
           <p className="text-muted-foreground">
             Hub analítico com fornecedores vencedores, impacto da reforma e comparação de cenários
           </p>
         </div>
-        <div className="flex gap-2 no-print">
-          <Button onClick={handlePrint} variant="outline">
+        <div className="flex gap-2 no-print flex-wrap">
+          <Button onClick={() => navigate("/cotacao")} variant="outline" size="sm">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Cotação
+          </Button>
+          <Button onClick={() => navigate("/config")} variant="outline" size="sm">
+            <Settings className="mr-2 h-4 w-4" /> Configurações
+          </Button>
+          <Button onClick={handlePrint} variant="outline" size="sm">
             <Printer className="mr-2 h-4 w-4" /> Imprimir
           </Button>
-          <Button onClick={handleExportPDF} variant="outline">
+          <Button onClick={handleExportPDF} variant="outline" size="sm">
             <FileText className="mr-2 h-4 w-4" /> PDF
           </Button>
-          <Button onClick={handleExportExcel} variant="outline">
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="mr-2 h-4 w-4" /> Excel/CSV
           </Button>
         </div>
@@ -666,3 +677,5 @@ function calcularMix(
     custoPorPorcao: i.custoEfetivo / porcoes,
   }));
 }
+
+export default memo(RelatoriosComponent);

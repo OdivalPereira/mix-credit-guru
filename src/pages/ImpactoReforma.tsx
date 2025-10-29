@@ -13,6 +13,8 @@ import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { analisarImpactoProduto, calcularTotais, type ProdutoAnalise } from "@/lib/impacto";
 import { ArrowRight, Plus, Trash2, TrendingDown, TrendingUp, AlertCircle, ShoppingCart } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { toast } from "@/hooks/use-toast";
+import { NextStepButton } from "@/components/quote/NextStepButton";
 
 interface ProdutoSelecionado {
   produtoId: string;
@@ -78,7 +80,14 @@ export default function ImpactoReforma() {
   };
 
   const handleCotarFornecedores = () => {
+    // Store products list to pass to Cotacao page
+    const produtosIds = produtosSelecionados.map(p => p.produtoId);
+    sessionStorage.setItem("impacto-produtos", JSON.stringify(produtosIds));
     navigate("/cotacao");
+    toast({
+      title: "Redirecionando para Cotação",
+      description: `${produtosSelecionados.length} produto(s) selecionado(s) para cotação`,
+    });
   };
 
   const formatCurrency = (value: number) =>

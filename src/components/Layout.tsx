@@ -12,6 +12,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Glossary } from "@/components/Glossary";
+import { Breadcrumb } from "@/components/Breadcrumb";
 
 const navigation = [
   { name: "Início", href: "/", icon: Home },
@@ -64,6 +65,7 @@ export function Layout() {
       </nav>
 
       <main className="mx-auto max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8">
+        <Breadcrumb />
         <Outlet />
       </main>
       <Glossary />

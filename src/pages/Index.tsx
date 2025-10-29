@@ -3,9 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, Calendar, BookOpen, Lightbulb, ArrowRight } from "lucide-react";
 import { scenarioTimeline } from "@/data/scenarios";
+import { WelcomeTour } from "@/components/WelcomeTour";
 
 const Index = () => {
   return (
+    <>
+      <WelcomeTour />
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Hero Section */}
       <div className="mb-12 text-center">
@@ -151,6 +154,7 @@ const Index = () => {
         </p>
       </div>
     </div>
+    </>
   );
 };
 
