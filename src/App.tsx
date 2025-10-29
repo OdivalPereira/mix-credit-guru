@@ -13,7 +13,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Cotacao = lazy(() => import("./pages/Cotacao"));
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Regras = lazy(() => import("./pages/Regras"));
-const Receitas = lazy(() => import("./pages/Receitas"));
+const ImpactoReforma = lazy(() => import("./pages/ImpactoReforma"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Config = lazy(() => import("./pages/Config"));
 const FornecedoresContratos = lazy(() => import("./pages/FornecedoresContratos"));
@@ -51,7 +51,7 @@ const App = () => (
                 <Route path="cadastros" element={<Cadastros />} />
                 <Route path="cenarios" element={<Cenarios />} />
                 <Route path="regras" element={<Regras />} />
-                <Route path="receitas" element={<Receitas />} />
+                <Route path="impacto-reforma" element={<ImpactoReforma />} />
                 <Route path="relatorios" element={<Relatorios />} />
                 <Route path="contratos" element={<FornecedoresContratos />} />
                 <Route path="unidades" element={<UnidadesConversoes />} />

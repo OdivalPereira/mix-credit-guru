@@ -7,6 +7,7 @@ import {
   Settings,
   ClipboardList,
   Home,
+  TrendingUp,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -18,7 +19,7 @@ const navigation = [
   { name: "Cadastros", href: "/cadastros", icon: ClipboardList },
   { name: "Cenários", href: "/cenarios", icon: Calendar },
   { name: "Regras", href: "/regras", icon: BookOpen },
-  { name: "Receitas", href: "/receitas", icon: FileText },
+  { name: "Impacto da Reforma", href: "/impacto-reforma", icon: TrendingUp },
   { name: "Relatórios", href: "/relatorios", icon: FileText },
   { name: "Config", href: "/config", icon: Settings },
 ];
