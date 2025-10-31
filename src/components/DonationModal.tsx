@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useDonationModalStore } from "@/store/useDonationModalStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,24 +75,24 @@ const donationOptions: DonationOption[] = [
 ];
 
 const DonationModal = () => {
-  const [isMainModalOpen, setIsMainModalOpen] = useState(false);
+  const { isOpen, closeModal } = useDonationModalStore();
   const [selectedDonation, setSelectedDonation] = useState<DonationOption | null>(null);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
 
   const handleDonationClick = (donation: DonationOption) => {
     setSelectedDonation(donation);
-    setIsMainModalOpen(false);
+    closeModal();
   };
 
   const handleProjectsClick = () => {
     setIsProjectsModalOpen(true);
-    setIsMainModalOpen(false);
+    closeModal();
   };
 
   return (
     <>
       {/* Modal Principal */}
-      <Dialog open={isMainModalOpen} onOpenChange={setIsMainModalOpen}>
+      <Dialog open={isOpen} onOpenChange={closeModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">

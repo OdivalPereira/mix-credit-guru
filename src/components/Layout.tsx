@@ -8,11 +8,14 @@ import {
   ClipboardList,
   Home,
   TrendingUp,
+  Heart,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Glossary } from "@/components/Glossary";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { Button } from "@/components/ui/button";
+import { useDonationModalStore } from "@/store/useDonationModalStore";
 
 const navigation = [
   { name: "Início", href: "/", icon: Home },
@@ -27,14 +30,19 @@ const navigation = [
 
 export function Layout() {
   const location = useLocation();
+  const { openModal } = useDonationModalStore();
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card shadow-sm">
-        <div className="mx-auto flex h-16 max-w-screen-2xl items-center px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl font-bold text-foreground">
             Mix Credit Guru
           </h1>
+          <Button variant="outline" size="sm" onClick={openModal}>
+            <Heart className="mr-2 h-4 w-4" />
+            Apoiar
+          </Button>
         </div>
       </header>
 
