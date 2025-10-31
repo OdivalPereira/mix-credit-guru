@@ -74,6 +74,10 @@ const donationOptions: DonationOption[] = [
   }
 ];
 
+/**
+ * @description Um componente de modal para lidar com doações e exibir outros projetos.
+ * @returns O componente de modal de doação.
+ */
 const DonationModal = () => {
   const { isOpen, closeModal } = useDonationModalStore();
   const [selectedDonation, setSelectedDonation] = useState<DonationOption | null>(null);

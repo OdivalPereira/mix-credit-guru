@@ -10,6 +10,15 @@ const defaultConversoes: UnitConv[] = [
 
 const defaultYields: YieldConfig[] = [];
 
+/**
+ * @description Zustand store para gerenciar conversões de unidades e configurações de rendimento.
+ * @property {UnitConv[]} conversoes - A lista de conversões de unidades.
+ * @property {YieldConfig[]} yields - A lista de configurações de rendimento.
+ * @property {(updater: (prev: UnitConv[]) => UnitConv[]) => void} updateConversoes - Atualiza a lista de conversões de unidades.
+ * @property {(updater: (prev: YieldConfig[]) => YieldConfig[]) => void} updateYields - Atualiza a lista de configurações de rendimento.
+ * @property {() => void} reset - Redefine as conversões e rendimentos para os padrões.
+ * @property {(produtoId: string | undefined, entrada: Unit, saida?: Unit) => YieldConfig | undefined} findYield - Encontra uma configuração de rendimento com base no ID do produto e nas unidades de entrada/saída.
+ */
 interface UnidadesStore {
   conversoes: UnitConv[];
   yields: YieldConfig[];

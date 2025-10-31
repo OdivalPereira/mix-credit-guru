@@ -15,6 +15,15 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
+/**
+ * @description Um componente de limite de erro React que captura erros de JavaScript em qualquer lugar em sua árvore de componentes filho,
+ * registra esses erros e exibe uma interface do usuário de fallback em vez da árvore de componentes que travou.
+ * @param props As props para o componente.
+ * @param props.children Os componentes filho a serem renderizados dentro do limite de erro.
+ * @param props.fallback Um componente de fallback opcional para renderizar quando um erro é capturado.
+ * @param props.onError Um manipulador de erro opcional para chamar quando um erro é capturado.
+ * @returns O componente ErrorBoundary.
+ */
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);

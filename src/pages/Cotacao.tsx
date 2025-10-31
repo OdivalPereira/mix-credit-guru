@@ -49,6 +49,10 @@ import { NextStepButton } from "@/components/quote/NextStepButton";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
 
+/**
+ * @description Um componente de página abrangente para gerenciar cotações de fornecedores, permitindo que os usuários configurem o contexto, gerenciem fornecedores, visualizem resultados e otimizem custos.
+ * @returns O componente da página de cotação.
+ */
 export default function Cotacao() {
   const navigate = useNavigate();
   const csvInputRef = useRef<HTMLInputElement>(null);

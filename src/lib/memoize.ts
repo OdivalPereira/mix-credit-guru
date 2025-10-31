@@ -4,6 +4,12 @@ export interface MemoizeOptions<Args extends unknown[]> {
   onCacheHit?: (...args: Args) => void;
 }
 
+/**
+ * @description Cria uma versão memoizada de uma função, armazenando em cache os resultados de chamadas de função com base em seus argumentos.
+ * @param fn A função a ser memoizada.
+ * @param options Opções de configuração, como `getKey` para geração de chave de cache personalizada e `maxSize` para o tamanho do cache.
+ * @returns Uma nova função memoizada.
+ */
 export function memoize<Args extends unknown[], Result>(
   fn: (...args: Args) => Result,
   { getKey, maxSize = 50, onCacheHit }: MemoizeOptions<Args> = {},

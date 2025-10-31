@@ -1,5 +1,9 @@
 import { optimizePerItem, type OptimizePerItemInput } from "@/lib/opt";
 
+/**
+ * @description Manipula as mensagens recebidas pelo web worker para executar a otimização.
+ * @param {MessageEvent<OptimizePerItemInput>} e O evento da mensagem contendo os dados de entrada para a otimização.
+ */
 self.onmessage = (e: MessageEvent<OptimizePerItemInput>) => {
   const input = e.data;
   let latestProgress = 0;

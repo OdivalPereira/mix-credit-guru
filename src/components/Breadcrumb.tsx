@@ -19,6 +19,10 @@ const routeMap: Record<string, string> = {
   "/config": "Configurações",
 };
 
+/**
+ * @description Renderiza um componente de navegação de breadcrumb com base na rota atual.
+ * @returns O componente de breadcrumb ou `null` se estiver na página inicial.
+ */
 export function Breadcrumb() {
   const location = useLocation();
   const pathSegments = location.pathname.split("/").filter(Boolean);

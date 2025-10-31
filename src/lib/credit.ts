@@ -18,9 +18,14 @@ export interface CreditResult {
 }
 
 /**
- * Calcula o credito tributario conforme a destinacao da mercadoria e o regime
- * tributario do comprador. Valores de IBS e CBS sao utilizados como base para o
- * calculo do credito potencial.
+ * @description Calcula o crédito tributário com base na destinação do item, regime do fornecedor, preço e alíquotas de impostos.
+ * @param destino A destinação do item (por exemplo, revenda, industrialização).
+ * @param regime O regime tributário do fornecedor (por exemplo, normal, simples).
+ * @param preco O preço do item.
+ * @param ibs A alíquota do IBS.
+ * @param cbs A alíquota do CBS.
+ * @param options Opções adicionais, como `isRefeicaoPronta` e `scenario`.
+ * @returns Um objeto contendo o status, a elegibilidade e o valor do crédito.
  */
 interface CreditOptions {
   isRefeicaoPronta?: boolean;

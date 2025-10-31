@@ -1,233 +1,154 @@
 # Mix Credit Guru
 
-Aplicativo para comparar fornecedores e analisar créditos tributários de produtos, auxiliando empresas durante a reforma tributária brasileira.
+O Mix Credit Guru é uma ferramenta web de código aberto projetada para ajudar empresas brasileiras a navegar pela transição da reforma tributária (2026-2033). A aplicação permite comparar fornecedores, analisar créditos tributários de produtos e tomar decisões estratégicas com base nos novos impostos (IBS, CBS e IS).
 
-## Funcionalidades atuais
-- **Catálogo de produtos**: gerencie itens com código NCM e indicadores fiscais, importando ou exportando dados em CSV.
-- **Cotação de fornecedores**: calcule IBS, CBS, IS e custo efetivo, com ranking de fornecedores e suporte a importação/exportação.
-- **Cenários tributários**: visualize o impacto da reforma em diferentes anos.
-- **Regras de crédito**: consulte matriz de creditabilidade e glossário de termos.
-- **Configurações e relatórios** adicionais para estudos fiscais.
+## Visão Geral
 
-## Guia de uso
+A reforma tributária brasileira representa uma mudança significativa na forma como os impostos são cobrados e gerenciados. O Mix Credit Guru foi criado para simplificar esse processo, oferecendo uma plataforma onde fabricantes, prestadores de serviços e revendedores podem:
 
-### Regras de crédito (JSON)
-- Acesse a página **Regras** para editar a matriz de creditabilidade.
-- Utilize **Importar JSON** para carregar um arquivo no formato:
+- **Simular custos:** Calcular o custo efetivo de produtos considerando os novos tributos e créditos.
+- **Comparar fornecedores:** Analisar diferentes fornecedores para encontrar o mix ideal que minimize os custos.
+- **Analisar cenários:** Visualizar o impacto da reforma em diferentes anos do período de transição.
+- **Gerenciar dados:** Manter um catálogo de produtos, fornecedores, contratos e regras fiscais.
 
-```json
-[
-  {
-    "ncm": "0000.00.00",
-    "descricao": "Produto",
-    "receita": { "codigo": "01", "descricao": "Exemplo" },
-    "aliquotas": { "ibs": 0, "cbs": 0, "is": 0 },
-    "validFrom": "2024-01-01",
-    "validTo": "2024-12-31"
-  }
-]
-```
-- Use **Exportar JSON** para salvar as regras atuais ou **Recarregar regras** para restaurar o arquivo padrão.
+## Recursos Principais
 
-### Cenários tributários
-- Na página **Cenários** selecione o período desejado no menu suspenso.
-- O cenário escolhido é aplicado nos cálculos e permanece salvo entre sessões.
+### Gestão de Produtos e Fornecedores
+- **Catálogo de Produtos:** Cadastro de produtos com NCM e indicadores fiscais (refeição, cesta básica, redução, IS).
+- **Importação/Exportação:** Suporte para importação e exportação de dados em CSV ou JSON com um parser tolerante a erros.
+- **Contratos:** Gestão de contratos com tabelas de preços escalonadas e frete variável.
+- **Unidades de Medida:** Unidades de medida customizadas com conversões e cálculo de rendimento.
 
-### Receitas
-- Em **Receitas** cadastre códigos e descrições para montar o mix.
-- Os três fornecedores com menor custo efetivo são usados para calcular custos por porção.
+### Cotação e Análise Tributária
+- **Painel de Cotação:** Resumo do contexto tributário para cada cotação.
+- **Cálculo Automático de Crédito:** Cálculo automático de crédito (IBS, CBS, IS) por fornecedor.
+- **Ranking de Fornecedores:** Classificação de fornecedores com base no custo efetivo.
+- **Otimizador:** Um otimizador *greedy* executado em um Web Worker para encontrar o mix ótimo de fornecedores.
+- **Alertas:** Notificações sobre restrições e violações de contratos.
 
-### Relatórios
-- Após realizar uma cotação, acesse **Relatórios** e clique em **Imprimir/Salvar PDF** para gerar um relatório com fornecedores vencedores, comparativo de custos e receitas cadastradas.
+### Cenários Tributários (2026-2033)
+- **Linha do Tempo Interativa:** Visualização interativa da linha do tempo da reforma tributária.
+- **Comparador de Cenários:** Compare cenários de transição com o cenário de longo prazo.
+- **Simulação de Impacto:** Simule o impacto por UF e município.
+- **Regras de Vigência:** Regras de NCM com vigência e *overrides* regionais.
 
-### Importação e exportação
-- **Regras de crédito**: botões de importação/exportação em JSON na própria página.
-- **Catálogo de produtos**: importação/exportação em CSV (colunas `descricao,ncm,refeicao,cesta,reducao,is`).
-- **Cotação de fornecedores**: importação/exportação em CSV ou JSON contendo contexto e fornecedores.
+### Persistência e Segurança
+- **Backend com Supabase:** Utiliza Supabase com *Row Level Security* (RLS) para persistência de dados.
+- **Autenticação de Usuários:** Sistema de autenticação com diferentes papéis (admin, moderator, user).
+- **Segregação de Dados:** Dados segregados por usuário para garantir a privacidade.
+- **Sincronização Automática:** Sincronização automática de dados entre dispositivos.
 
-### Persistência
-O estado é armazenado no `localStorage` usando as chaves:
+### Performance e Qualidade
+- **Code Splitting:** Carregamento sob demanda de rotas com *lazy loading*.
+- **Memoização Avançada:** Uso de `React.memo`, `useMemo` e `useCallback` para otimizar o desempenho.
+- **Testes:** Suíte de testes unitários e de ponta a ponta com Vitest e Playwright.
+- **Bundle Otimizado:** Redução de 40% no tamanho inicial do *bundle*.
 
-- `cmx_v04_app`: cenário, regras (effective-dated) e receitas.
-- `cmx_v04_catalogo`: catálogo de produtos.
-- `cmx_v04_cotacao`: dados de cotação, fornecedores e preferências.
+## Como Executar o Projeto
 
-## Scripts
-Para instalar dependências e executar o projeto localmente:
+Para executar o projeto localmente, siga os passos abaixo:
 
-Ferramenta web que ajuda fabricantes, prestadores e revendedores brasileiros a comparar fornecedores durante a transicao da reforma tributaria (2026-2033). O aplicativo calcula custo efetivo, credito tributario e apresenta o melhor mix por produto, integrando persistencia em nuvem (Supabase), otimizacao em Web Worker e UX aprimorada.
+1. **Clone o repositório:**
+   ```bash
+   git clone https://github.com/seu-usuario/mix-credit-guru.git
+   cd mix-credit-guru
+   ```
 
-## Recursos principais
+2. **Instale as dependências:**
+   ```bash
+   npm install
+   ```
 
-### Gestao de produtos e fornecedores
-- Cadastro de produtos com NCM e indicadores fiscais (refeicao, cesta basica, reducao, IS)
-- Importacao/exportacao CSV ou JSON com parser tolerante
-- Contratos com tabelas de preco escalonadas e frete variavel
-- Unidades de medida customizadas com conversoes e rendimento
+3. **Inicie o servidor de desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
 
-### Cotacao e analise tributaria
-- Painel de cotacao com resumo de contexto tributario
-- Calculo automatico de credito (IBS, CBS, IS) por fornecedor
-- Ranking de fornecedores considerando custo efetivo
-- Otimizador greedy em Web Worker para mix otimo
-- Alertas de restricoes e violacoes de constraints
+4. **Acesse a aplicação:**
+   Abra seu navegador e acesse `http://localhost:5173`.
 
-### Cenarios tributarios (2026-2033)
-- Linha do tempo interativa da reforma tributaria
-- Comparador de cenarios: transicao vs longo prazo
-- Simulacao de impacto por UF e municipio
-- Regras NCM com vigencia e overrides regionais
+### Executando os Testes
 
-### Persistencia e seguranca
-- Backend Supabase com Row Level Security (RLS)
-- Autenticacao de usuarios com roles (admin, moderator, user)
-- Dados segregados por usuario
-- Sincronizacao automatica entre dispositivos
+Para executar os testes, utilize os seguintes comandos:
 
-### Performance e qualidade
-- Code splitting com lazy loading de rotas
-- Memoizacao avancada (React.memo, useMemo, useCallback)
-- Suite de testes unitarios e E2E (Vitest + Playwright)
-- Bundle otimizado com reducao de 40% no tamanho inicial
+- **Testes Unitários:**
+  ```bash
+  npm run test:unit
+  ```
 
-## Como executar
-```bash
-npm install
-npm run dev
-```
+- **Testes de Ponta a Ponta (E2E):**
+  ```bash
+  npm run test:e2e
+  ```
 
-Executar testes:
-```bash
-npm run test:unit
-npm run test:e2e
-```
+## Estrutura do Projeto
 
-## Estrutura do projeto
+A estrutura do projeto é organizada da seguinte forma:
+
 ```
 src/
-  components/
-    quote/         # Componentes especificos de cotacao
-    ui/            # Biblioteca shadcn/ui (Radix + Tailwind)
-    ErrorBoundary  # Tratamento de erros global
-    Layout         # Layout principal com navegacao
-  data/
-    rules/         # Aliquotas, overrides UF e regras NCM
-    scenarios.ts   # Timeline de cenarios tributarios (2026-2033)
-    seed.ts        # Dados de exemplo para desenvolvimento
-  lib/
-    bom.ts         # Bill of Materials (BOM)
-    calcs.ts       # Calculos de credito e custo efetivo
-    contracts.ts   # Resolucao de contratos e price breaks
-    credit.ts      # Logica de creditabilidade tributaria
-    csv.ts         # Parser CSV tolerante
-    opt.ts         # Otimizador greedy multi-objetivo
-    rates.ts       # Motor de aliquotas por cenario/UF
-    units.ts       # Conversoes e rendimento de unidades
-    memoize.ts     # Utilitario de memoizacao
-  pages/           # Rotas principais (lazy loaded)
-    Cotacao        # Tela de cotacao e ranking
-    Catalogo       # Gestao de produtos
-    Cenarios       # Linha do tempo e comparacao
-    Regras         # Editor de regras NCM
-    FornecedoresContratos  # Gestao de contratos
-    UnidadesConversoes     # Config de unidades
-    Relatorios     # Impressao de relatorios
-    Config         # Configuracoes gerais
-  store/           # State management (Zustand)
-    useAppStore.ts       # Cenario e regras globais
-    useCotacaoStore.ts   # Cotacao e fornecedores
-    useCatalogoStore.ts  # Produtos
-    useContractsStore.ts # Contratos
-    useUnidadesStore.ts  # Unidades e conversoes
-  workers/
-    optWorker.ts   # Web Worker para otimizacao assincrona
-  integrations/
-    supabase/      # Cliente e tipos Supabase (auto-gerado)
+├── components/     # Componentes React reutilizáveis
+│   ├── quote/      # Componentes específicos da página de cotação
+│   └── ui/         # Componentes da biblioteca shadcn/ui
+├── data/           # Dados estáticos (regras, cenários, etc.)
+├── hooks/          # Hooks React customizados
+├── lib/            # Funções utilitárias e lógica de negócio
+├── pages/          # Componentes de página (rotas)
+├── store/          # Lojas de estado global (Zustand)
+├── workers/        # Web Workers para tarefas em segundo plano
+└── integrations/   # Integrações com serviços externos (Supabase)
 ```
 
-## Configuracao Supabase
+## Configuração do Supabase
 
-O projeto utiliza Supabase para persistencia de dados. As variaveis de ambiente estao definidas em `.env`:
+O projeto utiliza o Supabase para a persistência de dados. As variáveis de ambiente estão definidas no arquivo `.env`.
 
-```bash
-VITE_SUPABASE_URL=https://jksbkhbgggytymhgnerh.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_SUPABASE_PROJECT_ID=jksbkhbgggytymhgnerh
-```
+### Tabelas Principais
 
-### Tabelas principais
+1. **user_roles:** Sistema de permissões (admin, moderator, user).
+2. **produtos:** Catálogo de produtos com NCM e *flags* fiscais.
+3. **receitas:** Códigos de receita tributária.
+4. **regras_ncm:** Regras por NCM com vigência e *overrides* por UF.
+5. **cotacoes:** Contexto das cotações (data, UF, destino, regime).
+6. **cotacao_fornecedores:** Fornecedores por cotação.
+7. **contratos:** *Price breaks*, *freight breaks* e *yield*.
+8. **unidades_conversao:** Conversões entre unidades de medida.
+9. **unidades_yield:** Rendimento de produção.
 
-1. **user_roles**: Sistema de permissoes (admin, moderator, user)
-2. **produtos**: Catalogo com NCM e flags fiscais
-3. **receitas**: Codigos de receita tributaria
-4. **regras_ncm**: Regras por NCM com vigencia e overrides por UF
-5. **cotacoes**: Contexto de cotacoes (data, UF, destino, regime)
-6. **cotacao_fornecedores**: Fornecedores por cotacao
-7. **contratos**: Price breaks, freight breaks e yield
-8. **unidades_conversao**: Conversoes entre unidades
-9. **unidades_yield**: Rendimento de producao
+Todas as tabelas possuem *Row Level Security* (RLS) habilitado para garantir a segregação de dados por usuário.
 
-Todas as tabelas possuem Row Level Security (RLS) habilitado para segregacao por usuario.
+## Documentação do Código
 
-## Stack tecnologica
+Toda a base de código foi documentada utilizando o padrão **JSDoc**. Isso inclui todos os componentes, *hooks*, funções utilitárias e lojas de estado. A documentação pode ser encontrada diretamente nos arquivos de código-fonte e serve como uma referência para desenvolvedores que desejam entender a funcionalidade de cada parte do sistema.
 
-- **Frontend**: React 18, TypeScript, Vite
-- **UI**: shadcn/ui (Radix UI + Tailwind CSS)
-- **State**: Zustand com persistencia
-- **Backend**: Supabase (PostgreSQL + Row Level Security)
-- **Testes**: Vitest (unit) + Playwright (E2E)
-- **Otimizacao**: Web Workers, code splitting, memoizacao
+## Stack Tecnológica
 
-## Roadmap de desenvolvimento
-
-### ✅ Fase 1: Melhorias de UX
-- Resumo de contexto tributario
-- Estados vazios e tooltips
-- Cards de metricas
-
-### ✅ Fase 2: Performance
-- Code splitting (reducao de 40% no bundle)
-- Memoizacao avancada
-- Lazy loading de rotas
-
-### ✅ Fase 3: Testes
-- Suite de testes unitarios
-- Testes E2E com Playwright
-- Cobertura de componentes criticos
-
-### ✅ Fase 4: Integracao Supabase
-- Schema completo com RLS
-- Sistema de roles e permissoes
-- Triggers e indices otimizados
-
-### ⏳ Fase 5: Autenticacao (proxima)
-- Login/signup com email
-- Gestao de sessao
-- Migracao de dados local para nuvem
-
-### 📋 Futuro
-- Dashboard com graficos
-- Historico de cotacoes
-- Exportacao PDF de relatorios
-- API REST para integracao
-- App mobile (PWA ou React Native)
+- **Frontend:** React 18, TypeScript, Vite
+- **UI:** shadcn/ui (Radix UI + Tailwind CSS)
+- **Estado:** Zustand com persistência
+- **Backend:** Supabase (PostgreSQL + Row Level Security)
+- **Testes:** Vitest (unitários) + Playwright (E2E)
+- **Otimização:** Web Workers, *code splitting*, memoização
 
 ## Contribuindo
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudancas (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+Para contribuir com o projeto, siga os passos abaixo:
 
-## Licenca
+1. **Faça um *fork* do projeto.**
+2. **Crie uma nova *branch* para a sua *feature*:**
+   ```bash
+   git checkout -b feature/sua-feature
+   ```
+3. **Faça o *commit* das suas alterações:**
+   ```bash
+   git commit -m "Adiciona sua feature"
+   ```
+4. **Faça o *push* para a sua *branch*:**
+   ```bash
+   git push origin feature/sua-feature
+   ```
+5. **Abra um *Pull Request*.**
 
-Este projeto foi desenvolvido para auxiliar empresas brasileiras na transicao da reforma tributaria (2026-2033).
+## Licença
 
-## Observacoes tecnicas
-
-- Evite caracteres acentuados em nomes de variaveis/funcoes para manter consistencia de encoding
-- O parser CSV tolera delimitadores diferentes (virgula e ponto-e-virgula)
-- Regras NCM podem ter vigencia temporal e overrides por UF
-- O otimizador executa em Web Worker para nao bloquear a UI
-- Todos os calculos tributarios seguem a legislacao da reforma tributaria brasileira
+Este projeto foi desenvolvido para auxiliar empresas brasileiras na transição da reforma tributária (2026-2033).

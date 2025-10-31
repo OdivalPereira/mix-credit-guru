@@ -4,6 +4,15 @@ import type { Produto } from "@/types/domain";
 import { readProdutosCSV, writeProdutosCSV } from "@/lib/csv";
 import { generateId } from "@/lib/utils";
 
+/**
+ * @description Zustand store para gerenciar o catálogo de produtos.
+ * @property {Produto[]} produtos - A lista de produtos no catálogo.
+ * @property {(produto: Produto) => void} addProduto - Adiciona um novo produto ao catálogo.
+ * @property {(id: string, data: Partial<Produto>) => void} updateProduto - Atualiza um produto existente no catálogo.
+ * @property {(id: string) => void} removeProduto - Remove um produto do catálogo.
+ * @property {(csv: string) => void} importarCSV - Importa produtos de uma string CSV.
+ * @property {() => string} exportarCSV - Exporta os produtos para uma string CSV.
+ */
 interface CatalogoStore {
   produtos: Produto[];
   addProduto: (produto: Produto) => void;

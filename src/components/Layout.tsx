@@ -28,6 +28,10 @@ const navigation = [
   { name: "Config", href: "/config", icon: Settings },
 ];
 
+/**
+ * @description Renderiza o layout principal da aplicação, incluindo o cabeçalho, a navegação e a área de conteúdo principal.
+ * @returns O componente de layout.
+ */
 export function Layout() {
   const location = useLocation();
   const { openModal } = useDonationModalStore();

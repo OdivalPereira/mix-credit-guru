@@ -5,6 +5,10 @@ import { Calculator, TrendingUp, Calendar, BookOpen, Lightbulb, ArrowRight } fro
 import { scenarioTimeline } from "@/data/scenarios";
 import { WelcomeTour } from "@/components/WelcomeTour";
 
+/**
+ * @description Um componente de página inicial que serve como a página de destino da aplicação, fornecendo uma visão geral da reforma tributária, um cronograma e um apelo à ação para iniciar uma cotação.
+ * @returns O componente da página inicial.
+ */
 const Index = () => {
   return (
     <>

@@ -4,6 +4,10 @@ import ContractsManager from "@/components/cadastros/ContractsManager";
 import Catalogo from "./Catalogo";
 import UnidadesConversoes from "./UnidadesConversoes";
 
+/**
+ * @description Um componente de página que fornece uma interface com abas para gerenciar fornecedores, produtos, contratos e conversões de unidades.
+ * @returns O componente da página de cadastros.
+ */
 const Cadastros = () => {
   return (
     <div className="space-y-8">

@@ -21,6 +21,10 @@ interface ProdutoSelecionado {
   quantidade: number;
 }
 
+/**
+ * @description Um componente de página que permite aos usuários analisar o impacto da reforma tributária em seus produtos, comparando os custos antes e depois da reforma.
+ * @returns O componente da página de impacto da reforma.
+ */
 export default function ImpactoReforma() {
   const navigate = useNavigate();
   const { produtos: catalogo } = useCatalogoStore();

@@ -31,6 +31,28 @@ export interface Contexto {
 }
 
 
+/**
+ * @description Zustand store para gerenciar o estado da cotação.
+ * @property {Contexto} contexto - O contexto atual da cotação.
+ * @property {Supplier[]} fornecedores - A lista de fornecedores.
+ * @property {MixResultado} resultado - O resultado do cálculo do mix.
+ * @property {SupplierConstraints[]} constraints - As restrições para a otimização.
+ * @property {OptimizePrefs} prefs - As preferências para a otimização.
+ * @property {OptimizePerItemResult | null} ultimaOtimizacao - O resultado da última otimização.
+ * @property {(contexto: Partial<Contexto>) => void} setContexto - Define o contexto da cotação.
+ * @property {(fornecedor: Omit<Supplier, "id"> & { id?: string }) => void} upsertFornecedor - Adiciona ou atualiza um fornecedor.
+ * @property {(id: string) => void} removeFornecedor - Remove um fornecedor.
+ * @property {(constraints: SupplierConstraints[]) => void} setConstraints - Define as restrições de otimização.
+ * @property {(prefs: OptimizePrefs) => void} setPrefs - Define as preferências de otimização.
+ * @property {() => void} limpar - Limpa o estado da cotação.
+ * @property {(csv: string) => void} importarCSV - Importa fornecedores de uma string CSV.
+ * @property {() => string} exportarCSV - Exporta os fornecedores para uma string CSV.
+ * @property {(json: string) => void} importarJSON - Importa o estado da cotação de uma string JSON.
+ * @property {() => string} exportarJSON - Exporta o estado da cotação para uma string JSON.
+ * @property {() => void} calcular - Calcula o resultado do mix.
+ * @property {(resultado: OptimizePerItemResult) => void} registrarOtimizacao - Registra o resultado de uma otimização.
+ * @property {(scenario?: string) => MixResultado} computeResultado - Calcula o resultado do mix para um cenário específico.
+ */
 export interface CotacaoStore {
   contexto: Contexto;
   fornecedores: Supplier[];
