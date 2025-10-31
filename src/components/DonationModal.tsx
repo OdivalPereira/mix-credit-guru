@@ -4,7 +4,11 @@ import { useDonationModalStore } from "@/store/useDonationModalStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Coffee, Book, Code, Palette, Music, Camera, ExternalLink } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Heart, Coffee, Book, Code, Palette, Music, Camera, ExternalLink, CreditCard, Smartphone } from "lucide-react";
+import { DonationCustomAmount } from "@/components/donation/DonationCustomAmount";
+import { DonationQRCode } from "@/components/donation/DonationQRCode";
+import { DonationStats } from "@/components/donation/DonationStats";
 
 interface DonationOption {
   id: string;
@@ -18,7 +22,7 @@ interface DonationOption {
 const donationOptions: DonationOption[] = [
   {
     id: "coffee",
-    title: "Me pague um cafe",
+    title: "Me pague um café",
     description: "Ajude a manter o desenvolvedor acordado",
     icon: Coffee,
     amount: "R$ 5,00",
@@ -27,7 +31,7 @@ const donationOptions: DonationOption[] = [
   {
     id: "book", 
     title: "Compre um livro",
-    description: "Invista no aprendizado continuo",
+    description: "Invista no aprendizado contínuo",
     icon: Book,
     amount: "R$ 25,00",
     color: "blue"
@@ -82,15 +86,25 @@ const DonationModal = () => {
   const { isOpen, closeModal } = useDonationModalStore();
   const [selectedDonation, setSelectedDonation] = useState<DonationOption | null>(null);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
+  const [customAmount, setCustomAmount] = useState<number>(0);
 
   const handleDonationClick = (donation: DonationOption) => {
     setSelectedDonation(donation);
+    // Extrair valor numérico se não for "Livre"
+    if (donation.amount !== "Livre") {
+      const numericValue = parseFloat(donation.amount.replace("R$ ", "").replace(",", "."));
+      setCustomAmount(numericValue);
+    }
     closeModal();
   };
 
   const handleProjectsClick = () => {
     setIsProjectsModalOpen(true);
     closeModal();
+  };
+
+  const handleCustomAmountSelect = (amount: number) => {
+    setCustomAmount(amount);
   };
 
   return (
@@ -100,9 +114,12 @@ const DonationModal = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">
-              Apoie este projeto
+              Apoie este projeto 💙
             </DialogTitle>
           </DialogHeader>
+
+          {/* Estatísticas */}
+          <DonationStats />
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
             {donationOptions.map((option) => {
@@ -143,7 +160,7 @@ const DonationModal = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-xs">
-                  Conheca outros projetos incriveis
+                  Conheça outros projetos incríveis
                 </CardDescription>
               </CardContent>
             </Card>
@@ -151,7 +168,7 @@ const DonationModal = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Doacao Especifica */}
+      {/* Modal de Doação Específica */}
       <Dialog open={!!selectedDonation} onOpenChange={() => setSelectedDonation(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -166,24 +183,45 @@ const DonationModal = () => {
               {selectedDonation?.description}
             </p>
             
-            <div className="bg-secondary p-4 rounded-lg">
-              <p className="font-semibold">Valor sugerido: {selectedDonation?.amount}</p>
-            </div>
+            {selectedDonation?.id === "custom" ? (
+              <DonationCustomAmount onSelect={handleCustomAmountSelect} />
+            ) : (
+              <div className="bg-secondary p-4 rounded-lg">
+                <p className="font-semibold">Valor sugerido: {selectedDonation?.amount}</p>
+              </div>
+            )}
             
-            <div className="space-y-2">
-              <Button className="w-full" size="lg">
-                Doar via PIX
-              </Button>
-              <Button variant="outline" className="w-full">
-                Cartao de Credito
-              </Button>
-              <Button variant="ghost" className="w-full" size="sm">
-                PayPal
-              </Button>
-            </div>
+            <Tabs defaultValue="pix" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="pix" className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4" />
+                  PIX
+                </TabsTrigger>
+                <TabsTrigger value="card" className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Cartão
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="pix" className="mt-4">
+                <DonationQRCode amount={customAmount} />
+              </TabsContent>
+              
+              <TabsContent value="card" className="mt-4">
+                <div className="space-y-3 text-center py-6">
+                  <CreditCard className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Integração com cartão de crédito em breve
+                  </p>
+                  <Button variant="outline" className="w-full" disabled>
+                    Cartão de Crédito (Em breve)
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
             
             <p className="text-xs text-muted-foreground text-center">
-              Sua doacao ajuda a manter este projeto gratuito e em constante evolucao
+              Sua doação ajuda a manter este projeto gratuito e em constante evolução
             </p>
           </div>
         </DialogContent>
@@ -204,7 +242,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">Sistema de Estoque</CardTitle>
                 <CardDescription>
-                  Controle completo de inventario para pequenas empresas
+                  Controle completo de inventário para pequenas empresas
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -218,7 +256,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">Calculadora Fiscal</CardTitle>
                 <CardDescription>
-                  Ferramenta para calculos tributarios brasileiros
+                  Ferramenta para cálculos tributários brasileiros
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -232,7 +270,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">Dashboard Analytics</CardTitle>
                 <CardDescription>
-                  Visualizacao de dados em tempo real
+                  Visualização de dados em tempo real
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -246,7 +284,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">API Gateway</CardTitle>
                 <CardDescription>
-                  Solucao para gerenciamento de APIs
+                  Solução para gerenciamento de APIs
                 </CardDescription>
               </CardHeader>
               <CardContent>
