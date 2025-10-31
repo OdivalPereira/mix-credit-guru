@@ -1,17 +1,14 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import {
-  readFornecedoresCSV,
-  writeFornecedoresCSV,
-} from "../lib/csv";
+import { readFornecedoresCSV, writeFornecedoresCSV } from "../lib/csv";
 import type {
   Supplier,
   MixResultado,
   SupplierConstraints,
   OptimizePrefs,
+  DestinoTipo,
+  SupplierRegime,
 } from "@/types/domain";
-import { readFornecedoresCSV, writeFornecedoresCSV } from "../lib/csv";
-import type { Supplier, MixResultado, DestinoTipo, SupplierRegime } from "@/types/domain";
 import { rankSuppliers } from "@/lib/calcs";
 import { useAppStore } from "./useAppStore";
 import type { OptimizePerItemResult } from "@/lib/opt";
@@ -355,14 +352,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
           constraints: SupplierConstraints[];
           prefs: OptimizePrefs;
         }>;
-        set({
-          contexto: data.contexto ?? initialContexto,
-          fornecedores: data.fornecedores ?? [],
-          resultado: data.resultado ?? { itens: [] },
-          constraints: data.constraints ?? [],
-          prefs: data.prefs ?? { ...initialPrefs, constraints: data.constraints ?? [] },
-        });
-          set((state) => ({
+        set((state) => ({
             contexto: data.contexto
               ? { ...initialContexto, ...data.contexto, uf: (data.contexto.uf ?? "").toUpperCase() }
               : initialContexto,
@@ -390,6 +380,8 @@ export const useCotacaoStore = create<CotacaoStore>()(
               : state.fornecedores,
             resultado: data.resultado ?? { itens: [] },
             ultimaOtimizacao: null,
+            constraints: data.constraints ?? [],
+            prefs: data.prefs ?? { ...initialPrefs, constraints: data.constraints ?? [] },
           }));
         get().calcular();
       },
