@@ -26,6 +26,8 @@ const ruleSchema = z.object({
     cbs: z.number().nonnegative(),
     is: z.number().nonnegative(),
   }),
+  validFrom: z.string().optional(),
+  validTo: z.string().optional(),
   vigencia: vigenciaSchema,
   prioridade: z.number().int().min(0).optional(),
 });
@@ -34,7 +36,6 @@ export default function Regras() {
   const regras = useAppStore((s) => s.regras);
   const receitas = useAppStore((s) => s.receitas);
   const addRegra = useAppStore((s) => s.addRegra);
-  const updateRegra = useAppStore((s) => s.updateRegra);
   const removeRegra = useAppStore((s) => s.removeRegra);
   const setRegras = useAppStore((s) => s.setRegras);
 
@@ -125,6 +126,8 @@ export default function Regras() {
       descricao: "",
       receita: { codigo: "", descricao: "" },
       aliquotas: { ibs: 0, cbs: 0, is: 0 },
+      validFrom: "",
+      validTo: "",
       vigencia: { inicio: "", fim: "" },
       prioridade: 0,
     });
@@ -309,7 +312,7 @@ export default function Regras() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeRegra(r.ncm)}
+                      onClick={() => removeRegra(r.ncm, r.validFrom)}
                     >
                       Remover
                     </Button>

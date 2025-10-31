@@ -1,5 +1,15 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import {
+  readFornecedoresCSV,
+  writeFornecedoresCSV,
+} from "../lib/csv";
+import type {
+  Supplier,
+  MixResultado,
+  SupplierConstraints,
+  OptimizePrefs,
+} from "@/types/domain";
 import { readFornecedoresCSV, writeFornecedoresCSV } from "../lib/csv";
 import type { Supplier, MixResultado, DestinoTipo, SupplierRegime } from "@/types/domain";
 import { rankSuppliers } from "@/lib/calcs";
@@ -25,10 +35,14 @@ export interface CotacaoStore {
   contexto: Contexto;
   fornecedores: Supplier[];
   resultado: MixResultado;
+  constraints: SupplierConstraints[];
+  prefs: OptimizePrefs;
   ultimaOtimizacao: OptimizePerItemResult | null;
   setContexto: (contexto: Partial<Contexto>) => void;
   upsertFornecedor: (fornecedor: Omit<Supplier, "id"> & { id?: string }) => void;
   removeFornecedor: (id: string) => void;
+  setConstraints: (constraints: SupplierConstraints[]) => void;
+  setPrefs: (prefs: OptimizePrefs) => void;
   limpar: () => void;
   importarCSV: (csv: string) => void;
   exportarCSV: () => string;
@@ -48,6 +62,7 @@ const initialContexto: Contexto = {
   produto: "",
 };
 
+const initialPrefs: OptimizePrefs = { objetivo: "custo", constraints: [] };
 const supplyChainLength = 4;
 export const SUPPLY_CHAIN_STAGES = supplyChainLength;
 
@@ -225,6 +240,8 @@ export const useCotacaoStore = create<CotacaoStore>()(
       contexto: initialContexto,
       fornecedores: [],
       resultado: { itens: [] },
+      constraints: [],
+      prefs: initialPrefs,
       ultimaOtimizacao: null,
 
       setContexto: (ctx) =>
@@ -235,6 +252,15 @@ export const useCotacaoStore = create<CotacaoStore>()(
           }
           return { contexto: next };
         }),
+
+      setConstraints: (constraints) =>
+        set((state) => ({
+          constraints,
+          prefs: { ...state.prefs, constraints },
+        })),
+
+      setPrefs: (prefs) =>
+        set((state) => ({ prefs: { ...state.prefs, ...prefs, constraints: state.constraints } })),
 
       upsertFornecedor: (fornecedor) =>
         set((state) => {
@@ -258,6 +284,8 @@ export const useCotacaoStore = create<CotacaoStore>()(
           contexto: initialContexto,
           fornecedores: [],
           resultado: { itens: [] },
+          constraints: [],
+          prefs: initialPrefs,
           ultimaOtimizacao: null,
         }),
 
@@ -302,7 +330,16 @@ export const useCotacaoStore = create<CotacaoStore>()(
           contexto: Contexto;
           fornecedores: Supplier[];
           resultado: MixResultado;
+          constraints: SupplierConstraints[];
+          prefs: OptimizePrefs;
         }>;
+        set({
+          contexto: data.contexto ?? initialContexto,
+          fornecedores: data.fornecedores ?? [],
+          resultado: data.resultado ?? { itens: [] },
+          constraints: data.constraints ?? [],
+          prefs: data.prefs ?? { ...initialPrefs, constraints: data.constraints ?? [] },
+        });
           set((state) => ({
             contexto: data.contexto
               ? { ...initialContexto, ...data.contexto, uf: (data.contexto.uf ?? "").toUpperCase() }
@@ -336,8 +373,8 @@ export const useCotacaoStore = create<CotacaoStore>()(
       },
 
       exportarJSON: () => {
-        const { contexto, fornecedores, resultado } = get();
-        return JSON.stringify({ contexto, fornecedores, resultado });
+        const { contexto, fornecedores, resultado, constraints, prefs } = get();
+        return JSON.stringify({ contexto, fornecedores, resultado, constraints, prefs });
       },
 
       calcular: () =>
@@ -381,11 +418,13 @@ export const useCotacaoStore = create<CotacaoStore>()(
       },
     }),
     {
-      name: "cmx_v03_cotacao",
+      name: "cmx_v04_cotacao",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         contexto: state.contexto,
         fornecedores: state.fornecedores,
+        constraints: state.constraints,
+        prefs: state.prefs,
       }),
       version: 1,
       migrate: (persistedState, version) => {

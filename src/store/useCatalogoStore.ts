@@ -75,7 +75,7 @@ export const useCatalogoStore = create<CatalogoStore>()(
       exportarCSV: () => writeProdutosCSV(get().produtos),
     }),
     {
-      name: "cmx_v03_catalogo",
+      name: "cmx_v04_catalogo",
       storage: createJSONStorage(() => localStorage),
     },
   ),

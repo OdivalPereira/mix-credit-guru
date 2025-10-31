@@ -14,7 +14,12 @@ function calcularMix(itens: MixResultadoItem[], porcoes: number) {
 
 describe('mudanca de cenario', () => {
   beforeEach(() => {
-    useAppStore.setState({ scenario: 'default', regras: [], receitas: [] });
+    useAppStore.setState({
+      scenario: 'default',
+      regras: [],
+      scenarios: { default: [] },
+      receitas: [],
+    });
     useCotacaoStore.setState({
       contexto: {
         data: '2026-06-01',
@@ -26,6 +31,8 @@ describe('mudanca de cenario', () => {
       },
       fornecedores: [],
       resultado: { itens: [] },
+      constraints: [],
+      prefs: { objetivo: 'custo', constraints: [] },
     });
   });
 
