@@ -12,11 +12,58 @@ export interface FlagsItem {
   cesta?: boolean;
 }
 
+export type SupplierTipo = "industria" | "distribuidor" | "produtor" | "atacado" | "varejo";
+
+export type SupplierRegime = "normal" | "simples" | "presumido";
+
+export interface SupplierContato {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+}
+
+export interface ProdutoComponente {
+  id: string;
+  produtoId: string;
+  quantidade: number;
+  unidade?: Unit;
+  observacao?: string;
+}
+
+export interface Produto {
+  id: string;
+  descricao: string;
+  ncm: string;
+  unidadePadrao: Unit;
+  categoria?: string;
+  cest?: string;
+  codigoInterno?: string;
+  ativo: boolean;
+  flags: {
+    refeicao: boolean;
+    cesta: boolean;
+    reducao: boolean;
+    is: boolean;
+  };
+  componentes?: ProdutoComponente[];
+}
+
 export interface Supplier {
   id: string;
   nome: string;
-  tipo: string;
-  regime: string;
+  cnpj?: string;
+  tipo: SupplierTipo;
+  regime: SupplierRegime;
+  uf: string;
+  municipio?: string;
+  contato?: SupplierContato;
+  ativo: boolean;
+  produtoId?: string;
+  produtoDescricao?: string;
+  unidadeNegociada?: Unit;
+  pedidoMinimo?: number;
+  prazoEntregaDias?: number;
+  prazoPagamentoDias?: number;
   preco: number;
   ibs: number;
   cbs: number;
@@ -40,12 +87,21 @@ export interface Receita {
   descricao: string;
 }
 
+export interface VigenciaRegra {
+  inicio?: string;
+  fim?: string;
+}
+
+export type DestinoTipo = "A" | "B" | "C" | "D" | "E";
+
 export interface NcmRule {
   ncm: string;
   descricao: string;
   receita: Receita;
   aliquotas: AliquotasConfig;
   overridesUF?: OverridesUF;
+  vigencia?: VigenciaRegra;
+  prioridade?: number;
 }
 
 export interface MixResultadoItem extends Supplier {
@@ -53,6 +109,9 @@ export interface MixResultadoItem extends Supplier {
   credito: number;
   custoEfetivo: number;
   ranking: number;
+  custoNormalizado?: number;
+  degrauAplicado?: string;
+  restricoes?: string[];
 }
 
 export interface MixResultado {
@@ -95,6 +154,7 @@ export interface UnitConv {
 }
 
 export interface YieldConfig {
+  produtoId?: string;
   entrada: Unit;
   saida: Unit;
   rendimento: number;
@@ -111,7 +171,8 @@ export interface FreightBreak {
 }
 
 export interface ContractFornecedor {
-  fornecedorId: string;
+  id: string;
+  supplierId?: string;
   produtoId: string;
   unidade: Unit;
   precoBase: number;
@@ -119,6 +180,10 @@ export interface ContractFornecedor {
   freightBreaks?: FreightBreak[];
   yield?: YieldConfig;
   conversoes?: UnitConv[];
+  /**
+   * @deprecated Mantido apenas para migrar dados antigos que armazenavam o ID do contrato em `fornecedorId`.
+   */
+  fornecedorId?: string;
 }
 
 export interface SupplierConstraints {

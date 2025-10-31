@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useDonationModalStore } from "@/store/useDonationModalStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,7 @@ interface DonationOption {
 const donationOptions: DonationOption[] = [
   {
     id: "coffee",
-    title: "Me pague um café",
+    title: "Me pague um cafe",
     description: "Ajude a manter o desenvolvedor acordado",
     icon: Coffee,
     amount: "R$ 5,00",
@@ -26,7 +27,7 @@ const donationOptions: DonationOption[] = [
   {
     id: "book", 
     title: "Compre um livro",
-    description: "Invista no aprendizado contínuo",
+    description: "Invista no aprendizado continuo",
     icon: Book,
     amount: "R$ 25,00",
     color: "blue"
@@ -74,37 +75,28 @@ const donationOptions: DonationOption[] = [
 ];
 
 const DonationModal = () => {
-  const [isMainModalOpen, setIsMainModalOpen] = useState(false);
+  const { isOpen, closeModal } = useDonationModalStore();
   const [selectedDonation, setSelectedDonation] = useState<DonationOption | null>(null);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
 
-  useEffect(() => {
-    // Abre o modal automaticamente quando o componente monta
-    const timer = setTimeout(() => {
-      setIsMainModalOpen(true);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   const handleDonationClick = (donation: DonationOption) => {
     setSelectedDonation(donation);
-    setIsMainModalOpen(false);
+    closeModal();
   };
 
   const handleProjectsClick = () => {
     setIsProjectsModalOpen(true);
-    setIsMainModalOpen(false);
+    closeModal();
   };
 
   return (
     <>
       {/* Modal Principal */}
-      <Dialog open={isMainModalOpen} onOpenChange={setIsMainModalOpen}>
+      <Dialog open={isOpen} onOpenChange={closeModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">
-              Apoie este projeto ❤️
+              Apoie este projeto
             </DialogTitle>
           </DialogHeader>
           
@@ -147,7 +139,7 @@ const DonationModal = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-xs">
-                  Conheça outros projetos incríveis
+                  Conheca outros projetos incriveis
                 </CardDescription>
               </CardContent>
             </Card>
@@ -155,7 +147,7 @@ const DonationModal = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Doação Específica */}
+      {/* Modal de Doacao Especifica */}
       <Dialog open={!!selectedDonation} onOpenChange={() => setSelectedDonation(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -179,7 +171,7 @@ const DonationModal = () => {
                 Doar via PIX
               </Button>
               <Button variant="outline" className="w-full">
-                Cartão de Crédito
+                Cartao de Credito
               </Button>
               <Button variant="ghost" className="w-full" size="sm">
                 PayPal
@@ -187,7 +179,7 @@ const DonationModal = () => {
             </div>
             
             <p className="text-xs text-muted-foreground text-center">
-              Sua doação ajuda a manter este projeto gratuito e em constante evolução
+              Sua doacao ajuda a manter este projeto gratuito e em constante evolucao
             </p>
           </div>
         </DialogContent>
@@ -208,7 +200,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">Sistema de Estoque</CardTitle>
                 <CardDescription>
-                  Controle completo de inventário para pequenas empresas
+                  Controle completo de inventario para pequenas empresas
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -222,7 +214,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">Calculadora Fiscal</CardTitle>
                 <CardDescription>
-                  Ferramenta para cálculos tributários brasileiros
+                  Ferramenta para calculos tributarios brasileiros
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -236,7 +228,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">Dashboard Analytics</CardTitle>
                 <CardDescription>
-                  Visualização de dados em tempo real
+                  Visualizacao de dados em tempo real
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -250,7 +242,7 @@ const DonationModal = () => {
               <CardHeader>
                 <CardTitle className="text-base">API Gateway</CardTitle>
                 <CardDescription>
-                  Solução para gerenciamento de APIs
+                  Solucao para gerenciamento de APIs
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -267,3 +259,9 @@ const DonationModal = () => {
 };
 
 export default DonationModal;
+
+
+
+
+
+

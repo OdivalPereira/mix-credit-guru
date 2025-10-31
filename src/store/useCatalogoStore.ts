@@ -1,17 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-
-export interface Produto {
-  id: string;
-  descricao: string;
-  ncm: string;
-  flags: {
-    refeicao: boolean;
-    cesta: boolean;
-    reducao: boolean;
-    is: boolean;
-  };
-}
+import type { Produto } from "@/types/domain";
+import { readProdutosCSV, writeProdutosCSV } from "@/lib/csv";
+import { generateId } from "@/lib/utils";
 
 interface CatalogoStore {
   produtos: Produto[];
@@ -27,7 +18,15 @@ export const useCatalogoStore = create<CatalogoStore>()(
     (set, get) => ({
       produtos: [],
       addProduto: (produto) =>
-        set((state) => ({ produtos: [...state.produtos, produto] })),
+        set((state) => ({
+          produtos: [
+            ...state.produtos,
+            {
+              ...produto,
+              componentes: produto.componentes ?? [],
+            },
+          ],
+        })),
       updateProduto: (id, data) =>
         set((state) => ({
           produtos: state.produtos.map((p) =>
@@ -36,6 +35,8 @@ export const useCatalogoStore = create<CatalogoStore>()(
                   ...p,
                   ...data,
                   flags: { ...p.flags, ...(data.flags ?? {}) },
+                  componentes:
+                    data.componentes !== undefined ? data.componentes : p.componentes ?? [],
                 }
               : p,
           ),
@@ -45,38 +46,33 @@ export const useCatalogoStore = create<CatalogoStore>()(
           produtos: state.produtos.filter((p) => p.id !== id),
         })),
       importarCSV: (csv) => {
-        const lines = csv.trim().split(/\r?\n/);
-        const [, ...rows] = lines;
-        const produtos = rows.filter(Boolean).map((row) => {
-          const cols = row.split(",");
-          return {
-            id: crypto.randomUUID(),
-            descricao: cols[0]?.trim() ?? "",
-            ncm: cols[1]?.trim() ?? "",
-            flags: {
-              refeicao: cols[2] === "1",
-              cesta: cols[3] === "1",
-              reducao: cols[4] === "1",
-              is: cols[5] === "1",
-            },
-          } as Produto;
+        const produtosImportados = readProdutosCSV(csv);
+        if (produtosImportados.length === 0) {
+          console.warn("[catalogo] Nenhum produto valido encontrado no CSV.");
+          return;
+        }
+        set((state) => {
+          const byNcm = new Map(state.produtos.map((produto) => [produto.ncm, produto]));
+          for (const produto of produtosImportados) {
+            const current = byNcm.get(produto.ncm);
+            if (current) {
+              byNcm.set(produto.ncm, {
+                ...current,
+                ...produto,
+                id: current.id,
+                componentes: produto.componentes ?? current.componentes ?? [],
+              });
+            } else {
+              byNcm.set(produto.ncm, {
+                ...produto,
+                componentes: produto.componentes ?? [],
+              });
+            }
+          }
+          return { produtos: Array.from(byNcm.values()) };
         });
-        set({ produtos });
       },
-      exportarCSV: () => {
-        const header = ["descricao", "ncm", "refeicao", "cesta", "reducao", "is"].join(",");
-        const rows = get().produtos.map((p) =>
-          [
-            p.descricao,
-            p.ncm,
-            p.flags.refeicao ? "1" : "0",
-            p.flags.cesta ? "1" : "0",
-            p.flags.reducao ? "1" : "0",
-            p.flags.is ? "1" : "0",
-          ].join(","),
-        );
-        return [header, ...rows].join("\n");
-      },
+      exportarCSV: () => writeProdutosCSV(get().produtos),
     }),
     {
       name: "cmx_v04_catalogo",

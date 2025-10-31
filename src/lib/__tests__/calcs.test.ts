@@ -3,7 +3,7 @@ import { computeEffectiveCost, rankSuppliers } from '@/lib/calcs';
 import type { Supplier } from '@/types/domain';
 
 describe('computeEffectiveCost', () => {
-  it('soma preço, frete e impostos e subtrai crédito', () => {
+  it('soma preco, frete e impostos e subtrai credito', () => {
     const custo = computeEffectiveCost(100, 10, { ibs: 10, cbs: 5, is: 2 }, 15);
     expect(custo).toBe(112);
   });
@@ -15,8 +15,10 @@ describe('rankSuppliers', () => {
       {
         id: '1',
         nome: 'A',
-        tipo: 'x',
+        tipo: 'distribuidor',
         regime: 'normal',
+        uf: 'SP',
+        ativo: true,
         preco: 100,
         ibs: 10,
         cbs: 5,
@@ -26,8 +28,10 @@ describe('rankSuppliers', () => {
       {
         id: '2',
         nome: 'B',
-        tipo: 'x',
+        tipo: 'distribuidor',
         regime: 'normal',
+        uf: 'SP',
+        ativo: true,
         preco: 110,
         ibs: 5,
         cbs: 5,
@@ -36,7 +40,13 @@ describe('rankSuppliers', () => {
       }
     ];
 
-    const ranked = rankSuppliers(suppliers, { destino: 'A', regime: 'normal', scenario: 'default', uf: 'SP' });
+    const ranked = rankSuppliers(suppliers, {
+      destino: 'A',
+      regime: 'normal',
+      scenario: 'default',
+      date: '2026-06-01',
+      uf: 'SP',
+    });
 
     expect(ranked.map(s => s.ranking)).toEqual([1, 2]);
     expect(ranked[0].custoEfetivo).toBeLessThan(ranked[1].custoEfetivo);

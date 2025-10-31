@@ -33,6 +33,8 @@ export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
       scenario: "default",
+    (set) => ({
+      scenario: "transicao",
       regras: [],
       scenarios: { default: [] },
       receitas: [],

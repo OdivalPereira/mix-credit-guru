@@ -1,3 +1,5 @@
+import { memoize } from "./memoize";
+
 export interface Offer {
   id: string;
   price: number;
@@ -23,10 +25,10 @@ export interface OptimizePerItemResult {
  * Greedy optimization allocating quantity across offers while
  * respecting MOQ, step, capacity, budget and share constraints.
  */
-export function optimizePerItem(
+const optimizePerItemInternal = (
   { quantity, offers, budget }: OptimizePerItemInput,
-  onProgress?: (percent: number) => void
-): OptimizePerItemResult {
+  onProgress?: (percent: number) => void,
+): OptimizePerItemResult => {
   const totalQty = quantity;
   let remainingQty = quantity;
   let remainingBudget = budget ?? Infinity;
@@ -49,13 +51,13 @@ export function optimizePerItem(
     max = Math.floor(max / step) * step;
     if (max === 0) {
       if (remainingQty > 0) {
-        violations.push(`degrau não atendido para fornecedor ${id}`);
+        violations.push(`degrau nao atendido para fornecedor ${id}`);
       }
       if (onProgress) onProgress(((idx + 1) / sorted.length) * 100);
       return;
     }
     if (max < moq) {
-      violations.push(`MOQ não atendido para fornecedor ${id}`);
+      violations.push(`MOQ nao atendido para fornecedor ${id}`);
       if (onProgress) onProgress(((idx + 1) / sorted.length) * 100);
       return;
     }
@@ -78,17 +80,27 @@ export function optimizePerItem(
       budget !== undefined &&
       remainingBudget < Math.min(...offers.map((o) => o.price))
     ) {
-      violations.push("Orçamento insuficiente");
+      violations.push("Orcamento insuficiente");
     }
     const totalShare = offers.reduce(
       (sum, o) => sum + (o.share != null ? o.share * totalQty : totalQty),
       0,
     );
     if (totalShare < totalQty) {
-      violations.push("Participação insuficiente");
+      violations.push("Participacao insuficiente");
     }
   }
 
   return { allocation, cost, violations };
-}
+};
+
+export const optimizePerItem = memoize(optimizePerItemInternal, {
+  getKey: (input) => JSON.stringify(input),
+  maxSize: 50,
+  onCacheHit: (_input, onProgress) => {
+    if (typeof onProgress === "function") {
+      onProgress(100);
+    }
+  },
+});
 

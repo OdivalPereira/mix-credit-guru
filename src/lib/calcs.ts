@@ -1,39 +1,59 @@
 import type { Supplier, MixResultadoItem, AliquotasConfig } from "@/types/domain";
 import { computeCredit } from "./credit";
 import { computeRates } from "./rates";
+import { memoize } from "./memoize";
 
 export function round(value: number, digits = 2): number {
   return Number(value.toFixed(digits));
 }
 
-export function computeTaxes(preco: number, aliquotas: AliquotasConfig): number {
+const computeTaxesInternal = (preco: number, aliquotas: AliquotasConfig): number => {
   const { ibs, cbs, is } = aliquotas;
   return preco * (ibs + cbs + is) / 100;
-}
+};
 
-export function computeEffectiveCost(
+export const computeTaxes = memoize(computeTaxesInternal, {
+  getKey: (preco, aliquotas) =>
+    `${preco}|${aliquotas.ibs}|${aliquotas.cbs}|${aliquotas.is}`,
+  maxSize: 200,
+});
+
+const computeEffectiveCostInternal = (
   preco: number,
   frete: number,
   aliquotas: AliquotasConfig,
-  credito: number
-): number {
+  credito: number,
+): number => {
   const taxes = computeTaxes(preco, aliquotas);
   return round(preco + frete + taxes - credito);
-}
+};
+
+export const computeEffectiveCost = memoize(computeEffectiveCostInternal, {
+  getKey: (preco, frete, aliquotas, credito) =>
+    `${preco}|${frete}|${aliquotas.ibs}|${aliquotas.cbs}|${aliquotas.is}|${credito}`,
+  maxSize: 200,
+});
 
 interface RankContext {
   destino: string;
   regime: string;
   scenario: string;
+  date: string | Date;
   uf: string;
+  municipio?: string;
 }
 
-export function rankSuppliers(
+const rankSuppliersInternal = (
   suppliers: Supplier[],
-  ctx: RankContext
-): MixResultadoItem[] {
+  ctx: RankContext,
+): MixResultadoItem[] => {
   const calculated = suppliers.map((s) => {
-    const rates = computeRates(ctx.scenario, ctx.uf, s.flagsItem ?? {});
+    const rates = computeRates(ctx.scenario, ctx.date, {
+      uf: ctx.uf,
+      municipio: ctx.municipio,
+      itemId: s.id,
+      flagsItem: s.flagsItem,
+    });
     const credit = computeCredit(ctx.destino, ctx.regime, s.preco, rates.ibs, rates.cbs, {
       scenario: ctx.scenario,
       isRefeicaoPronta: s.isRefeicaoPronta,
@@ -59,5 +79,10 @@ export function rankSuppliers(
   calculated.sort((a, b) => a.custoEfetivo - b.custoEfetivo);
 
   return calculated.map((s, index) => ({ ...s, ranking: index + 1 }));
-}
+};
+
+export const rankSuppliers = memoize(rankSuppliersInternal, {
+  getKey: (suppliers, ctx) => JSON.stringify({ suppliers, ctx }),
+  maxSize: 20,
+});
 

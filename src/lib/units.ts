@@ -10,6 +10,7 @@ const ConvSchema = z.object({
 });
 
 const YieldSchema = z.object({
+  produtoId: z.string().trim().min(1).optional(),
   entrada: UnitEnum,
   saida: UnitEnum,
   rendimento: z.number().positive().max(100),
@@ -62,23 +63,27 @@ export function normalizeOffer(
     yieldCfg: y,
   } = NormalizeSchema.parse({ preco, packInfo, fromUnit, toUnit, convs, yieldCfg });
 
+  // Type assertion to ensure TypeScript understands the parsed types
+  const validConversions = conversions as UnitConv[];
+  const validYield = y as YieldConfig | undefined;
+
   let qty = pack.reduce((acc, n) => acc * n, 1);
 
-  if (y) {
-    const toEntrada = findFactor(from, y.entrada, conversions);
-    if (toEntrada === null) throw new Error("Conversão inválida");
+  if (validYield) {
+    const toEntrada = findFactor(from, validYield.entrada, validConversions);
+    if (toEntrada === null) throw new Error("Conversao invalida");
     qty *= toEntrada;
 
-    const entradaToSaida = findFactor(y.entrada, y.saida, conversions);
-    if (entradaToSaida === null) throw new Error("Conversão inválida");
-    qty = qty * (y.rendimento / 100) * entradaToSaida;
+    const entradaToSaida = findFactor(validYield.entrada, validYield.saida, validConversions);
+    if (entradaToSaida === null) throw new Error("Conversao invalida");
+    qty = qty * (validYield.rendimento / 100) * entradaToSaida;
 
-    const saidaToTarget = findFactor(y.saida, to, conversions);
-    if (saidaToTarget === null) throw new Error("Conversão inválida");
+    const saidaToTarget = findFactor(validYield.saida, to, validConversions);
+    if (saidaToTarget === null) throw new Error("Conversao invalida");
     qty *= saidaToTarget;
   } else {
-    const factor = findFactor(from, to, conversions);
-    if (factor === null) throw new Error("Conversão inválida");
+    const factor = findFactor(from, to, validConversions);
+    if (factor === null) throw new Error("Conversao invalida");
     qty *= factor;
   }
 

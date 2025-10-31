@@ -12,7 +12,7 @@ function calcularMix(itens: MixResultadoItem[], porcoes: number) {
   }));
 }
 
-describe('mudança de cenário', () => {
+describe('mudanca de cenario', () => {
   beforeEach(() => {
     useAppStore.setState({
       scenario: 'default',
@@ -21,7 +21,14 @@ describe('mudança de cenário', () => {
       receitas: [],
     });
     useCotacaoStore.setState({
-      contexto: { data: '', uf: 'SP', destino: 'A', regime: 'normal', produto: '' },
+      contexto: {
+        data: '2026-06-01',
+        uf: 'SP',
+        municipio: '',
+        destino: 'A',
+        regime: 'normal',
+        produto: '',
+      },
       fornecedores: [],
       resultado: { itens: [] },
       constraints: [],
@@ -29,13 +36,15 @@ describe('mudança de cenário', () => {
     });
   });
 
-  it('atualiza Cotacao e Receitas quando cenário muda', () => {
+  it('atualiza Cotacao e Receitas quando cenario muda', () => {
     const cotacao = useCotacaoStore.getState();
     cotacao.upsertFornecedor({
       id: 'f1',
       nome: 'Fornecedor',
-      tipo: 'fabricante',
+      tipo: 'industria',
       regime: 'normal',
+      uf: 'SP',
+      ativo: true,
       preco: 100,
       ibs: 0,
       cbs: 0,

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeRecipeMix } from '@/lib/bom';
 import type { Supplier, MixResultadoItem } from '@/types/domain';
 
-// Estrutura básica de receita para os testes
+// Estrutura basica de receita para os testes
 interface TestRecipeItem {
   id: string;
   suppliers: Supplier[];
@@ -26,8 +26,10 @@ describe('computeRecipeMix', () => {
           {
             id: 'forn-1',
             nome: 'Alfa',
-            tipo: 'fabricante',
+            tipo: 'industria',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 100,
             ibs: 0,
             cbs: 0,
@@ -40,6 +42,8 @@ describe('computeRecipeMix', () => {
             nome: 'Beta',
             tipo: 'distribuidor',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 95,
             ibs: 0,
             cbs: 0,
@@ -55,8 +59,10 @@ describe('computeRecipeMix', () => {
           {
             id: 'forn-3',
             nome: 'Gama',
-            tipo: 'fabricante',
+            tipo: 'industria',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 50,
             ibs: 0,
             cbs: 0,
@@ -69,6 +75,8 @@ describe('computeRecipeMix', () => {
             nome: 'Delta',
             tipo: 'distribuidor',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 55,
             ibs: 0,
             cbs: 0,
@@ -84,6 +92,7 @@ describe('computeRecipeMix', () => {
       destino: 'A',
       regime: 'normal',
       scenario: 'default',
+      data: '2026-06-01',
       uf: 'SP',
     });
 
@@ -94,12 +103,12 @@ describe('computeRecipeMix', () => {
     expect(arroz.id).toBe('forn-2');
     expect(arroz.custoEfetivo).toBe(107);
 
-    // Para o óleo, o fornecedor Gama (forn-3) deve ser o escolhido
+    // Para o oleo, o fornecedor Gama (forn-3) deve ser o escolhido
     expect(oleo.id).toBe('forn-3');
     expect(oleo.custoEfetivo).toBe(55);
   });
 
-  it('aplica Cesta Zero e Redução 60% conforme o cenário', () => {
+  it('aplica Cesta Zero e Reducao 60% conforme o cenario', () => {
     const recipe: TestRecipeItem[] = [
       {
         id: 'feijao',
@@ -107,8 +116,10 @@ describe('computeRecipeMix', () => {
           {
             id: 's1',
             nome: 'Fornecedor A',
-            tipo: 'fabricante',
+            tipo: 'industria',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 100,
             ibs: 0,
             cbs: 0,
@@ -123,8 +134,10 @@ describe('computeRecipeMix', () => {
           {
             id: 's2',
             nome: 'Fornecedor B',
-            tipo: 'fabricante',
+            tipo: 'industria',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 80,
             ibs: 0,
             cbs: 0,
@@ -140,6 +153,7 @@ describe('computeRecipeMix', () => {
       destino: 'A',
       regime: 'normal',
       scenario: 'cesta',
+      data: '2026-06-01',
       uf: 'SP',
     });
 
@@ -152,7 +166,7 @@ describe('computeRecipeMix', () => {
     expect(result[1].is).toBe(0);
   });
 
-  it('usa alíquotas padrão para anos 2026–2033 e calcula mix de receitas', () => {
+  it('usa aliquotas padrao para anos 2026-2033 e calcula mix de receitas', () => {
     const recipe: TestRecipeItem[] = [
       {
         id: 'item-a',
@@ -160,8 +174,10 @@ describe('computeRecipeMix', () => {
           {
             id: 'a1',
             nome: 'A1',
-            tipo: 'fabricante',
+            tipo: 'industria',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 50,
             ibs: 0,
             cbs: 0,
@@ -176,8 +192,10 @@ describe('computeRecipeMix', () => {
           {
             id: 'b1',
             nome: 'B1',
-            tipo: 'fabricante',
+            tipo: 'industria',
             regime: 'normal',
+            uf: 'SP',
+            ativo: true,
             preco: 100,
             ibs: 0,
             cbs: 0,
@@ -194,14 +212,18 @@ describe('computeRecipeMix', () => {
         destino: 'A',
         regime: 'normal',
         scenario: year,
+        data: `${year}-06-01`,
         uf: 'SP',
       });
-      expect(winners[0].ibs).toBe(12);
-      expect(winners[1].ibs).toBe(12);
+      const expectedIbs = Number(year) >= 2028 ? 10.5 : 12;
+      expect(winners[0].ibs).toBe(expectedIbs);
+      expect(winners[1].ibs).toBe(expectedIbs);
       const mix = calcularMix(winners, 1);
       const totalMix = mix.reduce((sum, i) => sum + i.mix, 0);
       expect(totalMix).toBeCloseTo(100);
     }
   });
 });
+
+
 

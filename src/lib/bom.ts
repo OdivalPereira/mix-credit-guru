@@ -12,12 +12,14 @@ interface RecipeContext {
   destino: string;
   regime: string;
   scenario: string;
+  data: string | Date;
   uf: string;
+  municipio?: string;
 }
 
 /**
  * Para cada item de receita, seleciona o fornecedor com menor custo efetivo
- * considerando alíquotas, créditos e frete.
+ * considerando aliquotas, creditos e frete.
  */
 export function computeRecipeMix(
   items: RecipeItem[],
@@ -27,7 +29,12 @@ export function computeRecipeMix(
     let best: MixResultadoItem | null = null;
 
     for (const supplier of item.suppliers) {
-      const rates = computeRates(ctx.scenario, ctx.uf, supplier.flagsItem ?? {});
+      const rates = computeRates(ctx.scenario, ctx.data, {
+        uf: ctx.uf,
+        municipio: ctx.municipio,
+        itemId: supplier.id,
+        flagsItem: supplier.flagsItem,
+      });
       const credit = computeCredit(
         ctx.destino,
         ctx.regime,

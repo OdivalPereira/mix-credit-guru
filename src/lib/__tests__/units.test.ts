@@ -9,7 +9,7 @@ describe('normalizeOffer', () => {
     { de: 'ton', para: 'kg', fator: 1000 },
   ];
 
-  it('calcula preço por unidade em multipack', () => {
+  it('calcula preco por unidade em multipack', () => {
     const preco = normalizeOffer(24, [12], 'un', 'un', []);
     expect(preco).toBe(2);
   });
@@ -21,11 +21,16 @@ describe('normalizeOffer', () => {
 
   it('aplica yield/perdas', () => {
     const preco = normalizeOffer(20, [1000], 'g', 'kg', convs, {
+      produtoId: 'prod-1',
       entrada: 'g',
       saida: 'g',
       rendimento: 80,
     });
     expect(preco).toBeCloseTo(25);
+  });
+
+  it('lanca erro quando nao existe caminho de conversao', () => {
+    expect(() => normalizeOffer(10, [1], 'kg', 'ml', convs)).toThrow('Conversao invalida');
   });
 });
 
