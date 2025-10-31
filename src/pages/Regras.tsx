@@ -32,6 +32,10 @@ const ruleSchema = z.object({
   prioridade: z.number().int().min(0).optional(),
 });
 
+/**
+ * @description Um componente de página para gerenciar regras de NCM e receitas, permitindo que os usuários adicionem, editem, removam, importem e exportem regras.
+ * @returns O componente da página de regras.
+ */
 export default function Regras() {
   const regras = useAppStore((s) => s.regras);
   const receitas = useAppStore((s) => s.receitas);

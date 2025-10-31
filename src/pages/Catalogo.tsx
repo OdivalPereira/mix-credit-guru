@@ -36,6 +36,10 @@ import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
 
 const EMPTY_COMPONENT_VALUE = "__component_empty__";
 
+/**
+ * @description Um componente de página que permite aos usuários gerenciar um catálogo de produtos, incluindo adição, edição, exclusão, importação e exportação de produtos.
+ * @returns O componente da página do catálogo.
+ */
 export default function Catalogo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");

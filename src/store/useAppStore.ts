@@ -7,6 +7,22 @@ interface EffectiveRule extends NcmRule {
   validTo?: string;
 }
 
+/**
+ * @description Zustand store para gerenciar o estado global da aplicação.
+ * @property {string} scenario - O cenário tributário atualmente ativo.
+ * @property {EffectiveRule[]} regras - As regras para o cenário atualmente selecionado.
+ * @property {Record<string, EffectiveRule[]>} scenarios - Todas as regras de cenário, chaveadas pelo nome do cenário.
+ * @property {Receita[]} receitas - A lista de receitas.
+ * @property {(scenario: string) => void} setScenario - Define o cenário ativo.
+ * @property {(regras: EffectiveRule[]) => void} setRegras - Define as regras para o cenário atual.
+ * @property {(receitas: Receita[]) => void} setReceitas - Define a lista de receitas.
+ * @property {(regra: EffectiveRule) => void} addRegra - Adiciona uma nova regra.
+ * @property {(ncm: string, validFrom: string, data: Partial<EffectiveRule>) => void} updateRegra - Atualiza uma regra existente.
+ * @property {(ncm: string, validFrom: string) => void} removeRegra - Remove uma regra.
+ * @property {(receita: Receita) => void} addReceita - Adiciona uma nova receita.
+ * @property {(codigo: string, data: Partial<Receita>) => void} updateReceita - Atualiza uma receita existente.
+ * @property {(codigo: string) => void} removeReceita - Remove uma receita.
+ */
 interface AppStore {
   scenario: string;
   /** Rules for the currently selected scenario */

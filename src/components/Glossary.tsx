@@ -135,6 +135,11 @@ const glossaryTerms: GlossaryTerm[] = [
   },
 ];
 
+/**
+ * @description Renderiza um componente de glossário com termos e definições pesquisáveis,
+ * categorizados e exibidos em um painel lateral.
+ * @returns O componente de glossário.
+ */
 export function Glossary() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

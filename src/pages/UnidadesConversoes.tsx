@@ -14,6 +14,10 @@ import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
 
+/**
+ * @description Um componente de página para gerenciar conversões de unidades e configurações de rendimento, permitindo que os usuários configurem regras globais e específicas de produtos.
+ * @returns O componente da página de conversões de unidades.
+ */
 export default function UnidadesConversoes() {
   const conversoes = useUnidadesStore((state) => state.conversoes);
   const yieldConfigs = useUnidadesStore((state) => state.yields);

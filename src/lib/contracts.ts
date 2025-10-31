@@ -1,8 +1,11 @@
 import type { ContractFornecedor } from "@/types/domain";
 
 /**
- * Resolve unit price and freight for a given quantity based on contract rules.
- * Selects the highest applicable price break and freight break.
+ * @description Resolve o preço unitário e o frete para uma determinada quantidade com base nas regras do contrato.
+ * Seleciona a maior quebra de preço e quebra de frete aplicável.
+ * @param qtdDesejada A quantidade desejada para o cálculo do preço.
+ * @param contract O contrato do fornecedor contendo as regras de preços.
+ * @returns Um objeto com o preço e frete resolvidos.
  */
 export function resolveUnitPrice(
   qtdDesejada: number,

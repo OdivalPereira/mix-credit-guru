@@ -39,6 +39,13 @@ export interface ComputeRatesContext {
 const baseSource = normalizeSource(baseAliquotas);
 const overridesByUF = mapRecord(overridesUF as Record<string, unknown>, normalizeSource);
 
+/**
+ * @description Calcula as alíquotas de imposto (IBS, CBS, IS) com base no cenário, data e contexto fornecidos.
+ * @param scenario O cenário tributário a ser usado para o cálculo.
+ * @param dateInput A data para a qual as alíquotas devem ser calculadas.
+ * @param ctx O contexto para o cálculo das alíquotas, incluindo UF, município e informações do item.
+ * @returns Um objeto contendo as alíquotas de IBS, CBS e IS calculadas.
+ */
 export function computeRates(
   scenario: string,
   dateInput: DateInput,

@@ -18,8 +18,14 @@ interface RecipeContext {
 }
 
 /**
+ * @description
  * Para cada item de receita, seleciona o fornecedor com menor custo efetivo
  * considerando aliquotas, creditos e frete.
+ *
+ * @param items A lista de itens de receita para processar.
+ * @param ctx O contexto tributário e de cenário para o cálculo.
+ * @returns Uma lista com o melhor fornecedor para cada item da receita,
+ *          incluindo detalhes de custo e impostos.
  */
 export function computeRecipeMix(
   items: RecipeItem[],

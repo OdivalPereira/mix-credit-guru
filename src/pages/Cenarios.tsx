@@ -44,6 +44,10 @@ const getImpactBadge = (impact: Scenario["impact"]) => {
   }
 };
 
+/**
+ * @description Um componente de página que permite aos usuários explorar e comparar diferentes cenários tributários, analisando o impacto nos custos e nos resultados das cotações.
+ * @returns O componente da página de cenários.
+ */
 export default function Cenarios() {
   const scenarioKey = useAppStore((state) => state.scenario);
   const setScenario = useAppStore((state) => state.setScenario);

@@ -1,6 +1,10 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
+/**
+ * @description Um componente que renderiza uma página 404 Not Found quando um usuário tenta acessar uma rota que não existe.
+ * @returns O componente da página Not Found.
+ */
 const NotFound = () => {
   const location = useLocation();
 

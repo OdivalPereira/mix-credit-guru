@@ -34,6 +34,13 @@ const defaultContracts: ContractFornecedor[] = [createContractDefaults()];
 export const createEmptyContract = (): ContractFornecedor =>
   normalizeContract(createContractDefaults());
 
+/**
+ * @description Zustand store para gerenciar contratos de fornecedores.
+ * @property {ContractFornecedor[]} contratos - A lista de contratos.
+ * @property {(updater: (prev: ContractFornecedor[]) => ContractFornecedor[]) => void} updateContracts - Atualiza a lista de contratos usando uma função de atualização.
+ * @property {() => void} reset - Redefine a lista de contratos para o padrão.
+ * @property {(supplierId: string, produtoKey?: string) => ContractFornecedor | undefined} findContract - Encontra um contrato com base no ID do fornecedor e na chave do produto.
+ */
 interface ContractsStore {
   contratos: ContractFornecedor[];
   updateContracts: (

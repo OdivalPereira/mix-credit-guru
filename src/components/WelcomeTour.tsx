@@ -76,6 +76,10 @@ const tourSteps: TourStep[] = [
 
 const TOUR_STORAGE_KEY = "mix-credit-guru-tour-completed";
 
+/**
+ * @description Um componente de tour de boas-vindas que guia os novos usuários através das principais características da aplicação.
+ * @returns O componente de tour de boas-vindas.
+ */
 export function WelcomeTour() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);

@@ -192,6 +192,11 @@ function normalizeSupplierRegime(value: string | undefined): SupplierRegime {
   }
 }
 
+/**
+ * @description Analisa uma string CSV contendo dados de fornecedores e a converte em uma matriz de objetos de Fornecedor.
+ * @param csv A string CSV a ser analisada.
+ * @returns Uma matriz de objetos de Fornecedor.
+ */
 export function readFornecedoresCSV(csv: string): Supplier[] {
   const rows = parseCsvRows(csv);
   if (rows.length === 0) {
@@ -307,6 +312,11 @@ export function readFornecedoresCSV(csv: string): Supplier[] {
   return fornecedores;
 }
 
+/**
+ * @description Analisa uma string CSV contendo dados de produtos e a converte em uma matriz de objetos de Produto.
+ * @param csv A string CSV a ser analisada.
+ * @returns Uma matriz de objetos de Produto.
+ */
 export function readProdutosCSV(csv: string): Produto[] {
   const rows = parseCsvRows(csv);
   if (rows.length === 0) {
@@ -366,6 +376,11 @@ export function readProdutosCSV(csv: string): Produto[] {
   return produtos;
 }
 
+/**
+ * @description Converte uma matriz de objetos de Fornecedor em uma string CSV.
+ * @param fornecedores A matriz de objetos de Fornecedor a ser convertida.
+ * @returns Uma string formatada em CSV.
+ */
 export function writeFornecedoresCSV(fornecedores: Supplier[]): string {
   const header = fornecedorCsvHeaders.join(",");
   const rows = fornecedores.map((f) =>
@@ -404,6 +419,11 @@ export function writeFornecedoresCSV(fornecedores: Supplier[]): string {
   return [header, ...rows].join("\n");
 }
 
+/**
+ * @description Converte uma matriz de objetos de Produto em uma string CSV.
+ * @param produtos A matriz de objetos de Produto a ser convertida.
+ * @returns Uma string formatada em CSV.
+ */
 export function writeProdutosCSV(produtos: Produto[]): string {
   const header = produtoCsvHeaders.join(",");
   const rows = produtos.map((p) =>

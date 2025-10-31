@@ -46,6 +46,17 @@ function findFactor(
   return null;
 }
 
+/**
+ * @description Normaliza o preço de uma oferta convertendo-o para uma unidade de medida de destino, levando em conta conversões de unidades e configurações de rendimento.
+ * @param preco O preço da oferta.
+ * @param packInfo Informações sobre a embalagem (por exemplo, [10, 100] para 10 pacotes de 100g).
+ * @param fromUnit A unidade de medida original da oferta.
+ * @param toUnit A unidade de medida de destino para a qual o preço deve ser normalizado.
+ * @param convs Uma matriz de regras de conversão de unidades.
+ * @param yieldCfg Uma configuração de rendimento opcional a ser aplicada.
+ * @returns O preço normalizado por unidade de destino.
+ * @throws {Error} Se uma conversão de unidade necessária não puder ser encontrada.
+ */
 export function normalizeOffer(
   preco: number,
   packInfo: number[],

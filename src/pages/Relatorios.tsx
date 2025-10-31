@@ -56,6 +56,10 @@ const CHART_COLORS = [
   "hsl(var(--chart-5))",
 ];
 
+/**
+ * @description Um componente de página que exibe um relatório consolidado da cotação, incluindo fornecedores vencedores, análise de impacto da reforma, comparação de cenários e gráficos avançados.
+ * @returns O componente da página de relatórios.
+ */
 const RelatoriosComponent = () => {
   const navigate = useNavigate();
   const resultado = useCotacaoStore((s) => s.resultado);
@@ -666,6 +670,12 @@ const RelatoriosComponent = () => {
   );
 }
 
+/**
+ * @description Calcula o mix de fornecedores e o custo por porção para uma lista de itens de resultado.
+ * @param itens A lista de itens de resultado a serem processados.
+ * @param porcoes O número de porções para calcular o custo.
+ * @returns Uma matriz de itens de resultado com as propriedades `mix` e `custoPorPorcao` adicionadas.
+ */
 function calcularMix(
   itens: MixResultadoItem[],
   porcoes: number,

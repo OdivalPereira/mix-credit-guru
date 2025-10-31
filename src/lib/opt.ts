@@ -22,8 +22,10 @@ export interface OptimizePerItemResult {
 }
 
 /**
- * Greedy optimization allocating quantity across offers while
- * respecting MOQ, step, capacity, budget and share constraints.
+ * @description Otimização greedy que aloca a quantidade entre as ofertas, respeitando as restrições de MOQ, passo, capacidade, orçamento e compartilhamento.
+ * @param input O objeto de entrada contendo a quantidade, ofertas e orçamento.
+ * @param onProgress Uma função de retorno de chamada para relatar o progresso da otimização.
+ * @returns Um objeto com a alocação, custo e quaisquer violações das restrições.
  */
 const optimizePerItemInternal = (
   { quantity, offers, budget }: OptimizePerItemInput,

@@ -3,21 +3,44 @@ import { computeCredit } from "./credit";
 import { computeRates } from "./rates";
 import { memoize } from "./memoize";
 
+/**
+ * @description Arredonda um número para um número especificado de casas decimais.
+ * @param value O número a ser arredondado.
+ * @param digits O número de casas decimais para manter.
+ * @returns O número arredondado.
+ */
 export function round(value: number, digits = 2): number {
   return Number(value.toFixed(digits));
 }
 
+/**
+ * @description Calcula os impostos totais (IBS, CBS, IS) para um determinado preço e alíquotas.
+ * @param preco O preço do item.
+ * @param aliquotas As alíquotas de imposto a serem aplicadas.
+ * @returns O valor total do imposto.
+ */
 const computeTaxesInternal = (preco: number, aliquotas: AliquotasConfig): number => {
   const { ibs, cbs, is } = aliquotas;
   return preco * (ibs + cbs + is) / 100;
 };
 
+/**
+ * @description Versão memoizada de `computeTaxesInternal` para otimizar os cálculos de impostos.
+ */
 export const computeTaxes = memoize(computeTaxesInternal, {
   getKey: (preco, aliquotas) =>
     `${preco}|${aliquotas.ibs}|${aliquotas.cbs}|${aliquotas.is}`,
   maxSize: 200,
 });
 
+/**
+ * @description Calcula o custo efetivo de um item, incluindo preço, frete, impostos e créditos.
+ * @param preco O preço do item.
+ * @param frete O custo do frete.
+ * @param aliquotas As alíquotas de imposto a serem aplicadas.
+ * @param credito O valor do crédito fiscal.
+ * @returns O custo efetivo calculado.
+ */
 const computeEffectiveCostInternal = (
   preco: number,
   frete: number,
@@ -28,6 +51,9 @@ const computeEffectiveCostInternal = (
   return round(preco + frete + taxes - credito);
 };
 
+/**
+ * @description Versão memoizada de `computeEffectiveCostInternal` para otimizar o cálculo do custo efetivo.
+ */
 export const computeEffectiveCost = memoize(computeEffectiveCostInternal, {
   getKey: (preco, frete, aliquotas, credito) =>
     `${preco}|${frete}|${aliquotas.ibs}|${aliquotas.cbs}|${aliquotas.is}|${credito}`,
@@ -43,6 +69,12 @@ interface RankContext {
   municipio?: string;
 }
 
+/**
+ * @description Classifica os fornecedores com base em seu custo efetivo, calculando impostos e créditos.
+ * @param suppliers A lista de fornecedores a ser classificada.
+ * @param ctx O contexto tributário e de cenário para o cálculo.
+ * @returns Uma lista de fornecedores classificados com informações detalhadas sobre custos e impostos.
+ */
 const rankSuppliersInternal = (
   suppliers: Supplier[],
   ctx: RankContext,

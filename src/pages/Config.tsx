@@ -14,6 +14,10 @@ import { useConfigStore } from "@/store/useConfigStore";
 import { toast } from "@/hooks/use-toast";
 import type { DestinoTipo, SupplierRegime } from "@/types/domain";
 
+/**
+ * @description Um componente de página que permite aos usuários personalizar as configurações da aplicação, como valores padrão, tema e comportamento do sistema.
+ * @returns O componente da página de configurações.
+ */
 export default function Config() {
   const { theme, setTheme } = useTheme();
   const {
