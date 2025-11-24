@@ -19,7 +19,7 @@ export const DonationStats = () => {
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium flex items-center gap-2">
             <Target className="h-4 w-4 text-primary" />
-            Meta do mês
+            Meta de infraestrutura mensal
           </span>
           <span className="text-muted-foreground">
             R$ {stats.currentAmount} / R$ {stats.monthlyGoal}

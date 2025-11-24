@@ -1,39 +1,30 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDonationModalStore } from '@/store/useDonationModalStore';
-import { CreditCard } from 'lucide-react';
-import { useState } from 'react';
-import { DonationStats } from './donation/DonationStats';
-import { DonationQRCode } from './donation/DonationQRCode';
-import { DonationCustomAmount } from './donation/DonationCustomAmount';
-import { DonationCard } from './donation/DonationCard';
-import { DeveloperDonationModal } from './donation/DeveloperDonationModal';
-import { projectDonationOptions, developerCardOption, DonationOption } from './donation/donationData';
+import { ArrowLeft, CreditCard } from 'lucide-react';
+import { DonationCard } from './DonationCard';
+import { DonationQRCode } from './DonationQRCode';
+import { DonationCustomAmount } from './DonationCustomAmount';
+import { developerDonationOptions, DonationOption } from './donationData';
 
-/**
- * @description Modal principal de doações focado no projeto e infraestrutura
- * @returns O componente de modal de doação reorganizado
- */
-const DonationModal = () => {
-  const { isOpen, closeModal, openModal } = useDonationModalStore();
+interface DeveloperDonationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onBack: () => void;
+}
+
+export const DeveloperDonationModal = ({ isOpen, onClose, onBack }: DeveloperDonationModalProps) => {
   const [selectedDonation, setSelectedDonation] = useState<DonationOption | null>(null);
-  const [isDeveloperModalOpen, setIsDeveloperModalOpen] = useState(false);
   const [customAmount, setCustomAmount] = useState<number | null>(null);
 
   const handleDonationClick = (option: DonationOption) => {
     setSelectedDonation(option);
-    setCustomAmount(option.numericValue || null);
-  };
-
-  const handleDeveloperClick = () => {
-    setIsDeveloperModalOpen(true);
-    closeModal();
-  };
-
-  const handleBackToProject = () => {
-    setIsDeveloperModalOpen(false);
-    openModal();
+    if (option.id === 'custom-dev') {
+      setCustomAmount(null);
+    } else {
+      setCustomAmount(option.numericValue || null);
+    }
   };
 
   const handleCustomAmountSelect = (amount: number) => {
@@ -45,23 +36,27 @@ const DonationModal = () => {
     setCustomAmount(null);
   };
 
+  const handleBackToProject = () => {
+    setSelectedDonation(null);
+    setCustomAmount(null);
+    onClose();
+    onBack();
+  };
+
   return (
     <>
-      {/* Modal principal de doações do projeto */}
-      <Dialog open={isOpen && !selectedDonation} onOpenChange={closeModal}>
+      {/* Modal de seleção de doações do desenvolvedor */}
+      <Dialog open={isOpen && !selectedDonation} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl text-center">Apoie o Mix Credit Guru 💙</DialogTitle>
+            <DialogTitle className="text-2xl text-center">Apoie o Desenvolvedor Diretamente ☕</DialogTitle>
             <DialogDescription className="text-center text-base">
-              Contribua para manter a infraestrutura e o desenvolvimento contínuo deste projeto gratuito.
+              Apoie diretamente o criador deste projeto. Sua contribuição ajuda nas necessidades pessoais e profissionais.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Estatísticas de doações */}
-          <DonationStats />
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 py-4">
-            {projectDonationOptions.map((option) => (
+            {developerDonationOptions.map((option) => (
               <DonationCard
                 key={option.id}
                 option={option}
@@ -69,22 +64,22 @@ const DonationModal = () => {
                 variant="default"
               />
             ))}
+          </div>
 
-            {/* Card especial "Apoie o Desenvolvedor" */}
-            <DonationCard
-              option={developerCardOption}
-              onClick={handleDeveloperClick}
-              variant="special"
-            />
+          <div className="flex justify-center pt-4 border-t">
+            <Button variant="outline" onClick={handleBackToProject} className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              ❤️ Voltar para doações do projeto
+            </Button>
           </div>
 
           <p className="text-sm text-muted-foreground text-center mt-4">
-            Sua doação mantém este projeto gratuito e sempre atualizado. Obrigado! ❤️
+            Apoie diretamente o criador deste projeto
           </p>
         </DialogContent>
       </Dialog>
 
-      {/* Modal de doação específica do projeto */}
+      {/* Modal de pagamento específico */}
       <Dialog open={!!selectedDonation} onOpenChange={handleClosePaymentModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -98,12 +93,10 @@ const DonationModal = () => {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Se for valor personalizado, mostra o seletor */}
-            {selectedDonation?.id === 'custom' && (
+            {selectedDonation?.id === 'custom-dev' && (
               <DonationCustomAmount onSelect={handleCustomAmountSelect} />
             )}
 
-            {/* Mostra o valor selecionado */}
             {customAmount && (
               <div className="text-center py-2">
                 <p className="text-sm text-muted-foreground">Valor selecionado</p>
@@ -139,15 +132,6 @@ const DonationModal = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Modal secundário - Apoie o Desenvolvedor */}
-      <DeveloperDonationModal 
-        isOpen={isDeveloperModalOpen}
-        onClose={() => setIsDeveloperModalOpen(false)}
-        onBack={handleBackToProject}
-      />
     </>
   );
 };
-
-export default DonationModal;
