@@ -1,14 +1,11 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import {
-  BookOpen,
-  Calendar,
   Calculator,
-  FileText,
   Settings,
-  ClipboardList,
   Home,
-  TrendingUp,
   Heart,
+  FolderOpen,
+  BarChart3,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -19,13 +16,10 @@ import { useDonationModalStore } from "@/store/useDonationModalStore";
 
 const navigation = [
   { name: "Início", href: "/", icon: Home },
+  { name: "Meus Dados", href: "/meus-dados", icon: FolderOpen },
   { name: "Cotação", href: "/cotacao", icon: Calculator },
-  { name: "Cadastros", href: "/cadastros", icon: ClipboardList },
-  { name: "Cenários", href: "/cenarios", icon: Calendar },
-  { name: "Regras", href: "/regras", icon: BookOpen },
-  { name: "Impacto da Reforma", href: "/impacto-reforma", icon: TrendingUp },
-  { name: "Relatórios", href: "/relatorios", icon: FileText },
-  { name: "Config", href: "/config", icon: Settings },
+  { name: "Análise", href: "/analise", icon: BarChart3 },
+  { name: "Configurações", href: "/config", icon: Settings },
 ];
 
 /**
