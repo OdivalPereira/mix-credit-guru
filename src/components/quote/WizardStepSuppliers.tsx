@@ -1,17 +1,18 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
-  CheckCircle2,
-  AlertTriangle,
   ArrowRight,
   Plus,
   Search,
   Trash2,
   Edit,
 } from "lucide-react";
+import { SectionAlert } from "@/components/shared/SectionAlert";
+import { CompletionBadge } from "@/components/shared/CompletionBadge";
+import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
+import { toast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -52,16 +53,36 @@ export function WizardStepSuppliers({
 
   const handleQuickEdit = (supplier: Supplier, field: keyof Supplier) => {
     setEditingId(supplier.id);
-    // This would open an inline edit or a dialog
+    toast({
+      title: "Edição rápida",
+      description: `Clique no fornecedor ${supplier.nome} para editar ${field}`,
+    });
+  };
+
+  const handleRemove = (id: string) => {
+    onRemoveSupplier(id);
+    toast({
+      title: "Fornecedor removido",
+      description: "O fornecedor foi removido da cotação",
+    });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">Fornecedores da cotação</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Fornecedores da cotação</h3>
+          <CompletionBadge
+            completed={fornecedores.length}
+            total={fornecedores.length + 1}
+            variant="compact"
+          />
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
           Adicione e configure os fornecedores que participarão desta cotação.
-          Você pode editar preços, frete e outras informações.
+          Você pode editar preços, frete,{" "}
+          <GlossaryTerm {...glossaryTerms.ibs}>IBS</GlossaryTerm> e{" "}
+          <GlossaryTerm {...glossaryTerms.cbs}>CBS</GlossaryTerm>.
         </p>
       </div>
 
@@ -149,7 +170,7 @@ export function WizardStepSuppliers({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onRemoveSupplier(supplier.id)}
+                        onClick={() => handleRemove(supplier.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -161,24 +182,20 @@ export function WizardStepSuppliers({
           </CardContent>
         </Card>
       ) : (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Nenhum fornecedor adicionado ainda. Clique em "Adicionar Fornecedor"
-            para começar.
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="info"
+          title="Nenhum fornecedor adicionado"
+          description='Clique em "Adicionar Fornecedor" para começar a configurar sua cotação.'
+        />
       )}
 
       {/* Status Alert */}
       {hasFornecedores && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-900">
-            {fornecedores.length} fornecedor(es) configurado(s). Você pode
-            avançar para ver os resultados calculados.
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="success"
+          title={`${fornecedores.length} fornecedor(es) configurado(s)`}
+          description="Você pode avançar para ver os resultados calculados."
+        />
       )}
 
       {/* Navigation */}
