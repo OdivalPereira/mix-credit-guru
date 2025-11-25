@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { QuoteForm } from "./QuoteForm";
 import { QuoteContextSummary } from "./QuoteContextSummary";
-import { CheckCircle2, AlertTriangle, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { SectionAlert } from "@/components/shared/SectionAlert";
+import { CompletionBadge } from "@/components/shared/CompletionBadge";
+import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
 import type { Contexto } from "@/store/useCotacaoStore";
 
 interface WizardStepContextProps {
@@ -39,13 +41,29 @@ export function WizardStepContext({
     return fields;
   }, [contexto]);
 
+  const filledFields = [
+    contexto.data,
+    contexto.uf,
+    contexto.destino,
+    contexto.regime,
+    contexto.produto,
+  ].filter(Boolean).length;
+
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">Contexto da cotação</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Contexto da cotação</h3>
+          <CompletionBadge completed={filledFields} total={5} />
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Configure os parâmetros que serão usados para calcular impostos e
-          créditos tributários.
+          Configure os parâmetros que serão usados para calcular{" "}
+          <GlossaryTerm {...glossaryTerms.ibs}>IBS</GlossaryTerm>,{" "}
+          <GlossaryTerm {...glossaryTerms.cbs}>CBS</GlossaryTerm> e{" "}
+          <GlossaryTerm {...glossaryTerms.creditoTributario}>
+            créditos tributários
+          </GlossaryTerm>
+          .
         </p>
       </div>
 
@@ -57,27 +75,19 @@ export function WizardStepContext({
 
       {/* Validation Alert */}
       {!isContextComplete && missingFields.length > 0 && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Campos obrigatórios pendentes:</strong>
-            <ul className="list-disc list-inside mt-2 text-sm">
-              {missingFields.map((field) => (
-                <li key={field}>{field}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="warning"
+          title="Campos obrigatórios pendentes"
+          description={`Complete os seguintes campos: ${missingFields.join(", ")}`}
+        />
       )}
 
       {isContextComplete && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-900">
-            Contexto configurado com sucesso! Você pode avançar para selecionar
-            os fornecedores.
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="success"
+          title="Contexto configurado com sucesso!"
+          description="Você pode avançar para selecionar os fornecedores."
+        />
       )}
 
       {/* Navigation */}

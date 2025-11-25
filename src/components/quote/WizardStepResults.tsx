@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { SectionAlert } from "@/components/shared/SectionAlert";
+import { CompletionBadge } from "@/components/shared/CompletionBadge";
+import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
 import {
   Card,
   CardContent,
@@ -81,21 +83,35 @@ export function WizardStepResults({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">Resultados da cotação</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Resultados da cotação</h3>
+          {hasResults && (
+            <CompletionBadge
+              completed={resultados.length}
+              total={fornecedores.length}
+              variant="compact"
+            />
+          )}
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Análise dos custos efetivos calculados para cada fornecedor,
-          considerando impostos e créditos tributários.
+          Análise dos{" "}
+          <GlossaryTerm {...glossaryTerms.custoEfetivo}>
+            custos efetivos
+          </GlossaryTerm>{" "}
+          calculados para cada fornecedor, considerando impostos e{" "}
+          <GlossaryTerm {...glossaryTerms.creditoTributario}>
+            créditos tributários
+          </GlossaryTerm>
+          .
         </p>
       </div>
 
       {!hasResults && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Aguardando cálculo dos resultados. Volte ao passo anterior e
-            verifique se todos os dados estão corretos.
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="info"
+          title="Aguardando cálculo"
+          description="Volte ao passo anterior e verifique se todos os dados estão corretos."
+        />
       )}
 
       {hasResults && (
@@ -165,13 +181,11 @@ export function WizardStepResults({
 
           {/* Alerts */}
           {analysis.alertCount > 0 && (
-            <Alert variant="default" className="border-yellow-300 bg-yellow-50">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-900">
-                <strong>{analysis.alertCount}</strong> fornecedor(es) com
-                restrições ou alertas. Revise as informações antes de finalizar.
-              </AlertDescription>
-            </Alert>
+            <SectionAlert
+              type="warning"
+              title={`${analysis.alertCount} fornecedor(es) com restrições`}
+              description="Revise as informações antes de finalizar. Verifique limites contratuais e configurações tributárias."
+            />
           )}
 
           {/* Results Table */}

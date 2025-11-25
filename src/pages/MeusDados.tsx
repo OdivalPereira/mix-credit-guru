@@ -7,6 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Package, Users, FileText, ArrowLeftRight, Search, Settings2, CheckCircle2, AlertCircle } from "lucide-react";
+import { CompletionBadge } from "@/components/shared/CompletionBadge";
+import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
 import SuppliersManager from "@/components/cadastros/SuppliersManager";
 import ContractsManager from "@/components/cadastros/ContractsManager";
 import Catalogo from "./Catalogo";
@@ -89,9 +91,14 @@ function MeusDadosContent() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Meus Dados</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-foreground">Meus Dados</h1>
+            <CompletionBadge completed={completionScore.score} total={completionScore.maxScore} />
+          </div>
           <p className="text-muted-foreground">
-            Centralize e gerencie produtos, fornecedores, contratos e conversões
+            Centralize e gerencie produtos com{" "}
+            <GlossaryTerm {...glossaryTerms.ncm}>NCM</GlossaryTerm>, fornecedores,
+            contratos e conversões de unidades
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center">
@@ -205,18 +212,22 @@ function MeusDadosContent() {
           <TabsTrigger value="produtos" className="gap-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Produtos</span>
+            <CompletionBadge completed={produtosAtivos} total={produtos.length} variant="compact" size="sm" showPercentage={false} />
           </TabsTrigger>
           <TabsTrigger value="fornecedores" className="gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Fornecedores</span>
+            <CompletionBadge completed={fornecedoresAtivos} total={fornecedores.length} variant="compact" size="sm" showPercentage={false} />
           </TabsTrigger>
           <TabsTrigger value="contratos" className="gap-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Contratos</span>
+            <Badge variant="outline" className="text-xs px-1.5 py-0">{contratos.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="unidades" className="gap-2">
             <ArrowLeftRight className="h-4 w-4" />
             <span className="hidden sm:inline">Unidades</span>
+            <Badge variant="outline" className="text-xs px-1.5 py-0">{conversoes.length + yields.length}</Badge>
           </TabsTrigger>
         </TabsList>
 

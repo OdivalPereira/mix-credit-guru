@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import {
   CheckCircle2,
@@ -13,6 +12,9 @@ import {
   FileText,
   Scale,
 } from "lucide-react";
+import { SectionAlert } from "@/components/shared/SectionAlert";
+import { CompletionBadge } from "@/components/shared/CompletionBadge";
+import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
@@ -103,10 +105,16 @@ export function WizardStepVerification({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">Verificação de dados</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Verificação de dados</h3>
+          <CompletionBadge completed={passedChecks} total={totalChecks} />
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
           Antes de iniciar a cotação, vamos verificar se todos os dados
-          necessários estão cadastrados.
+          necessários estão cadastrados. Configure seu{" "}
+          <GlossaryTerm {...glossaryTerms.ncm}>NCM</GlossaryTerm>,{" "}
+          <GlossaryTerm {...glossaryTerms.aliquota}>alíquotas</GlossaryTerm> e
+          fornecedores.
         </p>
       </div>
 
@@ -219,33 +227,31 @@ export function WizardStepVerification({
 
       {/* Status Alert */}
       {!requiredPassed && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>
-            É necessário cadastrar pelo menos 1 produto para continuar. Acesse
-            a página <strong>Meus Dados</strong> para configurar.
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="error"
+          title="Dados obrigatórios pendentes"
+          description="É necessário cadastrar pelo menos 1 produto para continuar. Acesse a página Meus Dados para configurar."
+          action={{
+            label: "Ir para Meus Dados",
+            onClick: () => navigate("/meus-dados?tab=produtos"),
+          }}
+        />
       )}
 
       {requiredPassed && fornecedoresCotacao.length === 0 && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Você ainda não adicionou fornecedores nesta cotação. Será possível
-            adicionar no próximo passo.
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="warning"
+          title="Nenhum fornecedor adicionado"
+          description="Você ainda não adicionou fornecedores nesta cotação. Será possível adicionar no próximo passo."
+        />
       )}
 
       {requiredPassed && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-900">
-            Tudo pronto! Você pode avançar para configurar o contexto da
-            cotação.
-          </AlertDescription>
-        </Alert>
+        <SectionAlert
+          type="success"
+          title="Tudo pronto!"
+          description="Você pode avançar para configurar o contexto da cotação."
+        />
       )}
 
       {/* Action Button */}

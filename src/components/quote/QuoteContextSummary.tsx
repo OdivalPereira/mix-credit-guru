@@ -3,6 +3,7 @@ import { CalendarDays, Globe2, MapPin, PackageSearch, ShieldCheck } from "lucide
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
 import { getMunicipiosByUF } from "@/data/locations";
 import { DESTINO_LABELS, REGIME_LABELS } from "@/data/lookups";
 import type { Contexto } from "@/store/useCotacaoStore";
@@ -90,7 +91,12 @@ const QuoteContextSummaryComponent = ({ contexto }: QuoteContextSummaryProps) =>
         ))}
       </div>
       <div className="flex flex-wrap gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-        <span>Contexto aplicado:</span>
+        <span>Contexto aplicado para cálculo de </span>
+        <GlossaryTerm {...glossaryTerms.ibs}>IBS</GlossaryTerm>,{" "}
+        <GlossaryTerm {...glossaryTerms.cbs}>CBS</GlossaryTerm> e{" "}
+        <GlossaryTerm {...glossaryTerms.creditoTributario}>
+          créditos
+        </GlossaryTerm>:
         <Badge variant="secondary">{contexto.uf?.toUpperCase() || "UF"}</Badge>
         <Badge variant="outline">{getLabel(contexto.destino, DESTINO_LABELS) ?? "Destino"}</Badge>
         <Badge variant="outline">{getLabel(contexto.regime, REGIME_LABELS) ?? "Regime"}</Badge>

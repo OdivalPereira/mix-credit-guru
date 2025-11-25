@@ -152,6 +152,10 @@ export default function Cotacao() {
     (supplier: MixResultadoItem) => {
       const { id, ...payload } = supplier;
       upsertFornecedor(payload);
+      toast({
+        title: "Fornecedor duplicado",
+        description: `${supplier.nome} foi duplicado com sucesso`,
+      });
     },
     [upsertFornecedor],
   );
@@ -174,7 +178,7 @@ export default function Cotacao() {
     upsertFornecedor(supplier);
     toast({
       title: "Fornecedor adicionado",
-      description: "Preencha os dados do novo fornecedor",
+      description: "Preencha os dados do novo fornecedor para incluí-lo na cotação",
     });
   }, [contexto, upsertFornecedor]);
 
@@ -186,8 +190,8 @@ export default function Cotacao() {
       importarCSV(text);
       event.target.value = "";
       toast({
-        title: "CSV importado",
-        description: "Fornecedores importados com sucesso",
+        title: "Fornecedores importados com sucesso",
+        description: `${text.split('\n').length - 1} fornecedores foram adicionados à cotação`,
       });
     },
     [importarCSV],
@@ -201,8 +205,8 @@ export default function Cotacao() {
       importarJSON(text);
       event.target.value = "";
       toast({
-        title: "JSON importado",
-        description: "Cotação importada com sucesso",
+        title: "Cotação importada com sucesso",
+        description: "Todos os dados da cotação foram restaurados",
       });
     },
     [importarJSON],
@@ -218,7 +222,7 @@ export default function Cotacao() {
     element.click();
     URL.revokeObjectURL(url);
     toast({
-      title: "CSV exportado",
+      title: "CSV exportado com sucesso",
       description: "Arquivo fornecedores.csv baixado",
     });
   }, [exportarCSV]);
@@ -233,8 +237,8 @@ export default function Cotacao() {
     element.click();
     URL.revokeObjectURL(url);
     toast({
-      title: "JSON exportado",
-      description: "Arquivo cotacao.json baixado",
+      title: "Cotação exportada com sucesso",
+      description: "Arquivo cotacao.json baixado com todos os dados da cotação",
     });
   }, [exportarJSON]);
 
@@ -317,7 +321,10 @@ export default function Cotacao() {
             : " Nenhum alerta encontrado.";
         const summary = `Custo total ${total}.${alerts}`;
         setOptStatusMessage(`Otimização concluída. ${summary}`);
-        toast({ title: "Otimização concluída", description: summary });
+        toast({ 
+          title: "Otimização concluída com sucesso", 
+          description: summary,
+        });
         workerRef.current?.terminate();
         workerRef.current = null;
         return;
