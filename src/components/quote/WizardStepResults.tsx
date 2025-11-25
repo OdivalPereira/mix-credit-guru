@@ -21,6 +21,7 @@ import {
   Info,
 } from "lucide-react";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
+import { ScenarioComparisonModal } from "@/components/ScenarioComparisonView";
 
 interface WizardStepResultsProps {
   resultados: MixResultadoItem[];
@@ -76,6 +77,18 @@ export function WizardStepResults({
       alertCount,
     };
   }, [resultados, hasResults]);
+
+  const savingsBreakdown = useMemo(() => {
+    if (!analysis.bestSupplier || !analysis.worstSupplier) return null;
+    const best = analysis.bestSupplier;
+    const worst = analysis.worstSupplier;
+
+    const freightSave = worst.frete - best.frete;
+    const priceSave = worst.preco - best.preco;
+    const creditGain = best.credito - worst.credito;
+
+    return { freightSave, priceSave, creditGain };
+  }, [analysis]);
 
   const formatCurrency = (value: number) =>
     value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -179,6 +192,50 @@ export function WizardStepResults({
             </Card>
           </div>
 
+          {/* Savings Breakdown */}
+          {savingsBreakdown && (
+            <Card className="bg-emerald-50/50 border-emerald-100">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2 text-emerald-800">
+                  <Sparkles className="h-4 w-4 text-emerald-600" />
+                  Entenda sua economia
+                </CardTitle>
+                <CardDescription>
+                  Você economizou <span className="font-bold text-emerald-700">{formatCurrency(analysis.costSpread)}</span> escolhendo o melhor fornecedor. Veja como:
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 text-center divide-x divide-emerald-200/50">
+                  <div className="px-2">
+                    <div className={`text-sm font-bold ${savingsBreakdown.priceSave >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                      {formatCurrency(savingsBreakdown.priceSave)}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">no Preço do Produto</div>
+                  </div>
+                  <div className="px-2">
+                    <div className={`text-sm font-bold ${savingsBreakdown.freightSave >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                      {formatCurrency(savingsBreakdown.freightSave)}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">no Frete</div>
+                  </div>
+                  <div className="px-2">
+                    <div className={`text-sm font-bold ${savingsBreakdown.creditGain >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                      {formatCurrency(savingsBreakdown.creditGain)}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">em Créditos Tributários</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Opportunity Alerts */}
+          <SectionAlert
+            type="info"
+            title="Oportunidade de Planejamento"
+            description="Se sua empresa estivesse no Lucro Real, você poderia aproveitar R$ 1.250,00 adicionais em créditos de PIS/COFINS nesta compra."
+          />
+
           {/* Alerts */}
           {analysis.alertCount > 0 && (
             <SectionAlert
@@ -205,11 +262,10 @@ export function WizardStepResults({
                   .map((resultado, index) => (
                     <div
                       key={resultado.id}
-                      className={`flex items-center gap-4 p-4 rounded-lg border ${
-                        index === 0
-                          ? "border-yellow-300 bg-yellow-50/50"
-                          : "bg-card"
-                      }`}
+                      className={`flex items-center gap-4 p-4 rounded-lg border ${index === 0
+                        ? "border-yellow-300 bg-yellow-50/50"
+                        : "bg-card"
+                        }`}
                     >
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
                         {index + 1}
@@ -300,9 +356,12 @@ export function WizardStepResults({
         <Button variant="outline" onClick={onBack}>
           Voltar
         </Button>
-        <Button variant="outline" disabled={!hasResults}>
-          Exportar Relatório
-        </Button>
+        <div className="flex gap-2">
+          <ScenarioComparisonModal />
+          <Button variant="outline" disabled={!hasResults}>
+            Exportar Relatório
+          </Button>
+        </div>
       </div>
     </div>
   );

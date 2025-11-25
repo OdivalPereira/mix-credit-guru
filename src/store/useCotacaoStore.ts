@@ -69,7 +69,7 @@ export interface CotacaoStore {
   exportarJSON: () => string;
   calcular: () => void;
   registrarOtimizacao: (resultado: OptimizePerItemResult) => void;
-  computeResultado: (scenario?: string) => MixResultado;
+  computeResultado: (scenario?: string, contextOverride?: Partial<Contexto>) => MixResultado;
 }
 
 const initialContexto: Contexto = {
@@ -287,8 +287,8 @@ export const useCotacaoStore = create<CotacaoStore>()(
           const exists = state.fornecedores.some((f) => f.id === id);
           const fornecedores = exists
             ? state.fornecedores.map((f) =>
-                f.id === id ? applyFornecedorDefaults({ ...f, ...fornecedor, id }) : f
-              )
+              f.id === id ? applyFornecedorDefaults({ ...f, ...fornecedor, id }) : f
+            )
             : [...state.fornecedores, applyFornecedorDefaults({ ...fornecedor, id })];
           return { fornecedores };
         }),
@@ -353,36 +353,36 @@ export const useCotacaoStore = create<CotacaoStore>()(
           prefs: OptimizePrefs;
         }>;
         set((state) => ({
-            contexto: data.contexto
-              ? { ...initialContexto, ...data.contexto, uf: (data.contexto.uf ?? "").toUpperCase() }
-              : initialContexto,
-            fornecedores: data.fornecedores
-              ? (() => {
-          const atual = new Map(
-            state.fornecedores.map((fornecedor) => [
-              `${fornecedor.nome.toLowerCase()}|${fornecedor.tipo.toLowerCase()}|${fornecedor.regime.toLowerCase()}`,
-              fornecedor,
-            ]),
-          );
-          for (const fornecedor of data.fornecedores) {
-            const chave = `${fornecedor.nome.toLowerCase()}|${fornecedor.tipo.toLowerCase()}|${fornecedor.regime.toLowerCase()}`;
-            const existente = atual.get(chave);
-            const fornecedorComId = fornecedor.id
-              ? fornecedor
-              : { ...fornecedor, id: generateId("fornecedor") };
-            const fornecedorFinal = existente
-              ? applyFornecedorDefaults({ ...existente, ...fornecedorComId, id: existente.id })
-              : applyFornecedorDefaults(fornecedorComId);
-            atual.set(chave, fornecedorFinal);
-          }
-          return Array.from(atual.values());
-        })()
-              : state.fornecedores,
-            resultado: data.resultado ?? { itens: [] },
-            ultimaOtimizacao: null,
-            constraints: data.constraints ?? [],
-            prefs: data.prefs ?? { ...initialPrefs, constraints: data.constraints ?? [] },
-          }));
+          contexto: data.contexto
+            ? { ...initialContexto, ...data.contexto, uf: (data.contexto.uf ?? "").toUpperCase() }
+            : initialContexto,
+          fornecedores: data.fornecedores
+            ? (() => {
+              const atual = new Map(
+                state.fornecedores.map((fornecedor) => [
+                  `${fornecedor.nome.toLowerCase()}|${fornecedor.tipo.toLowerCase()}|${fornecedor.regime.toLowerCase()}`,
+                  fornecedor,
+                ]),
+              );
+              for (const fornecedor of data.fornecedores) {
+                const chave = `${fornecedor.nome.toLowerCase()}|${fornecedor.tipo.toLowerCase()}|${fornecedor.regime.toLowerCase()}`;
+                const existente = atual.get(chave);
+                const fornecedorComId = fornecedor.id
+                  ? fornecedor
+                  : { ...fornecedor, id: generateId("fornecedor") };
+                const fornecedorFinal = existente
+                  ? applyFornecedorDefaults({ ...existente, ...fornecedorComId, id: existente.id })
+                  : applyFornecedorDefaults(fornecedorComId);
+                atual.set(chave, fornecedorFinal);
+              }
+              return Array.from(atual.values());
+            })()
+            : state.fornecedores,
+          resultado: data.resultado ?? { itens: [] },
+          ultimaOtimizacao: null,
+          constraints: data.constraints ?? [],
+          prefs: data.prefs ?? { ...initialPrefs, constraints: data.constraints ?? [] },
+        }));
         get().calcular();
       },
 
@@ -416,17 +416,18 @@ export const useCotacaoStore = create<CotacaoStore>()(
               restricoes,
             };
           });
-            return {
-              resultado: { itens: itensAtualizados },
-              ultimaOtimizacao: resultadoOtimizacao,
-            };
-          }),
+          return {
+            resultado: { itens: itensAtualizados },
+            ultimaOtimizacao: resultadoOtimizacao,
+          };
+        }),
 
-      computeResultado: (scenarioOverride) => {
+      computeResultado: (scenarioOverride, contextOverride) => {
         const scenario = scenarioOverride ?? useAppStore.getState().scenario;
+        const contexto = contextOverride ? { ...get().contexto, ...contextOverride } : get().contexto;
         return buildResultado({
           fornecedores: get().fornecedores,
-          contexto: get().contexto,
+          contexto,
           scenario,
         });
       },
