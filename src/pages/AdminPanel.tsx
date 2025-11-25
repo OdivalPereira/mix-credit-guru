@@ -9,7 +9,17 @@ import { useToast } from "@/hooks/use-toast";
 export default function AdminPanel() {
     const [rules, setRules] = useState<TaxRule[]>([]);
     const [loading, setLoading] = useState(true);
+    const [userId, setUserId] = useState<string | null>(null);
     const { toast } = useToast();
+
+    // Verificar se supabase está disponível
+    if (!supabase) {
+        return (
+            <div className="container mx-auto py-8">
+                <p className="text-destructive">Supabase não configurado.</p>
+            </div>
+        );
+    }
 
     // Form state
     const [formData, setFormData] = useState<Partial<TaxRule>>({
@@ -19,6 +29,7 @@ export default function AdminPanel() {
         aliquota_cbs: 0,
         aliquota_is: 0,
         date_start: new Date().toISOString().split('T')[0],
+        date_end: null,
         explanation_markdown: ''
     });
 
@@ -38,22 +49,58 @@ export default function AdminPanel() {
     };
 
     useEffect(() => {
+        const getUser = async () => {
+            if (!supabase) return;
+            const { data: { user } } = await supabase.auth.getUser();
+            setUserId(user?.id || null);
+        };
+        getUser();
         fetchRules();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const { error } = await supabase
+        
+        if (!userId) {
+            toast({ title: "Erro", description: "Usuário não autenticado", variant: "destructive" });
+            return;
+        }
+        
+        if (!formData.ncm || !formData.uf || !formData.date_start) {
+            toast({ title: "Erro", description: "Preencha todos os campos obrigatórios", variant: "destructive" });
+            return;
+        }
+        
+        const { error } = await supabase!
             .from('ncm_rules')
-            .insert([formData]);
+            .insert([{ 
+                ncm: formData.ncm,
+                uf: formData.uf,
+                date_start: formData.date_start,
+                date_end: formData.date_end || null,
+                aliquota_ibs: formData.aliquota_ibs || 0,
+                aliquota_cbs: formData.aliquota_cbs || 0,
+                aliquota_is: formData.aliquota_is || 0,
+                explanation_markdown: formData.explanation_markdown || null,
+                user_id: userId 
+            }]);
 
         if (error) {
             toast({ title: "Error creating rule", description: error.message, variant: "destructive" });
         } else {
             toast({ title: "Rule created successfully" });
             fetchRules();
-            // Reset form (partial)
-            setFormData({ ...formData, ncm: '', explanation_markdown: '' });
+            // Reset form
+            setFormData({ 
+                ncm: '', 
+                uf: 'SP',
+                aliquota_ibs: 0,
+                aliquota_cbs: 0,
+                aliquota_is: 0,
+                date_start: new Date().toISOString().split('T')[0],
+                date_end: null,
+                explanation_markdown: '' 
+            });
         }
     };
 
