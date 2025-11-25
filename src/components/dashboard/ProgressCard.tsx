@@ -1,84 +1,114 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle } from "lucide-react";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { ProgressRing } from "./ProgressRing";
+import { CheckCircle2, Circle, Package, Users, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * @description Card que mostra o progresso do usuário no cadastro de dados
- */
 export function ProgressCard() {
   const produtos = useCatalogoStore((state) => state.produtos);
-  const contratos = useContractsStore((state) => state.contratos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
-  const cotacoes = []; // TODO: Implementar histórico de cotações
+  const contratos = useContractsStore((state) => state.contratos);
 
   const steps = [
-    { label: "Produtos cadastrados", current: produtos.length, minimum: 1 },
-    { label: "Fornecedores adicionados", current: fornecedores.length, minimum: 2 },
-    { label: "Contratos configurados", current: contratos.length, minimum: 1 },
-    { label: "Cotações realizadas", current: cotacoes.length, minimum: 1 },
+    { 
+      label: "Produtos cadastrados", 
+      current: produtos.length, 
+      minimum: 5,
+      icon: Package,
+      color: "hsl(var(--chart-1))"
+    },
+    { 
+      label: "Fornecedores cadastrados", 
+      current: fornecedores.length, 
+      minimum: 3,
+      icon: Users,
+      color: "hsl(var(--chart-2))"
+    },
+    { 
+      label: "Contratos configurados", 
+      current: contratos.length, 
+      minimum: 3,
+      icon: FileText,
+      color: "hsl(var(--chart-3))"
+    },
   ];
 
+  const totalSteps = steps.length;
   const completedSteps = steps.filter((step) => step.current >= step.minimum).length;
-  const progressPercent = (completedSteps / steps.length) * 100;
+  const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
 
   return (
-    <Card className="relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-chart-2/10 rounded-full blur-2xl -z-10" />
-      <CardHeader>
-        <CardTitle className="text-xl">Progresso de Cadastro</CardTitle>
-        <CardDescription className="text-base">Complete todos os passos para usar o sistema</CardDescription>
+    <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm">
+      {/* Decorative blur effect */}
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+      
+      <CardHeader className="relative">
+        <CardTitle className="text-2xl">Progresso de Configuração</CardTitle>
+        <CardDescription>Complete todos os passos para usar o sistema</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted-foreground">Progresso Geral</span>
-            <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{Math.round(progressPercent)}%</span>
+      
+      <CardContent className="relative">
+        <div className="flex flex-col lg:flex-row gap-8 items-center">
+          {/* Progress Ring */}
+          <div className="flex-shrink-0">
+            <ProgressRing 
+              percentage={progressPercentage}
+              size={180}
+              strokeWidth={14}
+              label="Concluído"
+            />
           </div>
-          <Progress value={progressPercent} className="h-3" />
-        </div>
 
-        <div className="space-y-3">
-          {steps.map((step, index) => {
-            const isComplete = step.current >= step.minimum;
-            return (
-              <div
-                key={index}
-                className={cn(
-                  "flex items-center justify-between p-4 rounded-lg transition-all duration-200",
-                  isComplete 
-                    ? "bg-success/5 border border-success/20 hover:border-success/30" 
-                    : "bg-muted/30 border border-border/50 hover:bg-muted/50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  {isComplete ? (
-                    <div className="p-1 rounded-full bg-success/10">
-                      <CheckCircle2 className="h-5 w-5 text-success" />
-                    </div>
-                  ) : (
-                    <div className="p-1 rounded-full bg-muted">
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <span className="text-sm font-medium">{step.label}</span>
-                </div>
-                <Badge 
-                  variant={isComplete ? "default" : "secondary"} 
+          {/* Steps List */}
+          <div className="flex-1 w-full space-y-3">
+            {steps.map((step, index) => {
+              const isComplete = step.current >= step.minimum;
+              const Icon = step.icon;
+              
+              return (
+                <div
+                  key={index}
                   className={cn(
-                    "min-w-[3rem] justify-center font-semibold",
-                    isComplete && "bg-success hover:bg-success/90"
+                    "flex items-center gap-4 p-4 rounded-xl border transition-all duration-300",
+                    "hover:shadow-lg hover:scale-[1.01]",
+                    isComplete 
+                      ? "bg-success/5 border-success/30 shadow-glow-success" 
+                      : "bg-card/50 border-border/50 backdrop-blur-sm"
                   )}
                 >
-                  {step.current}
-                </Badge>
-              </div>
-            );
-          })}
+                  <div className={cn(
+                    "p-2.5 rounded-xl backdrop-blur-sm",
+                    isComplete && "shadow-lg"
+                  )} style={{ 
+                    backgroundColor: isComplete ? `${step.color}20` : 'hsl(var(--muted))',
+                    color: isComplete ? step.color : 'hsl(var(--muted-foreground))'
+                  }}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{step.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {step.current} de {step.minimum} {isComplete ? "✓" : ""}
+                    </p>
+                  </div>
+                  
+                  <div className={cn(
+                    "p-1.5 rounded-full",
+                    isComplete ? "bg-success/20" : "bg-muted/50"
+                  )}>
+                    {isComplete ? (
+                      <CheckCircle2 className="w-5 h-5 text-success drop-shadow-[0_0_8px_hsl(var(--success))]" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>
