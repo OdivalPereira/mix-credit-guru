@@ -14,6 +14,11 @@ export interface TaxRule {
 
 export const TaxRuleService = {
     async getRule(ncm: string, uf: string, date: Date): Promise<TaxRule | null> {
+        if (!supabase) {
+            console.warn('Supabase client not initialized');
+            return null;
+        }
+        
         const formattedDate = date.toISOString().split('T')[0];
 
         // We need to find a rule that is active for the given date

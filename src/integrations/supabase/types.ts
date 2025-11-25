@@ -214,6 +214,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ncm_rules: {
+        Row: {
+          aliquota_cbs: number
+          aliquota_ibs: number
+          aliquota_is: number
+          created_at: string
+          date_end: string | null
+          date_start: string
+          explanation_markdown: string | null
+          id: string
+          ncm: string
+          uf: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aliquota_cbs?: number
+          aliquota_ibs?: number
+          aliquota_is?: number
+          created_at?: string
+          date_end?: string | null
+          date_start: string
+          explanation_markdown?: string | null
+          id?: string
+          ncm: string
+          uf: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aliquota_cbs?: number
+          aliquota_ibs?: number
+          aliquota_is?: number
+          created_at?: string
+          date_end?: string | null
+          date_start?: string
+          explanation_markdown?: string | null
+          id?: string
+          ncm?: string
+          uf?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       produtos: {
         Row: {
           created_at: string
