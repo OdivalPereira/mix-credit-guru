@@ -1,0 +1,43 @@
+{
+    "version": "1.0",
+    "mode": "orchestration",
+    "agents": {
+        "software_architect": {
+            "name": "Arquiteto",
+            "role": "architect",
+            "color": "purple",
+            "capabilities": [
+                "analyze",
+                "plan"
+            ]
+        },
+        "backend_developer": {
+            "name": "Backend Dev",
+            "role": "implementer",
+            "color": "blue",
+            "capabilities": [
+                "read",
+                "write",
+                "terminal"
+            ]
+        },
+        "frontend_developer": {
+            "name": "Frontend Dev",
+            "role": "implementer",
+            "color": "green",
+            "capabilities": [
+                "read",
+                "write",
+                "terminal"
+            ]
+        },
+        "code_reviewer": {
+            "name": "Reviewer",
+            "role": "reviewer",
+            "color": "orange",
+            "capabilities": [
+                "review"
+            ]
+        }
+    }
+}
