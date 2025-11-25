@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/chart";
 import { QuoteContextSummary } from "@/components/quote/QuoteContextSummary";
 import { QuoteForm } from "@/components/quote/QuoteForm";
+import { QuoteWizard } from "@/components/quote/QuoteWizard";
 import { SupplierTable } from "@/components/quote/SupplierTable";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -37,7 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle, FileText, ArrowRight } from "lucide-react";
+import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle, FileText, ArrowRight, Wand2 } from "lucide-react";
 
 import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
@@ -64,6 +65,7 @@ export default function Cotacao() {
   const [optimizing, setOptimizing] = useState(false);
   const [optProgress, setOptProgress] = useState(0);
   const [optStatusMessage, setOptStatusMessage] = useState<string | null>(null);
+  const [wizardMode, setWizardMode] = useState(true);
 
   const {
     contexto,
@@ -430,13 +432,23 @@ export default function Cotacao() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">
-          Cotação de fornecedores
-        </h2>
-        <p className="text-muted-foreground">
-          Compare custos efetivos e créditos tributários por fornecedor.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Cotação de fornecedores
+          </h2>
+          <p className="text-muted-foreground">
+            Compare custos efetivos e créditos tributários por fornecedor.
+          </p>
+        </div>
+        <Button
+          variant={wizardMode ? "default" : "outline"}
+          onClick={() => setWizardMode(!wizardMode)}
+          className="gap-2"
+        >
+          <Wand2 className="h-4 w-4" />
+          {wizardMode ? "Modo Avançado" : "Modo Wizard"}
+        </Button>
       </div>
 
       <input
@@ -454,7 +466,23 @@ export default function Cotacao() {
         onChange={handleImportJSON}
       />
 
-      <QuoteForm contexto={contexto} onContextoChange={handleContextoChange} />
+      {wizardMode ? (
+        <QuoteWizard
+          contexto={contexto}
+          fornecedores={fornecedores}
+          resultados={resultados}
+          onContextoChange={handleContextoChange}
+          onAddSupplier={handleAddSupplier}
+          onPatchSupplier={handlePatchFornecedor}
+          onRemoveSupplier={removeFornecedor}
+          onCalculate={calcular}
+          onOptimize={handleOptimize}
+          optimizing={optimizing}
+          optProgress={optProgress}
+        />
+      ) : (
+        <>
+          <QuoteForm contexto={contexto} onContextoChange={handleContextoChange} />
 
       <QuoteContextSummary contexto={contexto} />
 
@@ -678,6 +706,8 @@ export default function Cotacao() {
             </ChartContainer>
           </CardContent>
         </Card>
+      )}
+        </>
       )}
 
       {resultados.length > 0 && (
