@@ -35,42 +35,45 @@ const Index = () => {
         </div>
 
         {/* Info Card */}
-        <Card className="bg-gradient-to-br from-primary/5 to-primary-glow/5 border-primary/20">
+        <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-primary/10 to-primary-glow/5">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <CardTitle>Sobre a Reforma Tributária</CardTitle>
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <CardTitle className="text-xl">Sobre a Reforma Tributária</CardTitle>
             </div>
-            <CardDescription>
+            <CardDescription className="text-base">
               Entenda como a mudança de ICMS, ISS, PIS e COFINS para IBS, CBS e IS pode impactar seus custos
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3 text-sm">
-              <div>
-                <div className="font-semibold text-foreground mb-1">Transição Gradual</div>
-                <p className="text-muted-foreground">2026 a 2033, mudança progressiva</p>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors">
+                <div className="font-semibold text-foreground mb-2 text-lg">Transição Gradual</div>
+                <p className="text-muted-foreground text-sm">2026 a 2033, mudança progressiva</p>
               </div>
-              <div>
-                <div className="font-semibold text-foreground mb-1">Créditos Tributários</div>
-                <p className="text-muted-foreground">Escolha melhor seus fornecedores</p>
+              <div className="p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 hover:border-success/30 transition-colors">
+                <div className="font-semibold text-foreground mb-2 text-lg">Créditos Tributários</div>
+                <p className="text-muted-foreground text-sm">Escolha melhor seus fornecedores</p>
               </div>
-              <div>
-                <div className="font-semibold text-foreground mb-1">Análise Completa</div>
-                <p className="text-muted-foreground">Compare cenários e custos</p>
+              <div className="p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 hover:border-chart-3/30 transition-colors">
+                <div className="font-semibold text-foreground mb-2 text-lg">Análise Completa</div>
+                <p className="text-muted-foreground text-sm">Compare cenários e custos</p>
               </div>
             </div>
             
             <div className="flex gap-3 pt-2">
               <Link to="/cotacao" className="flex-1">
-                <Button size="lg" className="w-full gap-2">
+                <Button size="lg" className="w-full gap-2 shadow-elegant">
                   <Calculator className="h-4 w-4" />
                   Começar Cotação
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/analise">
-                <Button size="lg" variant="outline">
+                <Button size="lg" variant="outline" className="hover:bg-primary/5">
                   Ver Análises
                 </Button>
               </Link>
