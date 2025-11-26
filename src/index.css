@@ -152,9 +152,28 @@
   * {
     @apply border-border;
   }
-
+  
+  /* Smooth theme transitions */
+  html {
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Smooth transitions for all themed elements */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 0.3s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Prevent transition interference with animations and transforms */
+  *:where([class*="animate-"], [class*="transition-transform"], [class*="transition-all"]) {
+    transition-property: transform, opacity;
   }
 }
 
