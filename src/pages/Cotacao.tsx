@@ -38,7 +38,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle, FileText, ArrowRight, Wand2 } from "lucide-react";
+import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle, FileText, ArrowRight, Wand2, Calculator } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
@@ -439,24 +440,22 @@ export default function Cotacao() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            Cotação de fornecedores
-          </h2>
-          <p className="text-muted-foreground">
-            Compare custos efetivos e créditos tributários por fornecedor.
-          </p>
-        </div>
-        <Button
-          variant={wizardMode ? "default" : "outline"}
-          onClick={() => setWizardMode(!wizardMode)}
-          className="gap-2"
-        >
-          <Wand2 className="h-4 w-4" />
-          {wizardMode ? "Modo Avançado" : "Modo Wizard"}
-        </Button>
-      </div>
+      <PageHeader
+        icon={Calculator}
+        iconColor="primary"
+        title="Cotação de fornecedores"
+        description="Compare custos efetivos e créditos tributários por fornecedor."
+        actions={
+          <Button
+            variant={wizardMode ? "default" : "outline"}
+            onClick={() => setWizardMode(!wizardMode)}
+            className="gap-2"
+          >
+            <Wand2 className="h-4 w-4" />
+            {wizardMode ? "Modo Avançado" : "Modo Wizard"}
+          </Button>
+        }
+      />
 
       <input
         ref={csvInputRef}

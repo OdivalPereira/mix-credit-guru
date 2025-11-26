@@ -4,6 +4,8 @@ import { Table, TableHeader, TableRow, TableHead, TableCell } from "@/components
 import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FileText } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { useAppStore } from "@/store/useAppStore";
 import { z } from "zod";
 
@@ -181,6 +183,13 @@ export default function Regras() {
 
   return (
     <div className="space-y-8">
+      <PageHeader
+        icon={FileText}
+        iconColor="accent"
+        title="Regras NCM e Receitas"
+        description="Gerencie regras de tributação e receitas para cálculos precisos"
+      />
+      
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => fileRef.current?.click()}>Importar JSON</Button>
         <input

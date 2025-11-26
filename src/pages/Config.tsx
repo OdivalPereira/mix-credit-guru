@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Settings, Save, Moon, Sun, RotateCcw } from "lucide-react";
 import { useTheme } from "next-themes";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { ESTADOS } from "@/data/locations";
 import { DESTINO_OPTIONS, REGIME_OPTIONS, REGIME_LABELS, DESTINO_LABELS } from "@/data/lookups";
 import { useConfigStore } from "@/store/useConfigStore";
@@ -62,12 +63,12 @@ export default function Config() {
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
-        <p className="text-muted-foreground">
-          Personalize o sistema com suas preferências padrão
-        </p>
-      </div>
+      <PageHeader
+        icon={Settings}
+        iconColor="primary"
+        title="Configurações"
+        description="Personalize o sistema com suas preferências padrão"
+      />
 
       {/* Default Values */}
       <Card>
