@@ -20,6 +20,9 @@ import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { MeusDadosProvider } from "@/contexts/MeusDadosContext";
+import { SmartSetupWizard } from "@/components/onboarding/SmartSetupWizard";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 
 /**
  * @description Página unificada para gerenciar todos os dados: produtos, fornecedores, contratos e conversões
@@ -27,7 +30,9 @@ import { MeusDadosProvider } from "@/contexts/MeusDadosContext";
 function MeusDadosContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [advancedMode, setAdvancedMode] = useState(false);
+
   const [activeTab, setActiveTab] = useState("produtos");
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const produtos = useCatalogoStore((state) => state.produtos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
@@ -107,6 +112,16 @@ function MeusDadosContent() {
         }}
         actions={
           <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary"
+              onClick={() => setWizardOpen(true)}
+            >
+              <Sparkles className="h-4 w-4" />
+              Smart Setup (AI)
+            </Button>
+            <div className="h-6 w-px bg-border mx-2" />
             <Settings2 className="h-4 w-4 text-muted-foreground" />
             <Label htmlFor="advanced-mode" className="text-sm cursor-pointer">
               Modo avançado
@@ -119,6 +134,8 @@ function MeusDadosContent() {
           </>
         }
       />
+
+      <SmartSetupWizard open={wizardOpen} onOpenChange={setWizardOpen} />
 
       {/* Progress Card */}
       {completionScore.percentage < 100 && (
