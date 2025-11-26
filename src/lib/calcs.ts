@@ -88,7 +88,7 @@ const rankSuppliersInternal = (
     });
 
     // Use pre-calculated rates if available (from backend), otherwise use local calculation
-    const effectiveRates = (s.ibs !== undefined && s.cbs !== undefined && s.is !== undefined && s.explanation)
+    const effectiveRates = s.explanation
       ? { ibs: s.ibs, cbs: s.cbs, is: s.is }
       : rates;
 
