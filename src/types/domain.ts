@@ -216,4 +216,7 @@ export interface TaxRule {
   explanation_md: string | null;
   legal_reference?: string | null;
   last_verified_at?: string | null;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
