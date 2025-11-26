@@ -15,3 +15,6 @@ export {
 
 export { normalizeOffer } from "./units";
 export { resolveUnitPrice } from "./contracts";
+export { optimizePerItem } from "./opt";
+export { TaxApiClient } from "../services/TaxApiClient";
+export { OptimizerApiClient } from "../services/OptimizerApiClient";

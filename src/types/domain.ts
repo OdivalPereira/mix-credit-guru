@@ -72,6 +72,8 @@ export interface Supplier {
   cadeia?: string[];
   flagsItem?: FlagsItem;
   isRefeicaoPronta?: boolean;
+  ncm?: string;
+  explanation?: string | null;
 }
 
 export interface AliquotasConfig {

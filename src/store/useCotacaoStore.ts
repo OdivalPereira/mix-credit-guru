@@ -17,6 +17,7 @@ import { resolveUnitPrice } from "@/lib/contracts";
 import { normalizeOffer } from "@/lib/units";
 import { useContractsStore } from "./useContractsStore";
 import { useUnidadesStore } from "./useUnidadesStore";
+import { TaxApiClient } from "@/services/TaxApiClient";
 
 export interface Contexto {
   data: string;
@@ -68,6 +69,7 @@ export interface CotacaoStore {
   importarJSON: (json: string) => void;
   exportarJSON: () => string;
   calcular: () => void;
+  enrichSuppliersWithTaxes: () => Promise<void>;
   registrarOtimizacao: (resultado: OptimizePerItemResult) => void;
   computeResultado: (scenario?: string, contextOverride?: Partial<Contexto>) => MixResultado;
 }
@@ -401,6 +403,52 @@ export const useCotacaoStore = create<CotacaoStore>()(
           });
           return { resultado, ultimaOtimizacao: null };
         }),
+
+      enrichSuppliersWithTaxes: async () => {
+        const { fornecedores, contexto } = get();
+        
+        if (!contexto.data || fornecedores.length === 0) {
+          console.warn('[cotacao] Cannot enrich taxes: missing data or no suppliers');
+          return;
+        }
+
+        try {
+          const requests = fornecedores.map(f => ({
+            ncm: f.ncm || '0000.00.00',
+            uf: contexto.uf,
+            date: contexto.data,
+          }));
+
+          const responses = await TaxApiClient.batchCalculateTaxes(requests);
+
+          set((state) => {
+            const enriched = state.fornecedores.map((f, idx) => {
+              const tax = responses[idx];
+              if (!tax) return f;
+              
+              return {
+                ...f,
+                ibs: tax.ibs,
+                cbs: tax.cbs,
+                is: tax.is,
+                explanation: tax.explanation,
+              };
+            });
+
+            const resultado = buildResultado({
+              fornecedores: enriched,
+              contexto: state.contexto,
+              scenario: useAppStore.getState().scenario,
+            });
+
+            return { fornecedores: enriched, resultado };
+          });
+
+          console.log('[cotacao] Successfully enriched suppliers with backend taxes');
+        } catch (error) {
+          console.error('[cotacao] Failed to enrich taxes:', error);
+        }
+      },
 
       registrarOtimizacao: (resultadoOtimizacao) =>
         set((state) => {
