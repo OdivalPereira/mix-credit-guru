@@ -44,6 +44,29 @@ export const produtoCsvHeaders = [
   "is",
 ] as const;
 
+export const ncmRuleCsvHeaders = [
+  "ncm",
+  "uf",
+  "aliquota_ibs",
+  "aliquota_cbs",
+  "aliquota_is",
+  "date_start",
+  "date_end",
+  "explanation_markdown",
+] as const;
+
+interface TaxRule {
+  id?: string;
+  ncm: string;
+  uf: string;
+  aliquota_ibs: number;
+  aliquota_cbs: number;
+  aliquota_is: number;
+  date_start: string;
+  date_end: string | null;
+  explanation_markdown: string | null;
+}
+
 function detectDelimiter(sample: string): string {
   const comma = (sample.match(/,/g) ?? []).length;
   const semicolon = (sample.match(/;/g) ?? []).length;
@@ -439,6 +462,82 @@ export function writeProdutosCSV(produtos: Produto[]): string {
       formatCsvValue(p.flags.cesta ? "1" : "0"),
       formatCsvValue(p.flags.reducao ? "1" : "0"),
       formatCsvValue(p.flags.is ? "1" : "0"),
+    ].join(","),
+  );
+  return [header, ...rows].join("\n");
+}
+
+/**
+ * @description Analisa uma string CSV contendo regras fiscais NCM e a converte em uma matriz de objetos.
+ * @param csv A string CSV a ser analisada.
+ * @returns Uma matriz de objetos TaxRule.
+ */
+export function readNcmRulesCSV(csv: string): Partial<TaxRule>[] {
+  const rows = parseCsvRows(csv);
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const headers = rows[0].map((header) => header.toLowerCase());
+  const dataRows = rows.slice(1);
+
+  const indexFor = (name: string, fallback: number) => {
+    const idx = headers.indexOf(name);
+    return idx >= 0 ? idx : fallback;
+  };
+
+  const idxNcm = indexFor("ncm", 0);
+  const idxUf = indexFor("uf", 1);
+  const idxIbs = indexFor("aliquota_ibs", 2);
+  const idxCbs = indexFor("aliquota_cbs", 3);
+  const idxIs = indexFor("aliquota_is", 4);
+  const idxDateStart = indexFor("date_start", 5);
+  const idxDateEnd = indexFor("date_end", 6);
+  const idxExplanation = indexFor("explanation_markdown", 7);
+
+  const rules: Partial<TaxRule>[] = [];
+
+  for (const cols of dataRows) {
+    const ncm = cols[idxNcm]?.trim();
+    const uf = cols[idxUf]?.trim().toUpperCase();
+    const dateStart = cols[idxDateStart]?.trim();
+
+    if (!ncm || !uf || !dateStart) {
+      continue;
+    }
+
+    rules.push({
+      ncm,
+      uf,
+      aliquota_ibs: parseNumber(cols[idxIbs]),
+      aliquota_cbs: parseNumber(cols[idxCbs]),
+      aliquota_is: parseNumber(cols[idxIs]),
+      date_start: dateStart,
+      date_end: cols[idxDateEnd]?.trim() || null,
+      explanation_markdown: cols[idxExplanation]?.trim() || null,
+    });
+  }
+
+  return rules;
+}
+
+/**
+ * @description Converte uma matriz de regras fiscais NCM em uma string CSV.
+ * @param rules A matriz de objetos TaxRule a ser convertida.
+ * @returns Uma string formatada em CSV.
+ */
+export function writeNcmRulesCSV(rules: TaxRule[]): string {
+  const header = ncmRuleCsvHeaders.join(",");
+  const rows = rules.map((r) =>
+    [
+      formatCsvValue(r.ncm),
+      formatCsvValue(r.uf),
+      formatCsvValue(r.aliquota_ibs),
+      formatCsvValue(r.aliquota_cbs),
+      formatCsvValue(r.aliquota_is),
+      formatCsvValue(r.date_start),
+      formatCsvValue(r.date_end),
+      formatCsvValue(r.explanation_markdown),
     ].join(","),
   );
   return [header, ...rows].join("\n");
