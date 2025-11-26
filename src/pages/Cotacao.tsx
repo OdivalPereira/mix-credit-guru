@@ -50,6 +50,7 @@ import { validateEssentialData } from "@/lib/validation";
 import { NextStepButton } from "@/components/quote/NextStepButton";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
+import { OptimizerApiClient } from "@/services/OptimizerApiClient";
 
 /**
  * @description Um componente de página abrangente para gerenciar cotações de fornecedores, permitindo que os usuários configurem o contexto, gerenciem fornecedores, visualizem resultados e otimizem custos.
@@ -60,7 +61,6 @@ export default function Cotacao() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
-  const workerRef = useRef<Worker | null>(null);
 
   const [showChart, setShowChart] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
@@ -133,8 +133,6 @@ export default function Cotacao() {
       calcular();
     }
   }, [contexto, fornecedores, contratos, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate]);
-
-  useEffect(() => () => workerRef.current?.terminate(), []);
 
   const formatCurrency = useCallback(
     (value: number) =>
@@ -243,7 +241,7 @@ export default function Cotacao() {
     });
   }, [exportarJSON]);
 
-  const handleOptimize = useCallback(() => {
+  const handleOptimize = useCallback(async () => {
     // Validate essential data before optimization
     if (fornecedores.length === 0) {
       toast({
@@ -270,93 +268,46 @@ export default function Cotacao() {
       });
     }
 
-    if (workerRef.current) {
-      workerRef.current.terminate();
-    }
-
-    const worker = new Worker(
-      new URL("../workers/optWorker.ts", import.meta.url),
-      {
-        type: "module",
-      },
-    );
-    workerRef.current = worker;
     setOptimizing(true);
-    setOptProgress(0);
+    setOptProgress(30);
     setOptStatusMessage("Processando combinações otimizadas...");
 
-    worker.postMessage({
-      quantity: 100,
-      offers: fornecedores.map((supplier) => ({
-        id: supplier.id,
-        price: supplier.preco,
-      })),
-    });
+    try {
+      const result = await OptimizerApiClient.optimize({
+        quantity: 100,
+        offers: fornecedores.map((supplier) => ({
+          id: supplier.id,
+          price: supplier.preco,
+        })),
+      });
 
-    worker.onmessage = (event) => {
-      type WorkerMessage =
-        | { type: "progress"; value: number }
-        | { type: "result"; result: OptimizePerItemResult }
-        | { type: "error"; message: string };
-
-      const message = event.data as WorkerMessage;
-
-      if (message.type === "progress") {
-        setOptProgress(message.value);
-        if (message.value >= 1) {
-          setOptStatusMessage(
-            `Otimizando fornecedores... ${Math.round(message.value)}% concluido.`,
-          );
-        }
-        return;
-      }
-
-      if (message.type === "result") {
-        setOptProgress(100);
-        setOptimizing(false);
-        registrarOtimizacao(message.result);
-        const total = formatCurrency(message.result.cost);
-        const alerts =
-          message.result.violations.length > 0
-            ? ` Alertas: ${message.result.violations.join(", ")}.`
-            : " Nenhum alerta encontrado.";
-        const summary = `Custo total ${total}.${alerts}`;
-        setOptStatusMessage(`Otimização concluída. ${summary}`);
-        toast({ 
-          title: "Otimização concluída com sucesso", 
-          description: summary,
-        });
-        workerRef.current?.terminate();
-        workerRef.current = null;
-        return;
-      }
-
+      setOptProgress(100);
+      setOptimizing(false);
+      registrarOtimizacao(result);
+      
+      const total = formatCurrency(result.cost);
+      const alerts =
+        result.violations.length > 0
+          ? ` Alertas: ${result.violations.join(", ")}.`
+          : " Nenhum alerta encontrado.";
+      const summary = `Custo total ${total}.${alerts}`;
+      setOptStatusMessage(`Otimização concluída. ${summary}`);
+      
+      toast({ 
+        title: "Otimização concluída com sucesso", 
+        description: summary,
+      });
+    } catch (error) {
       setOptimizing(false);
       setOptProgress(0);
       setOptStatusMessage("Falha ao otimizar fornecedores.");
       toast({
         variant: "destructive",
         title: "Erro na otimização",
-        description:
-          message.message || "Não foi possível concluir a otimização.",
+        description: error instanceof Error ? error.message : "Não foi possível concluir a otimização.",
       });
-      workerRef.current?.terminate();
-      workerRef.current = null;
-    };
-
-    worker.onerror = (error) => {
-      setOptimizing(false);
-      setOptProgress(0);
-      setOptStatusMessage("Falha ao otimizar fornecedores.");
-      toast({
-        variant: "destructive",
-        title: "Erro na otimização",
-        description: error.message || "Não foi possível concluir a otimização.",
-      });
-      workerRef.current?.terminate();
-      workerRef.current = null;
-    };
-  }, [fornecedores, formatCurrency, registrarOtimizacao]);
+    }
+  }, [fornecedores, formatCurrency, registrarOtimizacao, produtosCatalogo.length, contexto.uf, contexto.regime]);
 
   const getCreditBadge = useCallback(
     (creditavel: boolean, credito: number) => {

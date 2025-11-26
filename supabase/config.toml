@@ -1,1 +1,10 @@
 project_id = "jksbkhbgggytymhgnerh"
+
+[functions.tax-engine]
+verify_jwt = false
+
+[functions.optimizer]
+verify_jwt = false
+
+[functions.knowledge-base]
+verify_jwt = false
