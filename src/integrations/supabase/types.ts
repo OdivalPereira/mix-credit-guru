@@ -222,7 +222,7 @@ export type Database = {
           created_at: string
           date_end: string | null
           date_start: string
-          explanation_markdown: string | null
+          explanation_md: string | null
           id: string
           ncm: string
           uf: string
@@ -236,7 +236,7 @@ export type Database = {
           created_at?: string
           date_end?: string | null
           date_start: string
-          explanation_markdown?: string | null
+          explanation_md?: string | null
           id?: string
           ncm: string
           uf: string
@@ -250,7 +250,7 @@ export type Database = {
           created_at?: string
           date_end?: string | null
           date_start?: string
-          explanation_markdown?: string | null
+          explanation_md?: string | null
           id?: string
           ncm?: string
           uf?: string
