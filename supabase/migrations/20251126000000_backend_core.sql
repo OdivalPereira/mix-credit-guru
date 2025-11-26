@@ -1,6 +1,7 @@
 -- Add new fields to ncm_rules
 ALTER TABLE "public"."ncm_rules" 
 ADD COLUMN IF NOT EXISTS "legal_reference" text,
+ADD COLUMN IF NOT EXISTS "explanation_md" text,
 ADD COLUMN IF NOT EXISTS "last_verified_at" timestamp with time zone;
 
 -- Create audit_logs table

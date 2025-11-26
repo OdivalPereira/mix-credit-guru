@@ -44,7 +44,7 @@ serve(async (req) => {
             ibs_rate = Number(rule.aliquota_ibs);
             cbs_rate = Number(rule.aliquota_cbs);
             is_rate = Number(rule.aliquota_is);
-            explanation = rule.explanation_markdown || explanation;
+            explanation = rule.explanation_md || explanation;
         } else {
             // Fallback or standard rates (could be fetched from a default rule)
             // For now, let's assume 0 if not found, or maybe standard 26.5% split?

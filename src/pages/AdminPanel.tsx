@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TaxRule } from "@/services/TaxRuleService";
+import { TaxRule } from "@/types/domain";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminPanel() {
@@ -30,7 +30,7 @@ export default function AdminPanel() {
         aliquota_is: 0,
         date_start: new Date().toISOString().split('T')[0],
         date_end: null,
-        explanation_markdown: ''
+        explanation_md: ''
     });
 
     const fetchRules = async () => {
@@ -60,20 +60,20 @@ export default function AdminPanel() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!userId) {
             toast({ title: "Erro", description: "Usuário não autenticado", variant: "destructive" });
             return;
         }
-        
+
         if (!formData.ncm || !formData.uf || !formData.date_start) {
             toast({ title: "Erro", description: "Preencha todos os campos obrigatórios", variant: "destructive" });
             return;
         }
-        
+
         const { error } = await supabase!
             .from('ncm_rules')
-            .insert([{ 
+            .insert([{
                 ncm: formData.ncm,
                 uf: formData.uf,
                 date_start: formData.date_start,
@@ -81,8 +81,8 @@ export default function AdminPanel() {
                 aliquota_ibs: formData.aliquota_ibs || 0,
                 aliquota_cbs: formData.aliquota_cbs || 0,
                 aliquota_is: formData.aliquota_is || 0,
-                explanation_markdown: formData.explanation_markdown || null,
-                user_id: userId 
+                explanation_md: formData.explanation_md || null,
+                user_id: userId
             }]);
 
         if (error) {
@@ -91,15 +91,15 @@ export default function AdminPanel() {
             toast({ title: "Rule created successfully" });
             fetchRules();
             // Reset form
-            setFormData({ 
-                ncm: '', 
+            setFormData({
+                ncm: '',
                 uf: 'SP',
                 aliquota_ibs: 0,
                 aliquota_cbs: 0,
                 aliquota_is: 0,
                 date_start: new Date().toISOString().split('T')[0],
                 date_end: null,
-                explanation_markdown: '' 
+                explanation_md: ''
             });
         }
     };
@@ -178,8 +178,8 @@ export default function AdminPanel() {
                                 <textarea
                                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     placeholder="Why is this rate applied?"
-                                    value={formData.explanation_markdown || ''}
-                                    onChange={e => setFormData({ ...formData, explanation_markdown: e.target.value })}
+                                    value={formData.explanation_md || ''}
+                                    onChange={e => setFormData({ ...formData, explanation_md: e.target.value })}
                                 />
                             </div>
                             <Button type="submit" className="w-full">Add Rule</Button>
@@ -206,9 +206,9 @@ export default function AdminPanel() {
                                         <div className="bg-purple-50 p-1 rounded text-center">CBS: {rule.aliquota_cbs}%</div>
                                         <div className="bg-orange-50 p-1 rounded text-center">IS: {rule.aliquota_is}%</div>
                                     </div>
-                                    {rule.explanation_markdown && (
+                                    {rule.explanation_md && (
                                         <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
-                                            {rule.explanation_markdown}
+                                            {rule.explanation_md}
                                         </div>
                                     )}
                                 </div>

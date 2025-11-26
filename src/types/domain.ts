@@ -203,3 +203,17 @@ export interface CompareRequest {
   contratos: ContractFornecedor[];
   prefs?: OptimizePrefs;
 }
+
+export interface TaxRule {
+  id: string;
+  ncm: string;
+  uf: string;
+  date_start: string;
+  date_end: string | null;
+  aliquota_ibs: number;
+  aliquota_cbs: number;
+  aliquota_is: number;
+  explanation_md: string | null;
+  legal_reference?: string | null;
+  last_verified_at?: string | null;
+}
