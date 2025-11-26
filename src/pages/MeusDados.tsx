@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Package, Users, FileText, ArrowLeftRight, Search, Settings2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Package, Users, FileText, ArrowLeftRight, Search, Settings2, CheckCircle2, AlertCircle, FolderOpen } from "lucide-react";
 import { CompletionBadge } from "@/components/shared/CompletionBadge";
 import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { StatCard } from "@/components/shared/StatCard";
 import SuppliersManager from "@/components/cadastros/SuppliersManager";
 import ContractsManager from "@/components/cadastros/ContractsManager";
 import Catalogo from "./Catalogo";
@@ -89,30 +91,35 @@ function MeusDadosContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-foreground">Meus Dados</h1>
-            <CompletionBadge completed={completionScore.score} total={completionScore.maxScore} />
-          </div>
-          <p className="text-muted-foreground">
+      <PageHeader
+        icon={FolderOpen}
+        iconColor="primary"
+        title="Meus Dados"
+        description={
+          <>
             Centralize e gerencie produtos com{" "}
             <GlossaryTerm {...glossaryTerms.ncm}>NCM</GlossaryTerm>, fornecedores,
             contratos e conversões de unidades
-          </p>
-        </div>
-        <div className="flex items-center gap-2 self-start sm:self-center">
-          <Settings2 className="h-4 w-4 text-muted-foreground" />
-          <Label htmlFor="advanced-mode" className="text-sm cursor-pointer">
-            Modo avançado
-          </Label>
-          <Switch
-            id="advanced-mode"
-            checked={advancedMode}
-            onCheckedChange={setAdvancedMode}
-          />
-        </div>
-      </div>
+          </>
+        }
+        badge={{
+          label: `${completionScore.score}/${completionScore.maxScore} (${Math.round(completionScore.percentage)}%)`,
+          variant: completionScore.percentage === 100 ? "success" : "secondary",
+        }}
+        actions={
+          <>
+            <Settings2 className="h-4 w-4 text-muted-foreground" />
+            <Label htmlFor="advanced-mode" className="text-sm cursor-pointer">
+              Modo avançado
+            </Label>
+            <Switch
+              id="advanced-mode"
+              checked={advancedMode}
+              onCheckedChange={setAdvancedMode}
+            />
+          </>
+        }
+      />
 
       {/* Progress Card */}
       {completionScore.percentage < 100 && (
@@ -161,28 +168,19 @@ function MeusDadosContent() {
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card
+          <StatCard
             key={stat.label}
-            className="cursor-pointer transition-all hover:shadow-md"
+            label={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            iconColor={stat.color.replace("text-", "") as any}
+            badge={
+              stat.active !== undefined && stat.value > 0
+                ? { label: `${stat.active} ativos`, variant: "secondary" }
+                : undefined
+            }
             onClick={() => setActiveTab(stat.tab)}
-          >
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                    {stat.active !== undefined && stat.value > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {stat.active} ativos
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <stat.icon className={`h-8 w-8 ${stat.color}`} />
-              </div>
-            </CardContent>
-          </Card>
+          />
         ))}
       </div>
 

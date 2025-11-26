@@ -27,6 +27,7 @@ import {
   BarChart3,
   PieChart as PieChartIcon
 } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
 import {
   ChartContainer,
   ChartTooltip,
@@ -305,27 +306,27 @@ const Analise = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Análise</h1>
-          <p className="text-muted-foreground">
-            Visualize o impacto da reforma, compare cenários e gere relatórios consolidados
-          </p>
-        </div>
-        {activeTab === "relatorios" && (
-          <div className="flex gap-2 flex-wrap">
-            <Button onClick={handlePrint} variant="outline" size="sm">
-              <Printer className="mr-2 h-4 w-4" /> Imprimir
-            </Button>
-            <Button onClick={handleExportPDF} variant="outline" size="sm">
-              <FileText className="mr-2 h-4 w-4" /> PDF
-            </Button>
-            <Button onClick={handleExportExcel} variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" /> CSV
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        icon={BarChart3}
+        iconColor="primary"
+        title="Análise"
+        description="Visualize o impacto da reforma, compare cenários e gere relatórios consolidados"
+        actions={
+          activeTab === "relatorios" ? (
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={handlePrint} variant="outline" size="sm">
+                <Printer className="mr-2 h-4 w-4" /> Imprimir
+              </Button>
+              <Button onClick={handleExportPDF} variant="outline" size="sm">
+                <FileText className="mr-2 h-4 w-4" /> PDF
+              </Button>
+              <Button onClick={handleExportExcel} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" /> CSV
+              </Button>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
