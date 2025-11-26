@@ -86,22 +86,28 @@ const rankSuppliersInternal = (
       itemId: s.id,
       flagsItem: s.flagsItem,
     });
-    const credit = computeCredit(ctx.destino, ctx.regime, s.preco, rates.ibs, rates.cbs, {
+
+    // Use pre-calculated rates if available (from backend), otherwise use local calculation
+    const effectiveRates = (s.ibs !== undefined && s.cbs !== undefined && s.is !== undefined && s.explanation)
+      ? { ibs: s.ibs, cbs: s.cbs, is: s.is }
+      : rates;
+
+    const credit = computeCredit(ctx.destino, ctx.regime, s.preco, effectiveRates.ibs, effectiveRates.cbs, {
       scenario: ctx.scenario,
       isRefeicaoPronta: s.isRefeicaoPronta,
     });
     const custoEfetivo = computeEffectiveCost(
       s.preco,
       s.frete,
-      rates,
+      effectiveRates,
       credit.credito
     );
 
     return {
       ...s,
-      ibs: rates.ibs,
-      cbs: rates.cbs,
-      is: rates.is,
+      ibs: effectiveRates.ibs,
+      cbs: effectiveRates.cbs,
+      is: effectiveRates.is,
       creditavel: credit.creditavel,
       credito: credit.credito,
       custoEfetivo,

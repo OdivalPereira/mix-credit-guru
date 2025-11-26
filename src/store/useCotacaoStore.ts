@@ -17,6 +17,7 @@ import { resolveUnitPrice } from "@/lib/contracts";
 import { normalizeOffer } from "@/lib/units";
 import { useContractsStore } from "./useContractsStore";
 import { useUnidadesStore } from "./useUnidadesStore";
+import { TaxApiClient } from "@/services/TaxApiClient";
 
 export interface Contexto {
   data: string;
@@ -67,9 +68,10 @@ export interface CotacaoStore {
   exportarCSV: () => string;
   importarJSON: (json: string) => void;
   exportarJSON: () => string;
-  calcular: () => void;
+  calcular: () => Promise<void>;
   registrarOtimizacao: (resultado: OptimizePerItemResult) => void;
   computeResultado: (scenario?: string, contextOverride?: Partial<Contexto>) => MixResultado;
+  enrichSuppliersWithTaxes: () => Promise<void>;
 }
 
 const initialContexto: Contexto = {
@@ -391,7 +393,8 @@ export const useCotacaoStore = create<CotacaoStore>()(
         return JSON.stringify({ contexto, fornecedores, resultado, constraints, prefs });
       },
 
-      calcular: () =>
+      calcular: async () => {
+        await get().enrichSuppliersWithTaxes();
         set((state) => {
           const scenario = useAppStore.getState().scenario;
           const resultado = buildResultado({
@@ -400,7 +403,8 @@ export const useCotacaoStore = create<CotacaoStore>()(
             scenario,
           });
           return { resultado, ultimaOtimizacao: null };
-        }),
+        });
+      },
 
       registrarOtimizacao: (resultadoOtimizacao) =>
         set((state) => {
@@ -430,6 +434,39 @@ export const useCotacaoStore = create<CotacaoStore>()(
           contexto,
           scenario,
         });
+      },
+
+      enrichSuppliersWithTaxes: async () => {
+        const { fornecedores, contexto } = get();
+        const updatedFornecedores = await Promise.all(
+          fornecedores.map(async (f) => {
+            if (!f.ativo) return f;
+
+            // If we already have an explanation and rates, maybe skip? 
+            // But context might have changed (UF destination).
+            // For now, always re-calculate to be safe.
+
+            const result = await TaxApiClient.calculateTax(
+              f.flagsItem?.ncm || "0000.00.00", // Fallback NCM
+              f.uf,
+              contexto.uf,
+              f.preco
+            );
+
+            if (result) {
+              return {
+                ...f,
+                ibs: result.rates.ibs,
+                cbs: result.rates.cbs,
+                is: result.rates.is,
+                explanation: result.explanation
+              };
+            }
+            return f;
+          })
+        );
+
+        set({ fornecedores: updatedFornecedores });
       },
     }),
     {

@@ -50,6 +50,7 @@ import { validateEssentialData } from "@/lib/validation";
 import { NextStepButton } from "@/components/quote/NextStepButton";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
+import { OptimizerApiClient } from "@/services/OptimizerApiClient";
 
 /**
  * @description Um componente de página abrangente para gerenciar cotações de fornecedores, permitindo que os usuários configurem o contexto, gerenciem fornecedores, visualizem resultados e otimizem custos.
@@ -60,7 +61,7 @@ export default function Cotacao() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
-  const workerRef = useRef<Worker | null>(null);
+  // Worker ref removed as we use API client now
 
   const [showChart, setShowChart] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
@@ -134,7 +135,7 @@ export default function Cotacao() {
     }
   }, [contexto, fornecedores, contratos, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate]);
 
-  useEffect(() => () => workerRef.current?.terminate(), []);
+  // Worker cleanup removed
 
   const formatCurrency = useCallback(
     (value: number) =>
@@ -270,93 +271,59 @@ export default function Cotacao() {
       });
     }
 
-    if (workerRef.current) {
-      workerRef.current.terminate();
-    }
-
-    const worker = new Worker(
-      new URL("../workers/optWorker.ts", import.meta.url),
-      {
-        type: "module",
-      },
-    );
-    workerRef.current = worker;
     setOptimizing(true);
     setOptProgress(0);
-    setOptStatusMessage("Processando combinações otimizadas...");
+    setOptStatusMessage("Processando combinações otimizadas via nuvem...");
 
-    worker.postMessage({
+    // Simulate progress for UX since API is request/response
+    const progressInterval = setInterval(() => {
+      setOptProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
+
+    OptimizerApiClient.optimize({
       quantity: 100,
       offers: fornecedores.map((supplier) => ({
         id: supplier.id,
         price: supplier.preco,
       })),
-    });
-
-    worker.onmessage = (event) => {
-      type WorkerMessage =
-        | { type: "progress"; value: number }
-        | { type: "result"; result: OptimizePerItemResult }
-        | { type: "error"; message: string };
-
-      const message = event.data as WorkerMessage;
-
-      if (message.type === "progress") {
-        setOptProgress(message.value);
-        if (message.value >= 1) {
-          setOptStatusMessage(
-            `Otimizando fornecedores... ${Math.round(message.value)}% concluido.`,
-          );
-        }
-        return;
-      }
-
-      if (message.type === "result") {
+    })
+      .then((result) => {
+        clearInterval(progressInterval);
         setOptProgress(100);
         setOptimizing(false);
-        registrarOtimizacao(message.result);
-        const total = formatCurrency(message.result.cost);
-        const alerts =
-          message.result.violations.length > 0
-            ? ` Alertas: ${message.result.violations.join(", ")}.`
-            : " Nenhum alerta encontrado.";
-        const summary = `Custo total ${total}.${alerts}`;
-        setOptStatusMessage(`Otimização concluída. ${summary}`);
-        toast({ 
-          title: "Otimização concluída com sucesso", 
-          description: summary,
+
+        if (result) {
+          registrarOtimizacao(result);
+          const total = formatCurrency(result.cost);
+          const alerts =
+            result.violations.length > 0
+              ? ` Alertas: ${result.violations.join(", ")}.`
+              : " Nenhum alerta encontrado.";
+          const summary = `Custo total ${total}.${alerts}`;
+          setOptStatusMessage(`Otimização concluída. ${summary}`);
+          toast({
+            title: "Otimização concluída com sucesso",
+            description: summary,
+          });
+        } else {
+          throw new Error("Nenhum resultado retornado.");
+        }
+      })
+      .catch((error) => {
+        clearInterval(progressInterval);
+        setOptimizing(false);
+        setOptProgress(0);
+        setOptStatusMessage("Falha ao otimizar fornecedores.");
+        toast({
+          variant: "destructive",
+          title: "Erro na otimização",
+          description: error.message || "Não foi possível concluir a otimização.",
         });
-        workerRef.current?.terminate();
-        workerRef.current = null;
-        return;
-      }
-
-      setOptimizing(false);
-      setOptProgress(0);
-      setOptStatusMessage("Falha ao otimizar fornecedores.");
-      toast({
-        variant: "destructive",
-        title: "Erro na otimização",
-        description:
-          message.message || "Não foi possível concluir a otimização.",
       });
-      workerRef.current?.terminate();
-      workerRef.current = null;
-    };
-
-    worker.onerror = (error) => {
-      setOptimizing(false);
-      setOptProgress(0);
-      setOptStatusMessage("Falha ao otimizar fornecedores.");
-      toast({
-        variant: "destructive",
-        title: "Erro na otimização",
-        description: error.message || "Não foi possível concluir a otimização.",
-      });
-      workerRef.current?.terminate();
-      workerRef.current = null;
-    };
-  }, [fornecedores, formatCurrency, registrarOtimizacao]);
+  }, [fornecedores, formatCurrency, registrarOtimizacao, contexto.uf, contexto.regime, produtosCatalogo.length]);
 
   const getCreditBadge = useCallback(
     (creditavel: boolean, credito: number) => {
@@ -490,229 +457,229 @@ export default function Cotacao() {
         <>
           <QuoteForm contexto={contexto} onContextoChange={handleContextoChange} />
 
-      <QuoteContextSummary contexto={contexto} />
+          <QuoteContextSummary contexto={contexto} />
 
-      <TooltipProvider>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-1">
-                <span className="font-medium text-muted-foreground">
-                  Fornecedores avaliados
-                </span>
-                {config.showTooltips && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Total de fornecedores cadastrados e percentual com crédito tributário disponível</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+          <TooltipProvider>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-muted-foreground">
+                      Fornecedores avaliados
+                    </span>
+                    {config.showTooltips && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Total de fornecedores cadastrados e percentual com crédito tributário disponível</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                  <Factory className="h-4 w-4 text-primary" aria-hidden />
+                </div>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {quoteInsights.totalSuppliers}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {quoteInsights.creditavelCount} creditaveis (
+                  {quoteInsights.creditavelPercent}
+                  %)
+                </p>
               </div>
-              <Factory className="h-4 w-4 text-primary" aria-hidden />
-            </div>
-          <p className="mt-2 text-2xl font-semibold text-foreground">
-            {quoteInsights.totalSuppliers}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {quoteInsights.creditavelCount} creditaveis (
-            {quoteInsights.creditavelPercent}
-            %)
-          </p>
-        </div>
 
-          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-1">
-                <span className="font-medium text-muted-foreground">
-                  Melhor custo efetivo
-                </span>
-                {config.showTooltips && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Menor custo após aplicar impostos e descontar créditos tributários disponíveis</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+              <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-muted-foreground">
+                      Melhor custo efetivo
+                    </span>
+                    {config.showTooltips && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Menor custo após aplicar impostos e descontar créditos tributários disponíveis</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                  <Trophy className="h-4 w-4 text-primary" aria-hidden />
+                </div>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {bestSupplierCost}
+                </p>
+                <p className="text-xs text-muted-foreground">{bestSupplierName}</p>
               </div>
-              <Trophy className="h-4 w-4 text-primary" aria-hidden />
-            </div>
-          <p className="mt-2 text-2xl font-semibold text-foreground">
-            {bestSupplierCost}
-          </p>
-          <p className="text-xs text-muted-foreground">{bestSupplierName}</p>
-        </div>
 
-          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-1">
-                <span className="font-medium text-muted-foreground">
-                  Crédito médio
-                </span>
-                {config.showTooltips && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Média dos créditos de ICMS e PIS/COFINS que podem ser aproveitados na compra</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+              <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-muted-foreground">
+                      Crédito médio
+                    </span>
+                    {config.showTooltips && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Média dos créditos de ICMS e PIS/COFINS que podem ser aproveitados na compra</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                  <PiggyBank className="h-4 w-4 text-primary" aria-hidden />
+                </div>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {averageCreditDisplay}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Considera fornecedores creditaveis e nao creditaveis.
+                </p>
               </div>
-              <PiggyBank className="h-4 w-4 text-primary" aria-hidden />
-            </div>
-          <p className="mt-2 text-2xl font-semibold text-foreground">
-            {averageCreditDisplay}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Considera fornecedores creditaveis e nao creditaveis.
-          </p>
-        </div>
 
-          <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-1">
-                <span className="font-medium text-muted-foreground">
-                  Última otimização
-                </span>
-                {config.showTooltips && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Combinação otimizada de fornecedores respeitando limites contratuais e minimizando custos</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+              <div className="rounded-lg border bg-card/60 p-4 shadow-sm">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-muted-foreground">
+                      Última otimização
+                    </span>
+                    {config.showTooltips && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Combinação otimizada de fornecedores respeitando limites contratuais e minimizando custos</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                  <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+                </div>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {optimizationCost}
+                </p>
+                <p className="text-xs text-muted-foreground">{optimizationMessage}</p>
               </div>
-              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
             </div>
-          <p className="mt-2 text-2xl font-semibold text-foreground">
-            {optimizationCost}
-          </p>
-            <p className="text-xs text-muted-foreground">{optimizationMessage}</p>
-          </div>
-        </div>
-      </TooltipProvider>
+          </TooltipProvider>
 
-      {quoteInsights.alertSuppliers > 0 && (
-        <div className="rounded-lg border border-dashed bg-yellow-50/40 p-4 text-sm text-yellow-900">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" aria-hidden />
-            <span className="font-semibold">
-              {quoteInsights.alertSuppliers} fornecedor(es) com restrições
-            </span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Revise limites contratuais e configurações tributárias antes de
-            confirmar a cotação final.
-          </p>
-        </div>
-      )}
-
-      <SupplierTable
-        resultados={resultados}
-        fornecedoresOriginais={fornecedores}
-        produtos={produtosCatalogo}
-        contextProductKey={contexto.produto}
-        findContract={findContract}
-        formatCurrency={formatCurrency}
-        onAddSupplier={handleAddSupplier}
-        onDuplicate={handleDuplicate}
-        onRemove={removeFornecedor}
-        onImportCSV={() => csvInputRef.current?.click()}
-        onExportCSV={handleExportCSV}
-        onImportJSON={() => jsonInputRef.current?.click()}
-        onExportJSON={handleExportJSON}
-        onClear={limpar}
-        onToggleChart={() => setShowChart((previous) => !previous)}
-        onOptimize={handleOptimize}
-        getCreditBadge={getCreditBadge}
-        onPatchSupplier={handlePatchFornecedor}
-        showChart={showChart}
-        optimizing={optimizing}
-        optProgress={optProgress}
-        optStatusMessage={optStatusMessage}
-        containerRef={tableScrollRef}
-      />
-
-      {ultimaOtimizacao && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Resultado da última otimização</CardTitle>
-              <Button onClick={() => navigate("/relatorios")} size="sm" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Ver Relatório Completo
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+          {quoteInsights.alertSuppliers > 0 && (
+            <div className="rounded-lg border border-dashed bg-yellow-50/40 p-4 text-sm text-yellow-900">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" aria-hidden />
+                <span className="font-semibold">
+                  {quoteInsights.alertSuppliers} fornecedor(es) com restrições
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Revise limites contratuais e configurações tributárias antes de
+                confirmar a cotação final.
+              </p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <div>
-              Custo total:{" "}
-              <span className="font-medium text-foreground">
-                {formatCurrency(ultimaOtimizacao.cost)}
-              </span>
-            </div>
-            <div>
-              Violações:{" "}
-              {ultimaOtimizacao.violations.length > 0 ? (
-                <ul className="list-disc pl-5">
-                  {ultimaOtimizacao.violations.map((violation) => (
-                    <li key={violation}>{violation}</li>
-                  ))}
-                </ul>
-              ) : (
-                <span>Nenhuma</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {showChart && chartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Custos efetivos por fornecedor</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                custoEfetivo: {
-                  label: "Custo efetivo",
-                  color: "hsl(var(--chart-1))",
-                },
-              }}
-              className="h-[300px]"
-            >
-              <BarChart data={chartData} layout="vertical">
-                <CartesianGrid vertical={false} />
-                <XAxis type="number" dataKey="custoEfetivo" hide />
-                <YAxis
-                  dataKey="nome"
-                  type="category"
-                  width={150}
-                  tick={{ fontSize: 12 }}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar
-                  dataKey="custoEfetivo"
-                  fill="var(--color-custoEfetivo)"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      )}
+          <SupplierTable
+            resultados={resultados}
+            fornecedoresOriginais={fornecedores}
+            produtos={produtosCatalogo}
+            contextProductKey={contexto.produto}
+            findContract={findContract}
+            formatCurrency={formatCurrency}
+            onAddSupplier={handleAddSupplier}
+            onDuplicate={handleDuplicate}
+            onRemove={removeFornecedor}
+            onImportCSV={() => csvInputRef.current?.click()}
+            onExportCSV={handleExportCSV}
+            onImportJSON={() => jsonInputRef.current?.click()}
+            onExportJSON={handleExportJSON}
+            onClear={limpar}
+            onToggleChart={() => setShowChart((previous) => !previous)}
+            onOptimize={handleOptimize}
+            getCreditBadge={getCreditBadge}
+            onPatchSupplier={handlePatchFornecedor}
+            showChart={showChart}
+            optimizing={optimizing}
+            optProgress={optProgress}
+            optStatusMessage={optStatusMessage}
+            containerRef={tableScrollRef}
+          />
+
+          {ultimaOtimizacao && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Resultado da última otimização</CardTitle>
+                  <Button onClick={() => navigate("/relatorios")} size="sm" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    Ver Relatório Completo
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm text-muted-foreground">
+                <div>
+                  Custo total:{" "}
+                  <span className="font-medium text-foreground">
+                    {formatCurrency(ultimaOtimizacao.cost)}
+                  </span>
+                </div>
+                <div>
+                  Violações:{" "}
+                  {ultimaOtimizacao.violations.length > 0 ? (
+                    <ul className="list-disc pl-5">
+                      {ultimaOtimizacao.violations.map((violation) => (
+                        <li key={violation}>{violation}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span>Nenhuma</span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {showChart && chartData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Custos efetivos por fornecedor</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    custoEfetivo: {
+                      label: "Custo efetivo",
+                      color: "hsl(var(--chart-1))",
+                    },
+                  }}
+                  className="h-[300px]"
+                >
+                  <BarChart data={chartData} layout="vertical">
+                    <CartesianGrid vertical={false} />
+                    <XAxis type="number" dataKey="custoEfetivo" hide />
+                    <YAxis
+                      dataKey="nome"
+                      type="category"
+                      width={150}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar
+                      dataKey="custoEfetivo"
+                      fill="var(--color-custoEfetivo)"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
 
