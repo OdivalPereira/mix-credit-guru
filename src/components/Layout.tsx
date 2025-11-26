@@ -6,7 +6,10 @@ import {
   Heart,
   FolderOpen,
   BarChart3,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 import { cn } from "@/lib/utils";
 import { Glossary } from "@/components/Glossary";
@@ -29,6 +32,13 @@ const navigation = [
 export function Layout() {
   const location = useLocation();
   const { openModal } = useDonationModalStore();
+  const { theme, setTheme } = useTheme();
+  
+  const isDarkMode = theme === "dark";
+  
+  const toggleTheme = () => {
+    setTheme(isDarkMode ? "light" : "dark");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,15 +56,27 @@ export function Layout() {
               <p className="text-xs text-muted-foreground hidden sm:block">Tax Optimization Platform</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={openModal}
-            className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
-          >
-            <Heart className="h-4 w-4" />
-            <span className="hidden sm:inline">Apoiar</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="relative h-9 w-9 rounded-xl hover:bg-muted transition-all"
+              aria-label="Toggle theme"
+            >
+              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openModal}
+              className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+            >
+              <Heart className="h-4 w-4" />
+              <span className="hidden sm:inline">Apoiar</span>
+            </Button>
+          </div>
         </div>
       </header>
 
