@@ -93,6 +93,8 @@ export function WizardStepResults({
   const formatCurrency = (value: number) =>
     value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  const isZeroState = hasResults && resultados.every(r => r.custoEfetivo === 0);
+
   return (
     <div className="space-y-6">
       <div>
@@ -124,6 +126,14 @@ export function WizardStepResults({
           type="info"
           title="Aguardando cálculo"
           description="Volte ao passo anterior e verifique se todos os dados estão corretos."
+        />
+      )}
+
+      {isZeroState && (
+        <SectionAlert
+          type="warning"
+          title="Dados Insuficientes"
+          description="O cálculo retornou valores zerados. Verifique se o produto possui preço cadastrado e se as regras fiscais (NCM) foram encontradas para o estado selecionado."
         />
       )}
 

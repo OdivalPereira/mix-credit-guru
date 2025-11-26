@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Calculator, 
-  ClipboardList, 
-  TrendingUp, 
+import {
+  Calculator,
+  ClipboardList,
+  TrendingUp,
   FileText,
   CheckCircle2,
   ArrowRight,
@@ -80,17 +80,34 @@ const TOUR_STORAGE_KEY = "mix-credit-guru-tour-completed";
  * @description Um componente de tour de boas-vindas que guia os novos usuários através das principais características da aplicação.
  * @returns O componente de tour de boas-vindas.
  */
-export function WelcomeTour() {
+export interface WelcomeTourProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function WelcomeTour({ open: controlledOpen, onOpenChange }: WelcomeTourProps) {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
-  useEffect(() => {
-    const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
-    if (!tourCompleted) {
-      setOpen(true);
+  const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(newOpen);
     }
-  }, []);
+    setInternalOpen(newOpen);
+  };
+
+  useEffect(() => {
+    // Only check localStorage if not controlled
+    if (controlledOpen === undefined) {
+      const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
+      if (!tourCompleted) {
+        setInternalOpen(true);
+      }
+    }
+  }, [controlledOpen]);
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
@@ -108,12 +125,12 @@ export function WelcomeTour() {
 
   const handleSkip = () => {
     localStorage.setItem(TOUR_STORAGE_KEY, "true");
-    setOpen(false);
+    handleOpenChange(false);
   };
 
   const handleComplete = () => {
     localStorage.setItem(TOUR_STORAGE_KEY, "true");
-    setOpen(false);
+    handleOpenChange(false);
   };
 
   const handleAction = (route: string) => {
@@ -126,7 +143,7 @@ export function WelcomeTour() {
   const Icon = step.icon;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <button
           onClick={handleSkip}

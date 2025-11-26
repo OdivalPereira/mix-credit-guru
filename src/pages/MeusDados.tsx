@@ -42,12 +42,12 @@ function MeusDadosContent() {
   const completionScore = useMemo(() => {
     let score = 0;
     let maxScore = 4;
-    
+
     if (produtos.length > 0) score += 1;
     if (fornecedores.length >= 2) score += 1;
     if (contratos.length > 0) score += 1;
     if (conversoes.length >= 2) score += 1;
-    
+
     return { score, maxScore, percentage: (score / maxScore) * 100 };
   }, [produtos, fornecedores, contratos, conversoes]);
 
@@ -97,9 +97,8 @@ function MeusDadosContent() {
         title="Meus Dados"
         description={
           <>
-            Centralize e gerencie produtos com{" "}
-            <GlossaryTerm {...glossaryTerms.ncm}>NCM</GlossaryTerm>, fornecedores,
-            contratos e conversões de unidades
+            Você possui <strong>{produtos.length} produtos</strong> e <strong>{fornecedores.length} fornecedores</strong> cadastrados.
+            Centralize e gerencie seus dados para otimização tributária.
           </>
         }
         badge={{
