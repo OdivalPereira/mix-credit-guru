@@ -194,35 +194,135 @@ export function WizardStepResults({
 
           {/* Savings Breakdown */}
           {savingsBreakdown && (
-            <Card className="bg-emerald-50/50 border-emerald-100">
+            <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2 text-emerald-800">
-                  <Sparkles className="h-4 w-4 text-emerald-600" />
-                  Entenda sua economia
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                  Detalhamento da Economia
                 </CardTitle>
-                <CardDescription>
-                  Você economizou <span className="font-bold text-emerald-700">{formatCurrency(analysis.costSpread)}</span> escolhendo o melhor fornecedor. Veja como:
+                <CardDescription className="text-emerald-700/90">
+                  Você economizou{" "}
+                  <span className="font-bold text-emerald-800">
+                    {formatCurrency(analysis.costSpread)}
+                  </span>{" "}
+                  escolhendo o melhor fornecedor. Veja como:
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-center divide-x divide-emerald-200/50">
-                  <div className="px-2">
-                    <div className={`text-sm font-bold ${savingsBreakdown.priceSave >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-                      {formatCurrency(savingsBreakdown.priceSave)}
+              <CardContent className="space-y-4">
+                {/* Visual breakdown */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white rounded-lg p-4 border border-emerald-100 shadow-sm">
+                    <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <TrendingDown className="h-3 w-3" />
+                      Preço
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">no Preço do Produto</div>
+                    <div
+                      className={`text-lg font-bold ${
+                        savingsBreakdown.priceSave >= 0
+                          ? "text-emerald-700"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {formatCurrency(Math.abs(savingsBreakdown.priceSave))}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {savingsBreakdown.priceSave >= 0
+                        ? "Economizado"
+                        : "A mais"}
+                    </div>
                   </div>
-                  <div className="px-2">
-                    <div className={`text-sm font-bold ${savingsBreakdown.freightSave >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-                      {formatCurrency(savingsBreakdown.freightSave)}
+
+                  <div className="bg-white rounded-lg p-4 border border-emerald-100 shadow-sm">
+                    <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <TrendingDown className="h-3 w-3" />
+                      Frete
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">no Frete</div>
+                    <div
+                      className={`text-lg font-bold ${
+                        savingsBreakdown.freightSave >= 0
+                          ? "text-emerald-700"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {formatCurrency(Math.abs(savingsBreakdown.freightSave))}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {savingsBreakdown.freightSave >= 0
+                        ? "Economizado"
+                        : "A mais"}
+                    </div>
                   </div>
-                  <div className="px-2">
-                    <div className={`text-sm font-bold ${savingsBreakdown.creditGain >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-                      {formatCurrency(savingsBreakdown.creditGain)}
+
+                  <div className="bg-white rounded-lg p-4 border border-emerald-100 shadow-sm">
+                    <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <TrendingDown className="h-3 w-3" />
+                      Créditos
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">em Créditos Tributários</div>
+                    <div
+                      className={`text-lg font-bold ${
+                        savingsBreakdown.creditGain >= 0
+                          ? "text-emerald-700"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {formatCurrency(Math.abs(savingsBreakdown.creditGain))}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {savingsBreakdown.creditGain >= 0
+                        ? "Ganho adicional"
+                        : "Menos crédito"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comparative bar chart */}
+                <div className="bg-white rounded-lg p-4 border border-emerald-100">
+                  <div className="text-xs text-muted-foreground mb-3">
+                    Comparativo: Melhor vs Pior Fornecedor
+                  </div>
+                  <div className="space-y-2">
+                    {/* Best supplier */}
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-emerald-700">
+                          {analysis.bestSupplier?.nome}
+                        </span>
+                        <span className="font-bold text-emerald-700">
+                          {formatCurrency(analysis.bestSupplier?.custoEfetivo || 0)}
+                        </span>
+                      </div>
+                      <div className="h-6 bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-md relative overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
+                          Menor Custo ✓
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Worst supplier */}
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-muted-foreground">
+                          {analysis.worstSupplier?.nome}
+                        </span>
+                        <span className="font-bold text-muted-foreground">
+                          {formatCurrency(analysis.worstSupplier?.custoEfetivo || 0)}
+                        </span>
+                      </div>
+                      <div
+                        className="h-6 bg-gradient-to-r from-gray-400 to-gray-300 rounded-md relative overflow-hidden"
+                        style={{
+                          width: `${
+                            ((analysis.worstSupplier?.custoEfetivo || 0) /
+                              (analysis.bestSupplier?.custoEfetivo || 1)) *
+                            100
+                          }%`,
+                        }}
+                      >
+                        <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium whitespace-nowrap">
+                          +{formatCurrency(analysis.costSpread)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -230,11 +330,21 @@ export function WizardStepResults({
           )}
 
           {/* Opportunity Alerts */}
-          <SectionAlert
-            type="info"
-            title="Oportunidade de Planejamento"
-            description="Se sua empresa estivesse no Lucro Real, você poderia aproveitar R$ 1.250,00 adicionais em créditos de PIS/COFINS nesta compra."
-          />
+          {analysis.bestSupplier && analysis.bestSupplier.regime === 'simples' && (
+            <SectionAlert
+              type="info"
+              title="💡 Oportunidade de Planejamento Tributário"
+              description={`Se sua empresa estivesse no regime de Lucro Real, você poderia aproveitar aproximadamente ${formatCurrency(analysis.bestSupplier.ibs + analysis.bestSupplier.cbs)} adicionais em créditos tributários nesta compra (IBS: ${formatCurrency(analysis.bestSupplier.ibs)}, CBS: ${formatCurrency(analysis.bestSupplier.cbs)}). Considere avaliar com seu contador se a mudança de regime pode ser vantajosa.`}
+            />
+          )}
+          
+          {analysis.creditableCount < resultados.length && (
+            <SectionAlert
+              type="warning"
+              title="⚠️ Atenção: Fornecedores sem crédito"
+              description={`${resultados.length - analysis.creditableCount} de ${resultados.length} fornecedores não geram créditos tributários. Isso aumenta seu custo efetivo. Priorize fornecedores no regime de Lucro Real para maximizar benefícios fiscais.`}
+            />
+          )}
 
           {/* Alerts */}
           {analysis.alertCount > 0 && (
