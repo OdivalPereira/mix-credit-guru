@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { useNavigate } from "react-router-dom";
+import { generateId } from "@/lib/utils";
 
 interface SmartSetupWizardProps {
     open: boolean;
@@ -48,7 +49,7 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
     const [productsData, setProductsData] = useState<any[]>([]);
 
     const addProduto = useCatalogoStore((state) => state.addProduto);
-    const addFornecedor = useCotacaoStore((state) => state.addFornecedor);
+    const upsertFornecedor = useCotacaoStore((state) => state.upsertFornecedor);
     const enrichSuppliers = useCotacaoStore((state) => state.enrichSuppliersWithTaxes);
     const navigate = useNavigate();
 
@@ -120,10 +121,17 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
             if (productsData.length > 0) {
                 productsData.forEach((item: any) => {
                     addProduto({
+                        id: generateId("produto"),
                         descricao: item.nome || item.original_name,
                         ncm: item.ncm_sugerido,
-                        preco_referencia: Number(item.preco_medio) || 0,
-                        unidade: item.unidade || "UN"
+                        unidadePadrao: item.unidade || "un",
+                        ativo: true,
+                        flags: {
+                            refeicao: false,
+                            cesta: false,
+                            reducao: false,
+                            is: false,
+                        }
                     });
                 });
             }
@@ -148,13 +156,18 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
 
             suppliers.forEach((sup) => {
                 randomProducts.forEach((prod) => {
-                    addFornecedor({
+                    upsertFornecedor({
                         nome: sup.nome,
                         tipo: sup.tipo,
+                        regime: "normal",
                         uf: companyData?.endereco?.uf || "SP",
                         produtoDescricao: prod.nome || prod.original_name,
-                        preco: (Number(prod.preco_medio) || 100) * (Math.random() * 0.2 + 0.9), // Random variation
-                        ativo: true
+                        preco: (Number(prod.preco_medio) || 100) * (Math.random() * 0.2 + 0.9),
+                        ativo: true,
+                        ibs: 0,
+                        cbs: 0,
+                        is: 0,
+                        frete: 0
                     });
                 });
             });

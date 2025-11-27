@@ -62,42 +62,50 @@ export default function Index() {
 
         {/* KPI Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <KPICard
-            title="Total de Produtos"
-            value={totalProdutos.toString()}
-            change={totalProdutos > 0 ? "+12%" : "0%"}
-            changeType={totalProdutos > 0 ? "positive" : "neutral"}
-            icon={Package}
-            gradient="bg-gradient-to-br from-chart-1/20 to-chart-1/5"
-            iconColor="hsl(var(--chart-1))"
-          />
-          <KPICard
-            title="Fornecedores Ativos"
-            value={totalFornecedores.toString()}
-            change={totalFornecedores > 0 ? "+8%" : "0%"}
-            changeType={totalFornecedores > 0 ? "positive" : "neutral"}
-            icon={TrendingUp}
-            gradient="bg-gradient-to-br from-success/20 to-success/5"
-            iconColor="hsl(var(--success))"
-          />
-          <KPICard
-            title="Contratos"
-            value={totalContratos.toString()}
-            change={totalContratos > 0 ? "+15%" : "0%"}
-            changeType={totalContratos > 0 ? "positive" : "neutral"}
-            icon={Award}
-            gradient="bg-gradient-to-br from-warning/20 to-warning/5"
-            iconColor="hsl(var(--warning))"
-          />
-          <KPICard
-            title="Cotações"
-            value={totalCotacoes.toString()}
-            change={totalCotacoes > 0 ? "+23%" : "0%"}
-            changeType={totalCotacoes > 0 ? "positive" : "neutral"}
-            icon={DollarSign}
-            gradient="bg-gradient-to-br from-accent/20 to-accent/5"
-            iconColor="hsl(var(--accent))"
-          />
+          <Link to="/cadastros">
+            <KPICard
+              title="Total de Produtos"
+              value={totalProdutos.toString()}
+              change={totalProdutos > 0 ? "+12%" : "0%"}
+              changeType={totalProdutos > 0 ? "positive" : "neutral"}
+              icon={Package}
+              gradient="bg-gradient-to-br from-chart-1/20 to-chart-1/5"
+              iconColor="hsl(var(--chart-1))"
+            />
+          </Link>
+          <Link to="/fornecedores-contratos">
+            <KPICard
+              title="Fornecedores Ativos"
+              value={totalFornecedores.toString()}
+              change={totalFornecedores > 0 ? "+8%" : "0%"}
+              changeType={totalFornecedores > 0 ? "positive" : "neutral"}
+              icon={TrendingUp}
+              gradient="bg-gradient-to-br from-success/20 to-success/5"
+              iconColor="hsl(var(--success))"
+            />
+          </Link>
+          <Link to="/fornecedores-contratos">
+            <KPICard
+              title="Contratos"
+              value={totalContratos.toString()}
+              change={totalContratos > 0 ? "+15%" : "0%"}
+              changeType={totalContratos > 0 ? "positive" : "neutral"}
+              icon={Award}
+              gradient="bg-gradient-to-br from-warning/20 to-warning/5"
+              iconColor="hsl(var(--warning))"
+            />
+          </Link>
+          <Link to="/cotacao">
+            <KPICard
+              title="Cotações"
+              value={totalCotacoes.toString()}
+              change={totalCotacoes > 0 ? "+23%" : "0%"}
+              changeType={totalCotacoes > 0 ? "positive" : "neutral"}
+              icon={DollarSign}
+              gradient="bg-gradient-to-br from-accent/20 to-accent/5"
+              iconColor="hsl(var(--accent))"
+            />
+          </Link>
         </div>
 
         {/* Progress Card */}
