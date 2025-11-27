@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -21,27 +20,37 @@ import {
     AlertCircle,
     Sparkles,
     Key,
-    Loader2
+    Loader2,
+    ArrowRight,
+    Building2,
+    Package,
+    ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { useNavigate } from "react-router-dom";
 
 interface SmartSetupWizardProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
+type Step = "config" | "company" | "products" | "review" | "simulating";
+
 export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) {
-    const [step, setStep] = useState<"config" | "upload" | "review" | "simulating">("config");
+    const [step, setStep] = useState<Step>("config");
     const [apiKey, setApiKey] = useState("");
     const [loading, setLoading] = useState(false);
-    const [uploadType, setUploadType] = useState<"cnpj" | "products" | "suppliers">("cnpj");
-    const [extractedData, setExtractedData] = useState<any>(null);
+
+    const [companyData, setCompanyData] = useState<any>(null);
+    const [productsData, setProductsData] = useState<any[]>([]);
 
     const addProduto = useCatalogoStore((state) => state.addProduto);
     const addFornecedor = useCotacaoStore((state) => state.addFornecedor);
+    const enrichSuppliers = useCotacaoStore((state) => state.enrichSuppliersWithTaxes);
+    const navigate = useNavigate();
 
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         if (acceptedFiles.length === 0) return;
@@ -52,7 +61,10 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
         try {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("type", uploadType);
+
+            // Determine type based on step
+            const type = step === "company" ? "cnpj" : "products";
+            formData.append("type", type);
 
             const { data, error } = await supabase.functions.invoke("ai-setup", {
                 body: formData,
@@ -63,63 +75,275 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
 
             if (error) throw error;
 
-            setExtractedData(data.data);
-            setStep("review");
-            toast.success("Dados extraídos com sucesso!");
+            if (step === "company") {
+                setCompanyData(data.data);
+                toast.success("Dados da empresa extraídos!");
+            } else if (step === "products") {
+                setProductsData(data.data);
+                toast.success(`${data.data.length} produtos analisados!`);
+            }
+
         } catch (error: any) {
             console.error("Error extracting data:", error);
             toast.error("Erro ao analisar arquivo: " + (error.message || "Tente novamente."));
         } finally {
             setLoading(false);
         }
-    }, [apiKey, uploadType]);
+    }, [apiKey, step]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: {
-            'application/pdf': ['.pdf'],
-            'image/*': ['.png', '.jpg', '.jpeg'],
-            'text/csv': ['.csv'],
-            'text/plain': ['.txt']
-        },
+        accept: step === "company"
+            ? { 'application/pdf': ['.pdf'], 'image/*': ['.png', '.jpg', '.jpeg'] }
+            : { 'text/csv': ['.csv'], 'text/plain': ['.txt'] },
         maxFiles: 1
     });
 
-    const handleSaveData = async () => {
-        if (!extractedData) return;
+    const handleNext = () => {
+        if (step === "config") setStep("company");
+        else if (step === "company") setStep("products");
+        else if (step === "products") setStep("review");
+    };
+
+    const handleBack = () => {
+        if (step === "company") setStep("config");
+        else if (step === "products") setStep("company");
+        else if (step === "review") setStep("products");
+    };
+
+    const handleFinish = async () => {
+        setLoading(true);
+        setStep("simulating");
 
         try {
-            if (uploadType === "products" && Array.isArray(extractedData)) {
-                extractedData.forEach((item: any) => {
+            // 1. Save Products
+            if (productsData.length > 0) {
+                productsData.forEach((item: any) => {
                     addProduto({
-                        descricao: item.nome,
+                        descricao: item.nome || item.original_name,
                         ncm: item.ncm_sugerido,
-                        preco_referencia: item.preco_medio || 0,
+                        preco_referencia: Number(item.preco_medio) || 0,
                         unidade: item.unidade || "UN"
                     });
                 });
-                toast.success(`${extractedData.length} produtos importados!`);
-            } else if (uploadType === "suppliers" && Array.isArray(extractedData)) {
-                extractedData.forEach((item: any) => {
-                    addFornecedor({
-                        nome: item.nome,
-                        cnpj: item.cnpj,
-                        // Defaulting required fields for MVP
-                        uf: "SP",
-                        tipo: item.categoria === "Indústria" ? "industria" : "distribuidor"
-                    });
-                });
-                toast.success(`${extractedData.length} fornecedores importados!`);
-            } else if (uploadType === "cnpj") {
-                // Here we would save company info to a store or context
-                toast.success("Dados da empresa atualizados!");
             }
 
-            setStep("upload");
-            setExtractedData(null);
+            // 2. Save Company Data (Mocked for now as we don't have a company store yet)
+            if (companyData) {
+                console.log("Saving company data:", companyData);
+                // In a real app: useCompanyStore.setCompany(companyData);
+            }
+
+            // 3. Create Baseline Quote (Simulation)
+            // Pick random products
+            const randomProducts = productsData.slice(0, 5);
+
+            // Create dummy suppliers if needed or use existing
+            // For this demo, we'll add a few suppliers with these products
+            const suppliers = [
+                { nome: "Fornecedor A (Indústria)", tipo: "industria" as const },
+                { nome: "Fornecedor B (Distribuidor)", tipo: "distribuidor" as const },
+                { nome: "Fornecedor C (Atacado)", tipo: "distribuidor" as const }
+            ];
+
+            suppliers.forEach((sup) => {
+                randomProducts.forEach((prod) => {
+                    addFornecedor({
+                        nome: sup.nome,
+                        tipo: sup.tipo,
+                        uf: companyData?.endereco?.uf || "SP",
+                        produtoDescricao: prod.nome || prod.original_name,
+                        preco: (Number(prod.preco_medio) || 100) * (Math.random() * 0.2 + 0.9), // Random variation
+                        ativo: true
+                    });
+                });
+            });
+
+            // Trigger calculation/enrichment
+            await enrichSuppliers();
+
+            toast.success("Configuração concluída! Redirecionando para simulação...");
+
+            setTimeout(() => {
+                onOpenChange(false);
+                navigate("/quote"); // Assuming this is the route
+            }, 1500);
+
         } catch (error) {
-            console.error("Error saving data:", error);
-            toast.error("Erro ao salvar dados.");
+            console.error("Error in simulation:", error);
+            toast.error("Erro ao gerar simulação.");
+            setStep("review");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderStepContent = () => {
+        switch (step) {
+            case "config":
+                return (
+                    <div className="space-y-4">
+                        <div className="p-4 bg-muted/50 rounded-lg border border-dashed">
+                            <div className="flex items-start gap-3">
+                                <Key className="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div className="space-y-1">
+                                    <h4 className="font-medium">Chave da API Gemini</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Para usar o recurso gratuito, forneça sua chave. Usuários Premium usam a chave da plataforma.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="apiKey">Sua API Key (Opcional para Premium)</Label>
+                            <Input
+                                id="apiKey"
+                                type="password"
+                                placeholder="Cole sua chave aqui (AIza...)"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case "company":
+                return (
+                    <div className="space-y-4">
+                        {!companyData ? (
+                            <div
+                                {...getRootProps()}
+                                className={`
+                  border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+                  ${isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"}
+                `}
+                            >
+                                <input {...getInputProps()} />
+                                {loading ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        <p className="text-sm text-muted-foreground">Extraindo dados do CNPJ...</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Building2 className="h-8 w-8 text-muted-foreground" />
+                                        <p className="font-medium">Arraste o Cartão CNPJ (PDF/Imagem)</p>
+                                        <p className="text-xs text-muted-foreground">Identificaremos nome, endereço e regime tributário.</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Card>
+                                <CardContent className="p-4 space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="font-medium text-primary">Dados Extraídos</h4>
+                                        <Button variant="ghost" size="sm" onClick={() => setCompanyData(null)}>Alterar</Button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">Razão Social:</span>
+                                            <p>{companyData.razao_social}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">CNPJ:</span>
+                                            <p>{companyData.cnpj}</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <span className="text-muted-foreground">Endereço:</span>
+                                            <p>{companyData.endereco?.logradouro}, {companyData.endereco?.numero} - {companyData.endereco?.uf}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+                );
+
+            case "products":
+                return (
+                    <div className="space-y-4">
+                        {productsData.length === 0 ? (
+                            <div
+                                {...getRootProps()}
+                                className={`
+                  border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+                  ${isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"}
+                `}
+                            >
+                                <input {...getInputProps()} />
+                                {loading ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        <p className="text-sm text-muted-foreground">Classificando produtos com IA...</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Package className="h-8 w-8 text-muted-foreground" />
+                                        <p className="font-medium">Arraste sua lista de produtos (CSV)</p>
+                                        <p className="text-xs text-muted-foreground">Sugeriremos os NCMs corretos automaticamente.</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="font-medium">{productsData.length} Produtos Encontrados</h4>
+                                    <Button variant="ghost" size="sm" onClick={() => setProductsData([])}>Reenviar</Button>
+                                </div>
+                                <Card className="max-h-[300px] overflow-auto">
+                                    <CardContent className="p-0">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-muted sticky top-0">
+                                                <tr>
+                                                    <th className="p-2">Produto</th>
+                                                    <th className="p-2">NCM Sugerido</th>
+                                                    <th className="p-2">Confiança</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {productsData.map((item, i) => (
+                                                    <tr key={i} className="border-b">
+                                                        <td className="p-2">{item.nome || item.original_name}</td>
+                                                        <td className="p-2 font-mono text-primary">{item.ncm_sugerido}</td>
+                                                        <td className="p-2 text-xs">{item.confidence || "Alta"}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case "review":
+                return (
+                    <div className="space-y-4">
+                        <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
+                            <h3 className="font-medium text-primary mb-2">Tudo pronto!</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Revisamos seus dados. Ao clicar em finalizar, vamos:
+                            </p>
+                            <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
+                                <li>Cadastrar <strong>{productsData.length} produtos</strong> no catálogo.</li>
+                                <li>Definir <strong>{companyData?.razao_social || "Sua Empresa"}</strong> como perfil principal.</li>
+                                <li>Gerar uma <strong>Simulação Inicial</strong> com fornecedores de exemplo.</li>
+                            </ul>
+                        </div>
+                    </div>
+                );
+
+            case "simulating":
+                return (
+                    <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <div>
+                            <h3 className="text-lg font-medium">Gerando Simulação...</h3>
+                            <p className="text-muted-foreground">A IA está calculando os impostos para o seu cenário.</p>
+                        </div>
+                    </div>
+                );
         }
     };
 
@@ -129,115 +353,38 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
-                        Configuração Inteligente (AI)
+                        Smart Setup (AI)
                     </DialogTitle>
                     <DialogDescription>
-                        Use Inteligência Artificial para configurar sua conta automaticamente.
+                        Passo {step === "config" ? 1 : step === "company" ? 2 : step === "products" ? 3 : 4} de 4
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-4">
-                    {step === "config" && (
-                        <div className="space-y-4">
-                            <div className="p-4 bg-muted/50 rounded-lg border border-dashed">
-                                <div className="flex items-start gap-3">
-                                    <Key className="h-5 w-5 text-muted-foreground mt-0.5" />
-                                    <div className="space-y-1">
-                                        <h4 className="font-medium">Chave da API Gemini</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Para usar o recurso gratuito, você precisa fornecer sua própria chave de API do Google Gemini.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="apiKey">Sua API Key</Label>
-                                <Input
-                                    id="apiKey"
-                                    type="password"
-                                    placeholder="Cole sua chave aqui (AIza...)"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Não tem uma chave? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-primary hover:underline">Obter chave gratuita</a>
-                                </p>
-                            </div>
-
-                            <div className="flex justify-end pt-4">
-                                <Button onClick={() => setStep("upload")} disabled={!apiKey}>
-                                    Continuar
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-
-                    {step === "upload" && (
-                        <div className="space-y-6">
-                            <Tabs value={uploadType} onValueChange={(v) => setUploadType(v as any)}>
-                                <TabsList className="grid w-full grid-cols-3">
-                                    <TabsTrigger value="cnpj">Identidade</TabsTrigger>
-                                    <TabsTrigger value="products">Produtos</TabsTrigger>
-                                    <TabsTrigger value="suppliers">Fornecedores</TabsTrigger>
-                                </TabsList>
-
-                                <div className="mt-4">
-                                    <div
-                                        {...getRootProps()}
-                                        className={`
-                      border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                      ${isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"}
-                    `}
-                                    >
-                                        <input {...getInputProps()} />
-                                        {loading ? (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                                <p className="text-sm text-muted-foreground">Analisando documento com IA...</p>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Upload className="h-8 w-8 text-muted-foreground" />
-                                                <p className="font-medium">Arraste um arquivo ou clique para selecionar</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {uploadType === "cnpj" ? "PDF do Cartão CNPJ ou Contrato Social" : "Lista em PDF, CSV ou Texto"}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </Tabs>
-                        </div>
-                    )}
-
-                    {step === "review" && extractedData && (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="font-medium">Dados Extraídos</h3>
-                                <Button variant="ghost" size="sm" onClick={() => setStep("upload")}>
-                                    Cancelar
-                                </Button>
-                            </div>
-
-                            <Card className="max-h-[300px] overflow-auto">
-                                <CardContent className="p-4">
-                                    <pre className="text-xs whitespace-pre-wrap font-mono">
-                                        {JSON.stringify(extractedData, null, 2)}
-                                    </pre>
-                                </CardContent>
-                            </Card>
-
-                            <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setStep("upload")}>Voltar</Button>
-                                <Button onClick={handleSaveData}>
-                                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                                    Confirmar e Salvar
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                    {renderStepContent()}
                 </div>
+
+                {step !== "simulating" && (
+                    <DialogFooter className="flex justify-between sm:justify-between">
+                        <Button variant="ghost" onClick={step === "config" ? () => onOpenChange(false) : handleBack}>
+                            {step === "config" ? "Cancelar" : <><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</>}
+                        </Button>
+
+                        {step === "review" ? (
+                            <Button onClick={handleFinish}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Finalizar e Simular
+                            </Button>
+                        ) : (
+                            <Button onClick={handleNext} disabled={
+                                (step === "company" && !companyData) ||
+                                (step === "products" && productsData.length === 0)
+                            }>
+                                Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </DialogFooter>
+                )}
             </DialogContent>
         </Dialog>
     );
