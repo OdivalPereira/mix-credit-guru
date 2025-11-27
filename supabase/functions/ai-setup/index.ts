@@ -41,7 +41,7 @@ serve(async (req) => {
                 // if (role?.role === 'premium') apiKey = Deno.env.get("GEMINI_API_KEY");
 
                 // Fallback for MVP:
-                apiKey = Deno.env.get("GEMINI_API_KEY");
+                apiKey = Deno.env.get("GEMINI_API_KEY") ?? null;
             }
         }
 
@@ -160,7 +160,7 @@ serve(async (req) => {
         throw new Error("Invalid type");
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
