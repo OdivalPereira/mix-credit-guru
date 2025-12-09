@@ -10,6 +10,9 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import DonationModal from "./components/DonationModal";
 import { GlossaryProvider } from "@/contexts/GlossaryContext";
 import { ActiveGlossary } from "@/components/ActiveGlossary";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -18,6 +21,7 @@ const Cotacao = lazy(() => import("./pages/Cotacao"));
 const Analise = lazy(() => import("./pages/Analise"));
 const Config = lazy(() => import("./pages/Config"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const Auth = lazy(() => import("./pages/Auth"));
 
 // Legacy pages (manter temporariamente para compatibilidade)
 const Catalogo = lazy(() => import("./pages/Catalogo"));
@@ -42,42 +46,58 @@ const App = () => (
   <ErrorBoundary>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <QueryClientProvider client={queryClient}>
-        <GlossaryProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <DonationModal />
-            <ActiveGlossary />
-            <BrowserRouter>
-              <Suspense fallback={
-                <div className="flex items-center justify-center min-h-screen">
-                  <div className="animate-pulse text-muted-foreground">Carregando...</div>
-                </div>
-              }>
-                <Routes>
-                  <Route path="/" element={<Layout />}>
-                    <Route index element={<Index />} />
-                    <Route path="meus-dados" element={<MeusDados />} />
-                    <Route path="cotacao" element={<Cotacao />} />
-                    <Route path="analise" element={<Analise />} />
-                    <Route path="config" element={<Config />} />
-                    <Route path="admin" element={<AdminPanel />} />
+        <AuthProvider>
+          <GlossaryProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <DonationModal />
+              <ActiveGlossary />
+              <BrowserRouter>
+                <Suspense fallback={
+                  <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-pulse text-muted-foreground">Carregando...</div>
+                  </div>
+                }>
+                  <Routes>
+                    {/* Public route - Auth */}
+                    <Route path="/auth" element={<Auth />} />
 
-                    {/* Rotas legadas (redirecionar ou manter temporariamente) */}
-                    <Route path="catalogo" element={<Catalogo />} />
-                    <Route path="cadastros" element={<Cadastros />} />
-                    <Route path="cenarios" element={<Cenarios />} />
-                    <Route path="regras" element={<Regras />} />
-                    <Route path="impacto-reforma" element={<ImpactoReforma />} />
-                    <Route path="relatorios" element={<Relatorios />} />
-                    <Route path="fornecedores-contratos" element={<FornecedoresContratos />} />
-                    <Route path="unidades-conversoes" element={<UnidadesConversoes />} />
-                  </Route>
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
-        </GlossaryProvider>
+                    {/* Protected routes */}
+                    <Route path="/" element={
+                      <ProtectedRoute>
+                        <Layout />
+                      </ProtectedRoute>
+                    }>
+                      <Route index element={<Index />} />
+                      <Route path="meus-dados" element={<MeusDados />} />
+                      <Route path="cotacao" element={<Cotacao />} />
+                      <Route path="analise" element={<Analise />} />
+                      <Route path="config" element={<Config />} />
+                      
+                      {/* Admin only route */}
+                      <Route path="admin" element={
+                        <AdminRoute>
+                          <AdminPanel />
+                        </AdminRoute>
+                      } />
+
+                      {/* Legacy routes */}
+                      <Route path="catalogo" element={<Catalogo />} />
+                      <Route path="cadastros" element={<Cadastros />} />
+                      <Route path="cenarios" element={<Cenarios />} />
+                      <Route path="regras" element={<Regras />} />
+                      <Route path="impacto-reforma" element={<ImpactoReforma />} />
+                      <Route path="relatorios" element={<Relatorios />} />
+                      <Route path="fornecedores-contratos" element={<FornecedoresContratos />} />
+                      <Route path="unidades-conversoes" element={<UnidadesConversoes />} />
+                    </Route>
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
+          </GlossaryProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </ErrorBoundary>
