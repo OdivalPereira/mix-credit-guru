@@ -22,6 +22,7 @@ const Analise = lazy(() => import("./pages/Analise"));
 const Config = lazy(() => import("./pages/Config"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Auth = lazy(() => import("./pages/Auth"));
+const Perfil = lazy(() => import("./pages/Perfil"));
 
 // Legacy pages (manter temporariamente para compatibilidade)
 const Catalogo = lazy(() => import("./pages/Catalogo"));
@@ -74,6 +75,7 @@ const App = () => (
                       <Route path="cotacao" element={<Cotacao />} />
                       <Route path="analise" element={<Analise />} />
                       <Route path="config" element={<Config />} />
+                      <Route path="perfil" element={<Perfil />} />
                       
                       {/* Admin only route */}
                       <Route path="admin" element={
