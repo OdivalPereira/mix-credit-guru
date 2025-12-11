@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import DonationModal from "./components/DonationModal";
@@ -71,7 +71,7 @@ const App = () => (
                       </ProtectedRoute>
                     }>
                       <Route index element={<Index />} />
-                      <Route path="meus-dados" element={<MeusDados />} />
+                      <Route path="meus-dados" element={<Navigate to="/cadastros" replace />} />
                       <Route path="cotacao" element={<Cotacao />} />
                       <Route path="analise" element={<Analise />} />
                       <Route path="config" element={<Config />} />

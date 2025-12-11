@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Calculator, ArrowRight, TrendingUp, DollarSign, Package, Award, History, PlayCircle } from "lucide-react";
+import { Calculator, ArrowRight, TrendingUp, DollarSign, Package, Award, PlayCircle } from "lucide-react";
 import { WelcomeTour } from "@/components/WelcomeTour";
 import { ProgressCard } from "@/components/dashboard/ProgressCard";
-// import { QuickActions } from "@/components/dashboard/QuickActions";
 import { KPICard } from "@/components/dashboard/KPICard";
+import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
+import { EmptyDashboardState } from "@/components/dashboard/EmptyDashboardState";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
@@ -23,6 +24,9 @@ export default function Index() {
   const totalFornecedores = fornecedores.length;
   const totalContratos = contratos.length;
   const totalCotacoes = resultadoItens.length;
+
+  // Check if user has any data
+  const hasData = totalProdutos > 0 || totalFornecedores > 0 || totalContratos > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-card/50">
@@ -108,52 +112,15 @@ export default function Index() {
           </Link>
         </div>
 
-        {/* Progress Card */}
-        <ProgressCard />
+        {/* Onboarding Checklist - shows until all steps complete */}
+        <OnboardingChecklist />
 
-        {/* Recent Activity (Replaces Quick Actions) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Atividade Recente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Placeholder for recent activity */}
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <Calculator className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Cotação #1023 - Arroz e Feijão</p>
-                    <p className="text-xs text-muted-foreground">Calculado há 2 horas • SP para RJ</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/cotacao">Ver Detalhes</Link>
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-success/10 rounded-full">
-                    <Package className="h-4 w-4 text-success" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Novo Produto Cadastrado</p>
-                    <p className="text-xs text-muted-foreground">Óleo de Soja • NCM 1507.90.11</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/cadastros">Editar</Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Show empty state or progress card based on data */}
+        {!hasData ? (
+          <EmptyDashboardState />
+        ) : (
+          <ProgressCard />
+        )}
 
         {/* Info Card - Reforma Tributária */}
         <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm">
