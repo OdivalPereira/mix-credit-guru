@@ -32,7 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navigation = [
   { name: "Início", href: "/", icon: Home },
-  { name: "Meus Dados", href: "/meus-dados", icon: FolderOpen },
+  { name: "Cadastros", href: "/cadastros", icon: FolderOpen },
   { name: "Cotação", href: "/cotacao", icon: Calculator },
   { name: "Análise", href: "/analise", icon: BarChart3 },
   { name: "Configurações", href: "/config", icon: Settings },
