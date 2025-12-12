@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Calculator, ArrowRight, TrendingUp, DollarSign, Package, Award, PlayCircle } from "lucide-react";
-import { WelcomeTour } from "@/components/WelcomeTour";
+import { useInteractiveTour } from "@/components/InteractiveTour";
 import { ProgressCard } from "@/components/dashboard/ProgressCard";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
@@ -13,7 +12,7 @@ import { useContractsStore } from "@/store/useContractsStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 
 export default function Index() {
-  const [tourOpen, setTourOpen] = useState(false);
+  const { startTour } = useInteractiveTour({ autoStart: true });
   const produtos = useCatalogoStore((state) => state.produtos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
   const contratos = useContractsStore((state) => state.contratos);
@@ -31,7 +30,6 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-card/50">
       <div className="space-y-8 pb-8">
-        <WelcomeTour open={tourOpen} onOpenChange={setTourOpen} />
 
         {/* Premium Hero Section */}
         <div className="relative overflow-hidden rounded-2xl border border-primary/30 backdrop-blur-sm">
@@ -52,7 +50,7 @@ export default function Index() {
               </div>
             </div>
             <div className="absolute top-8 right-8 hidden lg:block">
-              <Button variant="outline" onClick={() => setTourOpen(true)} className="gap-2 bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10">
+              <Button variant="outline" onClick={startTour} className="gap-2 bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10">
                 <PlayCircle className="w-4 h-4" />
                 Iniciar Tour
               </Button>

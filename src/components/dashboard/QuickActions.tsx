@@ -62,7 +62,7 @@ const actions = [
 
 export function QuickActions() {
   return (
-    <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm">
+    <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm" data-tour="quick-actions">
       {/* Decorative blur effect */}
       <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
       

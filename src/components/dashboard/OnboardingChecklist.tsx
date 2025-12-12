@@ -76,7 +76,7 @@ export function OnboardingChecklist() {
   if (isDismissed || allComplete) return null;
 
   return (
-    <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+    <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent" data-tour="onboarding-checklist">
       <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
       
       <button

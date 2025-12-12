@@ -71,7 +71,7 @@ export function Layout() {
       {/* Premium Header */}
       <header className="border-b border-border/50 bg-gradient-to-r from-card to-card/50 backdrop-blur-sm shadow-card">
         <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" data-tour="logo">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow shadow-glow">
               <Calculator className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -89,6 +89,7 @@ export function Layout() {
               onClick={toggleTheme}
               className="relative h-9 w-9 rounded-xl hover:bg-muted transition-all"
               aria-label="Toggle theme"
+              data-tour="theme-toggle"
             >
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -162,10 +163,15 @@ export function Layout() {
               item.href === "/"
                 ? location.pathname === item.href
                 : location.pathname.startsWith(item.href);
+            const tourId = item.href === '/cadastros' ? 'nav-cadastros' 
+              : item.href === '/cotacao' ? 'nav-cotacao'
+              : item.href === '/analise' ? 'nav-analise'
+              : undefined;
             return (
               <Link
                 key={item.href}
                 to={item.href}
+                data-tour={tourId}
                 className={cn(
                   "flex items-center rounded-xl px-4 py-2 text-sm font-medium transition-all",
                   isActive
