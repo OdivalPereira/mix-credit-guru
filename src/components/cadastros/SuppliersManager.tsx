@@ -46,6 +46,7 @@ import {
   SUPPLY_CHAIN_STAGES,
 } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
+import { useActivityLogStore } from "@/store/useActivityLogStore";
 import type { Supplier } from "@/types/domain";
 import {
   SUPPLIER_TIPO_OPTIONS,
@@ -75,6 +76,7 @@ export const SuppliersManager = () => {
     exportarJSON,
   } = useCotacaoStore();
   const produtos = useCatalogoStore((state) => state.produtos);
+  const logActivity = useActivityLogStore((state) => state.logActivity);
 
   const filteredSuppliers = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();
@@ -185,6 +187,22 @@ export const SuppliersManager = () => {
     const novo = createEmptySupplier();
     upsertFornecedor(novo);
     setExpandedCards((prev) => ({ ...prev, [novo.id]: true }));
+    logActivity({
+      activity_type: 'fornecedor_criado',
+      entity_type: 'fornecedor',
+      entity_id: novo.id,
+      entity_name: 'Novo fornecedor',
+    });
+  };
+
+  const handleDeleteSupplier = (supplier: Supplier) => {
+    removeFornecedor(supplier.id);
+    logActivity({
+      activity_type: 'fornecedor_excluido',
+      entity_type: 'fornecedor',
+      entity_id: supplier.id,
+      entity_name: supplier.nome || 'Fornecedor sem nome',
+    });
   };
 
   const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -609,7 +627,7 @@ export const SuppliersManager = () => {
                     <Button variant="outline" size="sm" onClick={() => handleDuplicate(supplier)}>
                       Duplicar
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => removeFornecedor(supplier.id)}>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteSupplier(supplier)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Remover
                     </Button>
