@@ -30,7 +30,6 @@ export function WizardStepVerification({
 }: WizardStepVerificationProps) {
   const navigate = useNavigate();
   const produtos = useCatalogoStore((state) => state.produtos);
-  const contratos = useContractsStore((state) => state.contratos);
   const conversoes = useUnidadesStore((state) => state.conversoes);
   const fornecedoresCotacao = useCotacaoStore((state) => state.fornecedores);
 
@@ -51,6 +50,10 @@ export function WizardStepVerification({
     },
     enabled: !!supabase,
   });
+
+  const fornecedoresComCondicoes = fornecedoresGlobais.filter(
+    (f: any) => (f.price_breaks && f.price_breaks.length > 0) || (f.freight_breaks && f.freight_breaks.length > 0)
+  ).length;
 
   const checks = useMemo(
     () => [
@@ -73,13 +76,13 @@ export function WizardStepVerification({
         action: () => navigate("/meus-dados?tab=fornecedores"),
       },
       {
-        id: "contratos",
-        label: "Contratos ativos",
-        description: "Contratos com preços e condições comerciais",
-        count: contratos.length,
+        id: "condicoes",
+        label: "Condições comerciais",
+        description: "Fornecedores com preços escalonados ou frete configurado",
+        count: fornecedoresComCondicoes,
         required: false,
         icon: FileText,
-        action: () => navigate("/meus-dados?tab=contratos"),
+        action: () => navigate("/meus-dados?tab=fornecedores"),
       },
       {
         id: "conversoes",
@@ -91,7 +94,7 @@ export function WizardStepVerification({
         action: () => navigate("/meus-dados?tab=unidades"),
       },
     ],
-    [produtos, fornecedoresGlobais, contratos, conversoes, navigate]
+    [produtos, fornecedoresGlobais, fornecedoresComCondicoes, conversoes, navigate]
   );
 
   const requiredChecks = checks.filter((c) => c.required);

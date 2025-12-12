@@ -53,7 +53,6 @@ export default function Cenarios() {
 
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
   const contexto = useCotacaoStore((state) => state.contexto);
-  const contratos = useContractsStore((state) => state.contratos);
   const conversoes = useUnidadesStore((state) => state.conversoes);
   const yields = useUnidadesStore((state) => state.yields);
 
@@ -100,7 +99,6 @@ export default function Cenarios() {
     baseOption.scenarioKey,
     fornecedores,
     contexto,
-    contratos,
     conversoes,
     yields,
     hasDados,
@@ -115,7 +113,6 @@ export default function Cenarios() {
     compareOption.scenarioKey,
     fornecedores,
     contexto,
-    contratos,
     conversoes,
     yields,
     hasDados,

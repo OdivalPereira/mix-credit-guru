@@ -98,7 +98,7 @@ export default function Cotacao() {
     const validation = validateEssentialData({
       hasProdutos: produtosCatalogo.length > 0,
       hasFornecedores: fornecedores.length > 0,
-      hasContratos: contratos.length > 0,
+      hasContratos: fornecedores.some(f => f.priceBreaks && f.priceBreaks.length > 0),
       contextoUf: contexto.uf,
       contextoRegime: contexto.regime,
     });
@@ -112,7 +112,7 @@ export default function Cotacao() {
         });
       });
     }
-  }, [produtosCatalogo.length, fornecedores.length, contratos.length, contexto.uf, contexto.regime]);
+  }, [produtosCatalogo.length, fornecedores.length, contexto.uf, contexto.regime]);
 
   // Apply default config values on mount
   useEffect(() => {
@@ -130,7 +130,7 @@ export default function Cotacao() {
     if (config.autoCalculate) {
       calcular();
     }
-  }, [contexto, fornecedores, contratos, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate]);
+  }, [contexto, fornecedores, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate]);
 
   // Worker cleanup removed
 
@@ -616,7 +616,6 @@ export default function Cotacao() {
             fornecedoresOriginais={fornecedores}
             produtos={produtosCatalogo}
             contextProductKey={contexto.produto}
-            findContract={findContract}
             formatCurrency={formatCurrency}
             onAddSupplier={handleAddSupplier}
             onDuplicate={handleDuplicate}
