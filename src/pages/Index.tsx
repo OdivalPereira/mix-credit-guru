@@ -63,7 +63,7 @@ export default function Index() {
         </div>
 
         {/* KPI Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-tour="kpi-cards">
           <Link to="/cadastros">
             <KPICard
               title="Total de Produtos"
@@ -121,7 +121,7 @@ export default function Index() {
         )}
 
         {/* Info Card - Reforma Tributária */}
-        <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm">
+        <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm" data-tour="info-card">
           <div className="absolute -bottom-24 right-0 w-64 h-64 bg-success/10 rounded-full blur-3xl" />
 
           <CardHeader className="relative">

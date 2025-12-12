@@ -16,6 +16,15 @@ const tourSteps: DriveStep[] = [
     },
   },
   {
+    element: '[data-tour="kpi-cards"]',
+    popover: {
+      title: '📊 Indicadores Rápidos (KPIs)',
+      description: 'Visualize rapidamente seus dados: produtos cadastrados, fornecedores ativos, contratos e cotações realizadas. Clique em qualquer card para ir à página correspondente.',
+      side: 'bottom',
+      align: 'center',
+    },
+  },
+  {
     element: '[data-tour="nav-cadastros"]',
     popover: {
       title: '📋 1. Cadastre seus dados',
@@ -58,6 +67,24 @@ const tourSteps: DriveStep[] = [
       description: 'Acompanhe seu progresso inicial. Complete todas as tarefas para aproveitar ao máximo a plataforma!',
       side: 'left',
       align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="progress-card"]',
+    popover: {
+      title: '📈 Progresso de Configuração',
+      description: 'Veja quantos produtos, fornecedores e contratos você já cadastrou. Complete os mínimos recomendados para usar todo o potencial do sistema.',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="info-card"]',
+    popover: {
+      title: '💡 Saiba Mais',
+      description: 'Entenda como a Reforma Tributária impacta seus créditos fiscais e como o sistema pode ajudá-lo a economizar.',
+      side: 'top',
+      align: 'center',
     },
   },
   {
