@@ -52,7 +52,6 @@ import {
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { useAppStore } from "@/store/useAppStore";
-import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { analisarImpactoProduto, calcularTotais, type ProdutoAnalise } from "@/lib/impacto";
 import { scenarioTimeline } from "@/data/scenarios";

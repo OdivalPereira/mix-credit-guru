@@ -43,7 +43,6 @@ import { PageHeader } from "@/components/shared/PageHeader";
 
 import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
-import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { useConfigStore } from "@/store/useConfigStore";
 import { useActivityLogStore } from "@/store/useActivityLogStore";
@@ -86,10 +85,6 @@ export default function Cotacao() {
     calcular,
     registrarOtimizacao,
   } = useCotacaoStore();
-  const { contratos, findContract } = useContractsStore((state) => ({
-    contratos: state.contratos,
-    findContract: state.findContract,
-  }));
   const conversoesGlobais = useUnidadesStore((state) => state.conversoes);
   const yieldGlobais = useUnidadesStore((state) => state.yields);
   const produtosCatalogo = useCatalogoStore((state) => state.produtos);

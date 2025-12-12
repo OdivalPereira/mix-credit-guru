@@ -16,7 +16,6 @@ import { SectionAlert } from "@/components/shared/SectionAlert";
 import { CompletionBadge } from "@/components/shared/CompletionBadge";
 import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
-import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { supabase } from "@/integrations/supabase/client";

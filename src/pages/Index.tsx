@@ -9,24 +9,25 @@ import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist"
 import { EmptyDashboardState } from "@/components/dashboard/EmptyDashboardState";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
-import { useContractsStore } from "@/store/useContractsStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 
 export default function Index() {
   const { startTour } = useInteractiveTour({ autoStart: true });
   const produtos = useCatalogoStore((state) => state.produtos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
-  const contratos = useContractsStore((state) => state.contratos);
   const resultadoItens = useCotacaoStore((state) => state.resultado.itens);
 
   // Calculate some basic KPIs
   const totalProdutos = produtos.length;
   const totalFornecedores = fornecedores.length;
-  const totalContratos = contratos.length;
+  // Contagem de fornecedores com condições comerciais configuradas
+  const fornecedoresComCondicoes = fornecedores.filter(
+    (f) => (f.priceBreaks && f.priceBreaks.length > 0) || (f.freightBreaks && f.freightBreaks.length > 0)
+  ).length;
   const totalCotacoes = resultadoItens.length;
 
   // Check if user has any data
-  const hasData = totalProdutos > 0 || totalFornecedores > 0 || totalContratos > 0;
+  const hasData = totalProdutos > 0 || totalFornecedores > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-card/50">
@@ -89,10 +90,10 @@ export default function Index() {
           </Link>
           <Link to="/fornecedores-contratos">
             <KPICard
-              title="Contratos"
-              value={totalContratos.toString()}
-              change={totalContratos > 0 ? "+15%" : "0%"}
-              changeType={totalContratos > 0 ? "positive" : "neutral"}
+              title="Com Condições"
+              value={fornecedoresComCondicoes.toString()}
+              change={fornecedoresComCondicoes > 0 ? "+15%" : "0%"}
+              changeType={fornecedoresComCondicoes > 0 ? "positive" : "neutral"}
               icon={Award}
               gradient="bg-gradient-to-br from-warning/20 to-warning/5"
               iconColor="hsl(var(--warning))"

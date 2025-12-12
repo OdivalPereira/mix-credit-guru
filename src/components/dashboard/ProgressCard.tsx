@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
-import { useContractsStore } from "@/store/useContractsStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { ProgressRing } from "./ProgressRing";
 import { CheckCircle2, Circle, Package, Users, FileText } from "lucide-react";
@@ -9,7 +8,11 @@ import { cn } from "@/lib/utils";
 export function ProgressCard() {
   const produtos = useCatalogoStore((state) => state.produtos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
-  const contratos = useContractsStore((state) => state.contratos);
+
+  // Conta fornecedores com condições comerciais configuradas
+  const fornecedoresComCondicoes = fornecedores.filter(
+    (f) => (f.priceBreaks && f.priceBreaks.length > 0) || (f.freightBreaks && f.freightBreaks.length > 0)
+  ).length;
 
   const steps = [
     { 
@@ -27,9 +30,9 @@ export function ProgressCard() {
       color: "hsl(var(--chart-2))"
     },
     { 
-      label: "Contratos configurados", 
-      current: contratos.length, 
-      minimum: 3,
+      label: "Condições comerciais", 
+      current: fornecedoresComCondicoes, 
+      minimum: 1,
       icon: FileText,
       color: "hsl(var(--chart-3))"
     },

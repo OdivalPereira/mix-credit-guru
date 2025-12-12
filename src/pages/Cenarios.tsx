@@ -22,7 +22,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { scenarioTimeline } from "@/data/scenarios";
 import { useAppStore } from "@/store/useAppStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
-import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { NextStepButton } from "@/components/quote/NextStepButton";
 import type { MixResultadoItem, Scenario } from "@/types/domain";
