@@ -45,7 +45,7 @@ const quickStartActions: QuickStartAction[] = [
 
 export function EmptyDashboardState() {
   return (
-    <Card className="relative overflow-hidden border-dashed border-2 border-muted-foreground/20">
+    <Card className="relative overflow-hidden border-dashed border-2 border-muted-foreground/20" data-tour="empty-state">
       <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
 

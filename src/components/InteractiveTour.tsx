@@ -79,6 +79,24 @@ const tourSteps: DriveStep[] = [
     },
   },
   {
+    element: '[data-tour="empty-state"]',
+    popover: {
+      title: '🚀 Comece Aqui!',
+      description: 'Ainda não tem dados? Use o botão "Carregar Dados Demo" para explorar o sistema ou cadastre seus próprios produtos e fornecedores.',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="info-card"]',
+    popover: {
+      title: '💡 Saiba Mais',
+      description: 'Entenda como a Reforma Tributária impacta seus créditos fiscais e como o sistema pode ajudá-lo a economizar.',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
     element: '[data-tour="info-card"]',
     popover: {
       title: '💡 Saiba Mais',
