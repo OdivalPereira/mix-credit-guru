@@ -13,9 +13,8 @@ import { rankSuppliers } from "@/lib/calcs";
 import { useAppStore } from "./useAppStore";
 import type { OptimizePerItemResult } from "@/lib/opt";
 import { generateId } from "@/lib/utils";
-import { resolveUnitPrice } from "@/lib/contracts";
+import { resolveSupplierPrice } from "@/lib/contracts";
 import { normalizeOffer } from "@/lib/units";
-import { useContractsStore } from "./useContractsStore";
 import { useUnidadesStore } from "./useUnidadesStore";
 import { TaxApiClient } from "@/services/TaxApiClient";
 
@@ -130,45 +129,39 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
     return { itens: [] };
   }
 
-  const contractsState = useContractsStore.getState();
   const unidadesState = useUnidadesStore.getState();
 
-  const produtoChave = contexto.produto?.toLowerCase() ?? "";
   const ajustes = new Map<
     string,
     { preco: number; frete: number; custoNormalizado?: number }
   >();
 
   for (const fornecedor of ativos) {
-    const contrato = contractsState.findContract(fornecedor.id, produtoChave);
-    let preco = fornecedor.preco;
-    let frete = fornecedor.frete;
+    // Usar condições comerciais diretamente do fornecedor
+    const { preco, frete } = resolveSupplierPrice(1, fornecedor);
     let custoNormalizado: number | undefined;
 
-    if (contrato) {
-      const { preco: precoContrato, frete: freteContrato } = resolveUnitPrice(1, contrato);
-      preco = precoContrato;
-      frete = freteContrato;
+    const hasPriceBreaks = fornecedor.priceBreaks && fornecedor.priceBreaks.length > 0;
+    const hasYield = fornecedor.yield;
+    const hasConversoes = fornecedor.conversoes && fornecedor.conversoes.length > 0;
 
+    if (hasPriceBreaks || hasYield || hasConversoes) {
       const conversoesCombinadas = [
         ...unidadesState.conversoes,
-        ...(contrato.conversoes ?? []),
+        ...(fornecedor.conversoes ?? []),
       ];
-      const produtoYield =
-        contrato.produtoId?.trim() ||
-        fornecedor.produtoId?.trim() ||
-        undefined;
-      const yieldConfig =
-        contrato.yield ??
-        unidadesState.findYield(produtoYield, contrato.unidade);
+      
+      const unidadeFornecedor = fornecedor.unidadeNegociada ?? 'un';
+      const yieldConfig = fornecedor.yield ??
+        unidadesState.findYield(fornecedor.produtoId, unidadeFornecedor);
 
-      if (precoContrato > 0) {
+      if (preco > 0) {
         try {
           const normalizado = normalizeOffer(
-            precoContrato,
+            preco,
             [1],
-            contrato.unidade,
-            yieldConfig?.saida ?? contrato.unidade,
+            unidadeFornecedor,
+            yieldConfig?.saida ?? unidadeFornecedor,
             conversoesCombinadas,
             yieldConfig,
           );

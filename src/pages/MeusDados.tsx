@@ -12,12 +12,10 @@ import { GlossaryTerm, glossaryTerms } from "@/components/shared/GlossaryTerm";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import SuppliersManager from "@/components/cadastros/SuppliersManager";
-import ContractsManager from "@/components/cadastros/ContractsManager";
 import Catalogo from "./Catalogo";
 import UnidadesConversoes from "./UnidadesConversoes";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
-import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { MeusDadosProvider } from "@/contexts/MeusDadosContext";
 import { SmartSetupWizard } from "@/components/onboarding/SmartSetupWizard";
@@ -36,9 +34,13 @@ function MeusDadosContent() {
 
   const produtos = useCatalogoStore((state) => state.produtos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
-  const contratos = useContractsStore((state) => state.contratos);
   const conversoes = useUnidadesStore((state) => state.conversoes);
   const yields = useUnidadesStore((state) => state.yields);
+
+  // Conta fornecedores com condições comerciais
+  const fornecedoresComCondicoes = fornecedores.filter(
+    (f) => (f.priceBreaks && f.priceBreaks.length > 0) || (f.freightBreaks && f.freightBreaks.length > 0)
+  ).length;
 
   const produtosAtivos = useMemo(() => produtos.filter((p) => p.ativo !== false).length, [produtos]);
   const fornecedoresAtivos = useMemo(() => fornecedores.filter((f) => f.ativo !== false).length, [fornecedores]);
@@ -50,11 +52,11 @@ function MeusDadosContent() {
 
     if (produtos.length > 0) score += 1;
     if (fornecedores.length >= 2) score += 1;
-    if (contratos.length > 0) score += 1;
+    if (fornecedoresComCondicoes > 0) score += 1;
     if (conversoes.length >= 2) score += 1;
 
     return { score, maxScore, percentage: (score / maxScore) * 100 };
-  }, [produtos, fornecedores, contratos, conversoes]);
+  }, [produtos, fornecedores, fornecedoresComCondicoes, conversoes]);
 
   const stats = [
     {
@@ -76,12 +78,12 @@ function MeusDadosContent() {
       tab: "fornecedores"
     },
     {
-      label: "Contratos",
-      value: contratos.length,
+      label: "Condições",
+      value: fornecedoresComCondicoes,
       icon: FileText,
       color: "text-warning",
-      hasData: contratos.length > 0,
-      tab: "contratos"
+      hasData: fornecedoresComCondicoes > 0,
+      tab: "fornecedores"
     },
     {
       label: "Unidades",

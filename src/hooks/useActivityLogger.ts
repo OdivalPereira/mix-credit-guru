@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
 import { useCatalogoStore } from '@/store/useCatalogoStore';
 import { useCotacaoStore, Contexto } from '@/store/useCotacaoStore';
-import { useContractsStore } from '@/store/useContractsStore';
 import { useActivityLogStore, ActivityType } from '@/store/useActivityLogStore';
-import type { Produto, Supplier, ContractFornecedor } from '@/types/domain';
+import type { Produto, Supplier } from '@/types/domain';
 
 /**
  * Hook that wraps CRUD operations with activity logging
@@ -26,10 +25,6 @@ export function useActivityLogger() {
   const limpar = useCotacaoStore((state) => state.limpar);
   const importarCSV = useCotacaoStore((state) => state.importarCSV);
   const importarJSON = useCotacaoStore((state) => state.importarJSON);
-  
-  // Contract operations
-  const updateContracts = useContractsStore((state) => state.updateContracts);
-  const contratos = useContractsStore((state) => state.contratos);
 
   // Wrapped Produto operations
   const loggedAddProduto = useCallback((produto: Produto) => {
@@ -91,44 +86,6 @@ export function useActivityLogger() {
     });
   }, [removeFornecedor, logActivity]);
 
-  // Wrapped Contract operations
-  const loggedAddContract = useCallback((contract: ContractFornecedor) => {
-    updateContracts((prev) => [...prev, contract]);
-    logActivity({
-      activity_type: 'contrato_criado',
-      entity_type: 'contrato',
-      entity_id: contract.id,
-      entity_name: contract.produtoId || 'Novo contrato',
-      metadata: {
-        supplierId: contract.supplierId,
-        unidade: contract.unidade,
-        precoBase: contract.precoBase,
-      },
-    });
-  }, [updateContracts, logActivity]);
-
-  const loggedUpdateContract = useCallback((id: string, updates: Partial<ContractFornecedor>) => {
-    updateContracts((prev) => 
-      prev.map((c) => c.id === id ? { ...c, ...updates } : c)
-    );
-    logActivity({
-      activity_type: 'contrato_atualizado',
-      entity_type: 'contrato',
-      entity_id: id,
-      entity_name: updates.produtoId,
-    });
-  }, [updateContracts, logActivity]);
-
-  const loggedRemoveContract = useCallback((id: string, name?: string) => {
-    updateContracts((prev) => prev.filter((c) => c.id !== id));
-    logActivity({
-      activity_type: 'contrato_excluido',
-      entity_type: 'contrato',
-      entity_id: id,
-      entity_name: name,
-    });
-  }, [updateContracts, logActivity]);
-
   // Wrapped Cotação operations
   const loggedSetContexto = useCallback((ctx: Partial<Contexto>, cotacaoName?: string) => {
     setContexto(ctx);
@@ -182,11 +139,6 @@ export function useActivityLogger() {
     // Fornecedores
     upsertFornecedor: loggedUpsertFornecedor,
     removeFornecedor: loggedRemoveFornecedor,
-    
-    // Contratos
-    addContract: loggedAddContract,
-    updateContract: loggedUpdateContract,
-    removeContract: loggedRemoveContract,
     
     // Cotações
     setContexto: loggedSetContexto,

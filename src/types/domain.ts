@@ -73,6 +73,11 @@ export interface Supplier {
   flagsItem?: FlagsItem;
   isRefeicaoPronta?: boolean;
   explanation?: string;
+  // Condições comerciais opcionais (anteriormente em Contratos)
+  priceBreaks?: PriceBreak[];
+  freightBreaks?: FreightBreak[];
+  yield?: YieldConfig;
+  conversoes?: UnitConv[];
 }
 
 export interface AliquotasConfig {

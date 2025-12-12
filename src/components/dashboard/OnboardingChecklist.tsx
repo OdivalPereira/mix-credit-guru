@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
-import { useContractsStore } from "@/store/useContractsStore";
 
 interface ChecklistItem {
   id: string;
@@ -23,8 +22,12 @@ export function OnboardingChecklist() {
   const [isDismissed, setIsDismissed] = useState(false);
   const produtos = useCatalogoStore((state) => state.produtos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
-  const contratos = useContractsStore((state) => state.contratos);
   const resultadoItens = useCotacaoStore((state) => state.resultado.itens);
+
+  // Conta fornecedores com condições comerciais configuradas
+  const fornecedoresComCondicoes = fornecedores.filter(
+    (f) => (f.priceBreaks && f.priceBreaks.length > 0) || (f.freightBreaks && f.freightBreaks.length > 0)
+  ).length;
 
   useEffect(() => {
     const dismissed = localStorage.getItem(CHECKLIST_DISMISSED_KEY);
@@ -49,11 +52,11 @@ export function OnboardingChecklist() {
       isComplete: () => fornecedores.length > 0,
     },
     {
-      id: "contratos",
-      title: "Configurar contratos",
-      description: "Defina preços e condições comerciais",
+      id: "condicoes",
+      title: "Configurar condições comerciais",
+      description: "Defina preços escalonados e condições de frete (opcional)",
       route: "/fornecedores-contratos",
-      isComplete: () => contratos.length > 0,
+      isComplete: () => fornecedoresComCondicoes > 0,
     },
     {
       id: "cotacao",

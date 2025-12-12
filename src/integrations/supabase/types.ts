@@ -203,15 +203,19 @@ export type Database = {
           contato_email: string | null
           contato_nome: string | null
           contato_telefone: string | null
+          conversoes: Json | null
           created_at: string
+          freight_breaks: Json | null
           id: string
           municipio: string | null
           nome: string
+          price_breaks: Json | null
           regime: Database["public"]["Enums"]["supplier_regime"]
           tipo: Database["public"]["Enums"]["supplier_tipo"]
           uf: string
           updated_at: string
           user_id: string
+          yield_config: Json | null
         }
         Insert: {
           ativo?: boolean
@@ -219,15 +223,19 @@ export type Database = {
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
+          conversoes?: Json | null
           created_at?: string
+          freight_breaks?: Json | null
           id?: string
           municipio?: string | null
           nome: string
+          price_breaks?: Json | null
           regime: Database["public"]["Enums"]["supplier_regime"]
           tipo: Database["public"]["Enums"]["supplier_tipo"]
           uf: string
           updated_at?: string
           user_id: string
+          yield_config?: Json | null
         }
         Update: {
           ativo?: boolean
@@ -235,15 +243,19 @@ export type Database = {
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
+          conversoes?: Json | null
           created_at?: string
+          freight_breaks?: Json | null
           id?: string
           municipio?: string | null
           nome?: string
+          price_breaks?: Json | null
           regime?: Database["public"]["Enums"]["supplier_regime"]
           tipo?: Database["public"]["Enums"]["supplier_tipo"]
           uf?: string
           updated_at?: string
           user_id?: string
+          yield_config?: Json | null
         }
         Relationships: []
       }
