@@ -46,6 +46,7 @@ import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useUnidadesStore } from "@/store/useUnidadesStore";
 import { useConfigStore } from "@/store/useConfigStore";
+import { useActivityLogStore } from "@/store/useActivityLogStore";
 import { validateEssentialData } from "@/lib/validation";
 import { NextStepButton } from "@/components/quote/NextStepButton";
 import type { MixResultadoItem, Supplier } from "@/types/domain";
@@ -93,6 +94,7 @@ export default function Cotacao() {
   const yieldGlobais = useUnidadesStore((state) => state.yields);
   const produtosCatalogo = useCatalogoStore((state) => state.produtos);
   const config = useConfigStore();
+  const logActivity = useActivityLogStore((state) => state.logActivity);
 
   const resultados = useMemo(() => resultado.itens, [resultado.itens]);
 
@@ -178,25 +180,39 @@ export default function Cotacao() {
   const handleAddSupplier = useCallback(() => {
     const supplier = createEmptySupplier(contexto);
     upsertFornecedor(supplier);
+    logActivity({
+      activity_type: 'fornecedor_criado',
+      entity_type: 'fornecedor',
+      entity_id: supplier.id,
+      entity_name: 'Novo fornecedor',
+      metadata: { source: 'cotacao' },
+    });
     toast({
       title: "Fornecedor adicionado",
       description: "Preencha os dados do novo fornecedor para incluí-lo na cotação",
     });
-  }, [contexto, upsertFornecedor]);
+  }, [contexto, upsertFornecedor, logActivity]);
 
   const handleImportCSV = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
       const text = await file.text();
+      const count = text.split('\n').length - 1;
       importarCSV(text);
       event.target.value = "";
+      logActivity({
+        activity_type: 'cotacao_criada',
+        entity_type: 'cotacao',
+        entity_name: file.name,
+        metadata: { source: 'csv', count },
+      });
       toast({
         title: "Fornecedores importados com sucesso",
-        description: `${text.split('\n').length - 1} fornecedores foram adicionados à cotação`,
+        description: `${count} fornecedores foram adicionados à cotação`,
       });
     },
-    [importarCSV],
+    [importarCSV, logActivity],
   );
 
   const handleImportJSON = useCallback(
@@ -206,12 +222,18 @@ export default function Cotacao() {
       const text = await file.text();
       importarJSON(text);
       event.target.value = "";
+      logActivity({
+        activity_type: 'cotacao_criada',
+        entity_type: 'cotacao',
+        entity_name: file.name,
+        metadata: { source: 'json' },
+      });
       toast({
         title: "Cotação importada com sucesso",
         description: "Todos os dados da cotação foram restaurados",
       });
     },
-    [importarJSON],
+    [importarJSON, logActivity],
   );
 
   const handleExportCSV = useCallback(() => {
@@ -304,6 +326,16 @@ export default function Cotacao() {
               : " Nenhum alerta encontrado.";
           const summary = `Custo total ${total}.${alerts}`;
           setOptStatusMessage(`Otimização concluída. ${summary}`);
+          logActivity({
+            activity_type: 'cotacao_atualizada',
+            entity_type: 'cotacao',
+            entity_name: contexto.produto || 'Cotação',
+            metadata: { 
+              action: 'otimizacao',
+              cost: result.cost,
+              fornecedores: fornecedores.length,
+            },
+          });
           toast({
             title: "Otimização concluída com sucesso",
             description: summary,
@@ -323,7 +355,7 @@ export default function Cotacao() {
           description: error.message || "Não foi possível concluir a otimização.",
         });
       });
-  }, [fornecedores, formatCurrency, registrarOtimizacao, contexto.uf, contexto.regime, produtosCatalogo.length]);
+  }, [fornecedores, formatCurrency, registrarOtimizacao, contexto.uf, contexto.regime, contexto.produto, produtosCatalogo.length, logActivity]);
 
   const getCreditBadge = useCallback(
     (creditavel: boolean, credito: number) => {

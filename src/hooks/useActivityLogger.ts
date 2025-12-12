@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useCatalogoStore } from '@/store/useCatalogoStore';
-import { useCotacaoStore } from '@/store/useCotacaoStore';
+import { useCotacaoStore, Contexto } from '@/store/useCotacaoStore';
 import { useContractsStore } from '@/store/useContractsStore';
 import { useActivityLogStore, ActivityType } from '@/store/useActivityLogStore';
 import type { Produto, Supplier, ContractFornecedor } from '@/types/domain';
@@ -20,6 +20,12 @@ export function useActivityLogger() {
   const upsertFornecedor = useCotacaoStore((state) => state.upsertFornecedor);
   const removeFornecedor = useCotacaoStore((state) => state.removeFornecedor);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
+  
+  // Cotação operations
+  const setContexto = useCotacaoStore((state) => state.setContexto);
+  const limpar = useCotacaoStore((state) => state.limpar);
+  const importarCSV = useCotacaoStore((state) => state.importarCSV);
+  const importarJSON = useCotacaoStore((state) => state.importarJSON);
   
   // Contract operations
   const updateContracts = useContractsStore((state) => state.updateContracts);
@@ -123,6 +129,50 @@ export function useActivityLogger() {
     });
   }, [updateContracts, logActivity]);
 
+  // Wrapped Cotação operations
+  const loggedSetContexto = useCallback((ctx: Partial<Contexto>, cotacaoName?: string) => {
+    setContexto(ctx);
+    logActivity({
+      activity_type: 'cotacao_atualizada',
+      entity_type: 'cotacao',
+      entity_name: cotacaoName || ctx.produto || 'Cotação',
+      metadata: {
+        uf: ctx.uf,
+        destino: ctx.destino,
+        regime: ctx.regime,
+      },
+    });
+  }, [setContexto, logActivity]);
+
+  const loggedLimparCotacao = useCallback((cotacaoName?: string) => {
+    limpar();
+    logActivity({
+      activity_type: 'cotacao_excluida',
+      entity_type: 'cotacao',
+      entity_name: cotacaoName || 'Cotação',
+    });
+  }, [limpar, logActivity]);
+
+  const loggedImportarCSV = useCallback((csv: string, fileName?: string) => {
+    importarCSV(csv);
+    logActivity({
+      activity_type: 'cotacao_criada',
+      entity_type: 'cotacao',
+      entity_name: fileName || 'Importação CSV',
+      metadata: { source: 'csv' },
+    });
+  }, [importarCSV, logActivity]);
+
+  const loggedImportarJSON = useCallback((json: string, fileName?: string) => {
+    importarJSON(json);
+    logActivity({
+      activity_type: 'cotacao_criada',
+      entity_type: 'cotacao',
+      entity_name: fileName || 'Importação JSON',
+      metadata: { source: 'json' },
+    });
+  }, [importarJSON, logActivity]);
+
   return {
     // Produtos
     addProduto: loggedAddProduto,
@@ -137,6 +187,12 @@ export function useActivityLogger() {
     addContract: loggedAddContract,
     updateContract: loggedUpdateContract,
     removeContract: loggedRemoveContract,
+    
+    // Cotações
+    setContexto: loggedSetContexto,
+    limparCotacao: loggedLimparCotacao,
+    importarCSV: loggedImportarCSV,
+    importarJSON: loggedImportarJSON,
     
     // Direct log access for custom logging
     logActivity,
