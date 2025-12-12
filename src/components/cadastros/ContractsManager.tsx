@@ -37,6 +37,7 @@ import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
 import { useContractsStore, createEmptyContract } from "@/store/useContractsStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
+import { useActivityLogStore } from "@/store/useActivityLogStore";
 import type { ContractFornecedor, FreightBreak, PriceBreak, Unit, YieldConfig } from "@/types/domain";
 
 type ContractUpdate = Partial<ContractFornecedor>;
@@ -50,6 +51,7 @@ export const ContractsManager = () => {
 
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
   const produtos = useCatalogoStore((state) => state.produtos);
+  const logActivity = useActivityLogStore((state) => state.logActivity);
 
   const fornecedoresMap = useMemo(
     () => new Map(fornecedores.map((supplier) => [supplier.id, supplier])),
@@ -195,11 +197,24 @@ export const ContractsManager = () => {
   };
 
   const addContract = () => {
-    updateContracts((prev) => [...prev, createEmptyContract()]);
+    const newContract = createEmptyContract();
+    updateContracts((prev) => [...prev, newContract]);
+    logActivity({
+      activity_type: 'contrato_criado',
+      entity_type: 'contrato',
+      entity_id: newContract.id,
+      entity_name: 'Novo contrato',
+    });
   };
 
-  const removeContract = (id: string) => {
+  const removeContract = (id: string, name?: string) => {
     updateContracts((prev) => prev.filter((contract) => contract.id !== id));
+    logActivity({
+      activity_type: 'contrato_excluido',
+      entity_type: 'contrato',
+      entity_id: id,
+      entity_name: name || 'Contrato',
+    });
   };
 
   const addPriceBreak = (id: string) => {
@@ -631,7 +646,7 @@ export const ContractsManager = () => {
                   </Card>
 
                   <div className="flex justify-end">
-                    <Button variant="destructive" onClick={() => removeContract(contract.id)}>
+                    <Button variant="destructive" onClick={() => removeContract(contract.id, title)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Excluir contrato
                     </Button>

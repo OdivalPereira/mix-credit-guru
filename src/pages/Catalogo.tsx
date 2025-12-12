@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { useActivityLogStore } from "@/store/useActivityLogStore";
 import type { Produto, ProdutoComponente, Unit } from "@/types/domain";
 import { generateId } from "@/lib/utils";
 import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
@@ -54,6 +55,7 @@ export default function Catalogo() {
     exportarCSV,
   } = useCatalogoStore();
   const setContexto = useCotacaoStore((s) => s.setContexto);
+  const logActivity = useActivityLogStore((s) => s.logActivity);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredProducts = useMemo(() => {
@@ -109,6 +111,22 @@ export default function Catalogo() {
       componentes: [],
     });
     setEditingId(id);
+    logActivity({
+      activity_type: 'produto_criado',
+      entity_type: 'produto',
+      entity_id: id,
+      entity_name: 'Novo produto',
+    });
+  };
+
+  const handleRemove = (product: Produto) => {
+    removeProduto(product.id);
+    logActivity({
+      activity_type: 'produto_excluido',
+      entity_type: 'produto',
+      entity_id: product.id,
+      entity_name: product.descricao || 'Produto sem nome',
+    });
   };
 
   const handleUsar = (product: Produto) => {
@@ -604,7 +622,7 @@ export default function Catalogo() {
                         size="sm"
                         variant="destructive"
                         className="flex-1"
-                        onClick={() => removeProduto(product.id)}
+                        onClick={() => handleRemove(product)}
                       >
                         Excluir
                       </Button>
