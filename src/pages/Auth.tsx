@@ -113,11 +113,29 @@ export default function Auth() {
     setIsLoading(false);
 
     if (error) {
-      let message = 'Erro ao criar conta';
       if (error.message.includes('already registered')) {
-        message = 'Este email já está cadastrado';
+        toast({
+          title: 'Email já cadastrado',
+          description: (
+            <div className="flex flex-col gap-2">
+              <span>Este email já possui uma conta.</span>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-sm justify-start"
+                onClick={() => {
+                  forgotPasswordForm.setValue('email', data.email);
+                  setView('forgot-password');
+                }}
+              >
+                Esqueceu sua senha? Clique aqui para recuperar
+              </Button>
+            </div>
+          ),
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: 'Erro', description: 'Erro ao criar conta', variant: 'destructive' });
       }
-      toast({ title: 'Erro', description: message, variant: 'destructive' });
     } else {
       toast({
         title: 'Conta criada!',
