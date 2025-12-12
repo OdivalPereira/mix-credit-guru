@@ -33,6 +33,7 @@ const ImpactoReforma = lazy(() => import("./pages/ImpactoReforma"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const FornecedoresContratos = lazy(() => import("./pages/FornecedoresContratos"));
 const UnidadesConversoes = lazy(() => import("./pages/UnidadesConversoes"));
+const Historico = lazy(() => import("./pages/Historico"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +94,7 @@ const App = () => (
                       <Route path="relatorios" element={<Relatorios />} />
                       <Route path="fornecedores-contratos" element={<FornecedoresContratos />} />
                       <Route path="unidades-conversoes" element={<UnidadesConversoes />} />
+                      <Route path="historico" element={<Historico />} />
                     </Route>
                   </Routes>
                 </Suspense>

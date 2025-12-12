@@ -11,6 +11,7 @@ import {
   LogOut,
   User,
   Shield,
+  History,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -35,6 +36,7 @@ const navigation = [
   { name: "Cadastros", href: "/cadastros", icon: FolderOpen },
   { name: "Cotação", href: "/cotacao", icon: Calculator },
   { name: "Análise", href: "/analise", icon: BarChart3 },
+  { name: "Histórico", href: "/historico", icon: History },
   { name: "Configurações", href: "/config", icon: Settings },
 ];
 
