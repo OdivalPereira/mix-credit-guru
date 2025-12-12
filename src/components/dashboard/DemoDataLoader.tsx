@@ -15,6 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
+import { useActivityLogStore } from "@/store/useActivityLogStore";
 import { comboXTudo, suppliers as demoSuppliers } from "@/data/combo-x-tudo";
 import { generateId } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ export function DemoDataLoader() {
   const setContexto = useCotacaoStore((state) => state.setContexto);
   const produtos = useCatalogoStore((state) => state.produtos);
   const fornecedores = useCotacaoStore((state) => state.fornecedores);
+  const logActivity = useActivityLogStore((state) => state.logActivity);
 
   // Check if demo data was already loaded or user already has data
   const hasData = produtos.length > 0 || fornecedores.length > 0;
@@ -78,6 +80,17 @@ export function DemoDataLoader() {
       });
 
       localStorage.setItem(DEMO_LOADED_KEY, "true");
+
+      // Log activity
+      logActivity({
+        activity_type: 'demo_carregado',
+        entity_type: 'demo',
+        entity_name: `${comboXTudo.length} produtos, ${demoSuppliers.length} fornecedores`,
+        metadata: {
+          produtos_count: comboXTudo.length,
+          fornecedores_count: demoSuppliers.length,
+        },
+      });
 
       toast({
         title: "Dados de demonstração carregados!",

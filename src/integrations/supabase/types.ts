@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contratos: {
         Row: {
           conversoes: Json | null
@@ -507,6 +540,27 @@ export type Database = {
       }
     }
     Enums: {
+      activity_type:
+        | "produto_criado"
+        | "produto_atualizado"
+        | "produto_excluido"
+        | "fornecedor_criado"
+        | "fornecedor_atualizado"
+        | "fornecedor_excluido"
+        | "contrato_criado"
+        | "contrato_atualizado"
+        | "contrato_excluido"
+        | "cotacao_criada"
+        | "cotacao_atualizada"
+        | "cotacao_excluida"
+        | "regra_criada"
+        | "regra_atualizada"
+        | "regra_excluida"
+        | "login"
+        | "logout"
+        | "perfil_atualizado"
+        | "demo_carregado"
+        | "configuracao_alterada"
       app_role: "admin" | "moderator" | "user"
       destinacao_tipo: "A" | "B" | "C" | "D" | "E"
       supplier_regime: "normal" | "simples" | "presumido"
@@ -644,6 +698,28 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: [
+        "produto_criado",
+        "produto_atualizado",
+        "produto_excluido",
+        "fornecedor_criado",
+        "fornecedor_atualizado",
+        "fornecedor_excluido",
+        "contrato_criado",
+        "contrato_atualizado",
+        "contrato_excluido",
+        "cotacao_criada",
+        "cotacao_atualizada",
+        "cotacao_excluida",
+        "regra_criada",
+        "regra_atualizada",
+        "regra_excluida",
+        "login",
+        "logout",
+        "perfil_atualizado",
+        "demo_carregado",
+        "configuracao_alterada",
+      ],
       app_role: ["admin", "moderator", "user"],
       destinacao_tipo: ["A", "B", "C", "D", "E"],
       supplier_regime: ["normal", "simples", "presumido"],

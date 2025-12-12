@@ -7,6 +7,7 @@ import { ProgressCard } from "@/components/dashboard/ProgressCard";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { EmptyDashboardState } from "@/components/dashboard/EmptyDashboardState";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useContractsStore } from "@/store/useContractsStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
@@ -114,11 +115,14 @@ export default function Index() {
         <OnboardingChecklist />
 
         {/* Show empty state or progress card based on data */}
-        {!hasData ? (
-          <EmptyDashboardState />
-        ) : (
-          <ProgressCard />
-        )}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {!hasData ? (
+            <EmptyDashboardState />
+          ) : (
+            <ProgressCard />
+          )}
+          <ActivityFeed />
+        </div>
 
         {/* Info Card - Reforma Tributária */}
         <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm" data-tour="info-card">
