@@ -88,10 +88,10 @@ const tourSteps: DriveStep[] = [
     },
   },
   {
-    element: '[data-tour="info-card"]',
+    element: '[data-tour="activity-feed"]',
     popover: {
-      title: '💡 Saiba Mais',
-      description: 'Entenda como a Reforma Tributária impacta seus créditos fiscais e como o sistema pode ajudá-lo a economizar.',
+      title: '📋 Histórico de Atividades',
+      description: 'Acompanhe todas as ações realizadas no sistema. O registro é automático e ajuda a rastrear alterações importantes.',
       side: 'top',
       align: 'center',
     },
