@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useActivityLogStore } from '@/store/useActivityLogStore';
 
 interface Profile {
   id: string;
@@ -105,6 +106,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
     });
+    
+    if (!error) {
+      // Log activity after successful login
+      setTimeout(() => {
+        useActivityLogStore.getState().logActivity({
+          activity_type: 'login',
+          entity_type: 'auth',
+          entity_name: email,
+        });
+      }, 100);
+    }
+    
     return { error };
   }
 
@@ -140,6 +153,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     if (!supabase) return;
+    
+    // Log activity before signing out
+    const currentEmail = user?.email;
+    await useActivityLogStore.getState().logActivity({
+      activity_type: 'logout',
+      entity_type: 'auth',
+      entity_name: currentEmail || undefined,
+    });
+    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
