@@ -111,7 +111,6 @@ const Analise = () => {
   const { contexto, fornecedores, resultado, ultimaOtimizacao } = useCotacaoStore();
   const scenario = useAppStore((state) => state.scenario);
   const setScenario = useAppStore((state) => state.setScenario);
-  const contratos = useContractsStore((state) => state.contratos);
   const conversoes = useUnidadesStore((state) => state.conversoes);
   const yields = useUnidadesStore((state) => state.yields);
 
@@ -175,12 +174,12 @@ const Analise = () => {
   const baseResultado = useMemo(() => {
     if (!hasDados) return { itens: [] as MixResultadoItem[] };
     return useCotacaoStore.getState().computeResultado(baseOption.scenarioKey);
-  }, [baseOption.scenarioKey, fornecedores, contexto, contratos, conversoes, yields, hasDados]);
+  }, [baseOption.scenarioKey, fornecedores, contexto, conversoes, yields, hasDados]);
 
   const compareResultado = useMemo(() => {
     if (!hasDados) return { itens: [] as MixResultadoItem[] };
     return useCotacaoStore.getState().computeResultado(compareOption.scenarioKey);
-  }, [compareOption.scenarioKey, fornecedores, contexto, contratos, conversoes, yields, hasDados]);
+  }, [compareOption.scenarioKey, fornecedores, contexto, conversoes, yields, hasDados]);
 
   const allItemIds = useMemo(() => {
     const ids = new Set<string>();

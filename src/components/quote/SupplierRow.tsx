@@ -4,14 +4,14 @@ import { Copy, Info, Trash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import type { ContractFornecedor, MixResultadoItem, Supplier } from "@/types/domain";
+import type { MixResultadoItem, Supplier } from "@/types/domain";
 import { getMunicipiosByUF } from "@/data/locations";
 import { REGIME_LABELS, SUPPLIER_TIPO_LABELS } from "@/data/lookups";
 
 interface SupplierRowProps {
   supplier: MixResultadoItem;
   sourceSupplier?: Supplier;
-  contract?: ContractFornecedor;
+  hasCommercialConditions?: boolean;
   formatCurrency: (value: number) => string;
   getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
   onDuplicate: (supplier: MixResultadoItem) => void;
@@ -22,7 +22,7 @@ interface SupplierRowProps {
 const SupplierRowComponent = ({
   supplier,
   sourceSupplier,
-  contract,
+  hasCommercialConditions,
   formatCurrency,
   getCreditBadge,
   onDuplicate,
@@ -107,39 +107,46 @@ const SupplierRowComponent = ({
       </TableCell>
 
       <TableCell className="min-w-[220px]">
-        {contract ? (
+        {hasCommercialConditions ? (
           <div className="space-y-1">
-            <div className="text-sm font-medium text-foreground">
-              {contract.produtoId?.trim() ? contract.produtoId : "Contrato sem produto"}
-            </div>
-            {contract.unidade ? (
+            <Badge variant="secondary" className="gap-1">
+              Condições configuradas
+            </Badge>
+            {sourceSupplier?.priceBreaks?.length ? (
               <div className="text-xs text-muted-foreground">
-                Unidade: {contract.unidade.toUpperCase()}
+                {sourceSupplier.priceBreaks.length} degrau(s) de preço
               </div>
             ) : null}
-            <div className="text-xs text-muted-foreground">
-              Preco base: {formatCurrency(contract.precoBase)}
-            </div>
+            {sourceSupplier?.freightBreaks?.length ? (
+              <div className="text-xs text-muted-foreground">
+                {sourceSupplier.freightBreaks.length} degrau(s) de frete
+              </div>
+            ) : null}
+            {sourceSupplier?.yield ? (
+              <div className="text-xs text-muted-foreground">
+                Rendimento: {((sourceSupplier.yield.rendimento ?? 1) * 100).toFixed(0)}%
+              </div>
+            ) : null}
             {supplier.degrauAplicado ? (
               <div className="text-xs text-muted-foreground">Degrau: {supplier.degrauAplicado}</div>
             ) : null}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground">Nenhum contrato vinculado</div>
+          <div className="text-xs text-muted-foreground">Sem condições especiais</div>
         )}
       </TableCell>
 
       <TableCell className="min-w-[140px] text-right">
         <div className="font-medium">{formatCurrency(supplier.preco)}</div>
         <div className="text-[11px] text-muted-foreground">
-          {priceChanged ? "Ajustado pelo contrato" : "Valor informado"}
+          {priceChanged ? "Ajustado" : "Valor informado"}
         </div>
       </TableCell>
 
       <TableCell className="min-w-[140px] text-right">
         <div className="font-medium">{formatCurrency(supplier.frete)}</div>
         <div className="text-[11px] text-muted-foreground">
-          {freightChanged ? "Ajustado pelo contrato" : "Valor informado"}
+          {freightChanged ? "Ajustado" : "Valor informado"}
         </div>
       </TableCell>
 

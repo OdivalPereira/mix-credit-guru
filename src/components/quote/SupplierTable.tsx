@@ -40,7 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
-import type { ContractFornecedor, MixResultadoItem, Produto, Supplier } from "@/types/domain";
+import type { MixResultadoItem, Produto, Supplier } from "@/types/domain";
 
 import { OptimizationProgress } from "./OptimizationProgress";
 import { SupplierRow } from "./SupplierRow";
@@ -51,7 +51,6 @@ interface SupplierTableProps {
   fornecedoresOriginais: Supplier[];
   produtos: Produto[];
   contextProductKey: string;
-  findContract: (supplierId: string, produtoKey?: string) => ContractFornecedor | undefined;
   formatCurrency: (value: number) => string;
   onAddSupplier: () => void;
   onDuplicate: (supplier: MixResultadoItem) => void;
@@ -77,7 +76,6 @@ const SupplierTableComponent = ({
   fornecedoresOriginais,
   produtos,
   contextProductKey,
-  findContract,
   formatCurrency,
   onAddSupplier,
   onDuplicate,
@@ -110,13 +108,35 @@ const SupplierTableComponent = ({
     return fornecedoresOriginais.find((item) => item.id === detailsSupplierId) ?? null;
   }, [detailsSupplierId, fornecedoresOriginais]);
 
+  const renderSupplierRow = (supplier: MixResultadoItem) => {
+    const sourceSupplier = supplierIndex.get(supplier.id);
+    const hasConditions = !!(
+      sourceSupplier?.priceBreaks?.length ||
+      sourceSupplier?.freightBreaks?.length ||
+      sourceSupplier?.yield
+    );
+    return (
+      <SupplierRow
+        key={supplier.id}
+        supplier={supplier}
+        sourceSupplier={sourceSupplier}
+        hasCommercialConditions={hasConditions}
+        formatCurrency={formatCurrency}
+        getCreditBadge={getCreditBadge}
+        onDuplicate={onDuplicate}
+        onRemove={onRemove}
+        onOpenDetails={() => setDetailsSupplierId(supplier.id)}
+      />
+    );
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <CardTitle>Comparacao de fornecedores</CardTitle>
           <CardDescription>
-            Resultados refletem contratos ativos, tributos configurados e otimizacoes recentes.
+            Resultados refletem condições comerciais, tributos configurados e otimizacoes recentes.
           </CardDescription>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
@@ -229,7 +249,7 @@ const SupplierTableComponent = ({
               <TableRow className="whitespace-nowrap">
                 <TableHead className="w-16 text-center">#</TableHead>
                 <TableHead className="min-w-[260px]">Fornecedor</TableHead>
-                <TableHead className="min-w-[220px]">Contrato vinculado</TableHead>
+                <TableHead className="min-w-[220px]">Condições comerciais</TableHead>
                 <TableHead className="min-w-[140px] text-right">Preco</TableHead>
                 <TableHead className="min-w-[140px] text-right">Frete</TableHead>
                 <TableHead className="min-w-[160px] text-center">Tributos</TableHead>
@@ -257,19 +277,7 @@ const SupplierTableComponent = ({
                   </TableCell>
                 </TableRow>
               }
-              renderRow={(supplier) => (
-                <SupplierRow
-                  key={supplier.id}
-                  supplier={supplier}
-                  sourceSupplier={supplierIndex.get(supplier.id)}
-                  contract={findContract(supplier.id, contextProductKey)}
-                  formatCurrency={formatCurrency}
-                  getCreditBadge={getCreditBadge}
-                  onDuplicate={onDuplicate}
-                  onRemove={onRemove}
-                  onOpenDetails={() => setDetailsSupplierId(supplier.id)}
-                />
-              )}
+              renderRow={renderSupplierRow}
             />
           </Table>
         </div>

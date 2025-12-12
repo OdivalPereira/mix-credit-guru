@@ -224,7 +224,7 @@ function MeusDadosContent() {
 
       {/* Tabs with Data Sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto">
           <TabsTrigger value="produtos" className="gap-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Produtos</span>
@@ -234,11 +234,6 @@ function MeusDadosContent() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Fornecedores</span>
             <CompletionBadge completed={fornecedoresAtivos} total={fornecedores.length} variant="compact" size="sm" showPercentage={false} />
-          </TabsTrigger>
-          <TabsTrigger value="contratos" className="gap-2">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Contratos</span>
-            <Badge variant="outline" className="text-xs px-1.5 py-0">{contratos.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="unidades" className="gap-2">
             <ArrowLeftRight className="h-4 w-4" />
@@ -253,10 +248,6 @@ function MeusDadosContent() {
 
         <TabsContent value="fornecedores" className="space-y-6 mt-0">
           <SuppliersManager />
-        </TabsContent>
-
-        <TabsContent value="contratos" className="space-y-6 mt-0">
-          <ContractsManager />
         </TabsContent>
 
         <TabsContent value="unidades" className="space-y-6 mt-0">
