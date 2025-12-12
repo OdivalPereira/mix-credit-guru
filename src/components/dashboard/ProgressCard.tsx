@@ -40,7 +40,7 @@ export function ProgressCard() {
   const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
 
   return (
-    <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm">
+    <Card className="relative overflow-hidden border-border/50 backdrop-blur-sm" data-tour="progress-card">
       {/* Decorative blur effect */}
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
       
