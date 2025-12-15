@@ -49,7 +49,8 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
     const [productsData, setProductsData] = useState<any[]>([]);
 
     const addProduto = useCatalogoStore((state) => state.addProduto);
-    const upsertFornecedor = useCotacaoStore((state) => state.upsertFornecedor);
+    const upsertFornecedorCadastro = useCotacaoStore((state) => state.upsertFornecedorCadastro);
+    const upsertOferta = useCotacaoStore((state) => state.upsertOferta);
     const enrichSuppliers = useCotacaoStore((state) => state.enrichSuppliersWithTaxes);
     const navigate = useNavigate();
 
@@ -146,28 +147,33 @@ export function SmartSetupWizard({ open, onOpenChange }: SmartSetupWizardProps) 
             // Pick random products
             const randomProducts = productsData.slice(0, 5);
 
-            // Create dummy suppliers if needed or use existing
-            // For this demo, we'll add a few suppliers with these products
-            const suppliers = [
+            // Create suppliers and offers for these products
+            const supplierTemplates = [
                 { nome: "Fornecedor A (Indústria)", tipo: "industria" as const },
                 { nome: "Fornecedor B (Distribuidor)", tipo: "distribuidor" as const },
                 { nome: "Fornecedor C (Atacado)", tipo: "distribuidor" as const }
             ];
 
-            suppliers.forEach((sup) => {
+            supplierTemplates.forEach((sup, idx) => {
+                const fornecedorId = upsertFornecedorCadastro({
+                    nome: sup.nome,
+                    tipo: sup.tipo,
+                    regime: "normal",
+                    uf: companyData?.endereco?.uf || "SP",
+                    ativo: true,
+                });
+
                 randomProducts.forEach((prod) => {
-                    upsertFornecedor({
-                        nome: sup.nome,
-                        tipo: sup.tipo,
-                        regime: "normal",
-                        uf: companyData?.endereco?.uf || "SP",
+                    upsertOferta({
+                        fornecedorId,
+                        produtoId: prod.ncm_sugerido || "",
                         produtoDescricao: prod.nome || prod.original_name,
                         preco: (Number(prod.preco_medio) || 100) * (Math.random() * 0.2 + 0.9),
-                        ativo: true,
                         ibs: 0,
                         cbs: 0,
                         is: 0,
-                        frete: 0
+                        frete: 0,
+                        ativa: true,
                     });
                 });
             });

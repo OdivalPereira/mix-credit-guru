@@ -1,6 +1,6 @@
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
-import type { Supplier, Produto, Fornecedor, OfertaFornecedor } from "@/types/domain";
+import type { Produto, Fornecedor, OfertaFornecedor } from "@/types/domain";
 
 export const seedProdutos: Produto[] = [
   {
@@ -212,125 +212,6 @@ export const seedOfertas: OfertaFornecedor[] = [
     flagsItem: { ncm: "0901.21.00", cesta: true, reducao: true },
     cadeia: ["Fabricante Exterior", "Importador", "Distribuidor", "Varejo"],
     ativa: true,
-  },
-];
-
-// ============================================
-// LEGADO: Manter para compatibilidade
-// ============================================
-/** @deprecated Use seedFornecedoresCadastro + seedOfertas */
-export const seedFornecedores: Supplier[] = [
-  {
-    id: "forn-1",
-    nome: "Alimentos Alpha",
-    cnpj: "12.345.678/0001-90",
-    tipo: "industria",
-    regime: "normal",
-    uf: "SP",
-    municipio: "3550308",
-    contato: {
-      nome: "Ana Souza",
-      email: "ana.souza@alpha.com.br",
-      telefone: "(11) 3333-1000",
-    },
-    ativo: true,
-    produtoId: "prod-1",
-    produtoDescricao: "Arroz Tipo 1 5kg",
-    unidadeNegociada: "kg",
-    pedidoMinimo: 100,
-    prazoEntregaDias: 5,
-    prazoPagamentoDias: 30,
-    preco: 100,
-    ibs: 5,
-    cbs: 2,
-    is: 0,
-    frete: 10,
-    flagsItem: { ncm: "1006.30.11", cesta: true, reducao: false },
-    cadeia: ["Produtor", "Processador", "Distribuidor", "Varejo"],
-  },
-  {
-    id: "forn-2",
-    nome: "Distribuidora Beta",
-    cnpj: "23.456.789/0001-10",
-    tipo: "distribuidor",
-    regime: "presumido",
-    uf: "RJ",
-    municipio: "3304557",
-    contato: {
-      nome: "Bruno Lima",
-      email: "bruno.lima@betadistribuidora.com",
-      telefone: "(21) 3777-2200",
-    },
-    ativo: true,
-    produtoId: "prod-2",
-    produtoDescricao: "Feijao Carioca 1kg",
-    unidadeNegociada: "kg",
-    pedidoMinimo: 80,
-    prazoEntregaDias: 4,
-    prazoPagamentoDias: 21,
-    preco: 95,
-    ibs: 4,
-    cbs: 1.5,
-    is: 0,
-    frete: 12,
-    flagsItem: { ncm: "0713.33.29", cesta: true, reducao: false },
-    cadeia: ["Importador", "Distribuidor", "Atacadista", "Varejo"],
-  },
-  {
-    id: "forn-3",
-    nome: "Comercial Gama",
-    cnpj: "34.567.890/0001-80",
-    tipo: "atacado",
-    regime: "simples",
-    uf: "MG",
-    municipio: "3106200",
-    contato: {
-      nome: "Camila Ribeiro",
-      email: "camila.ribeiro@gamacomercial.com",
-      telefone: "(31) 2999-8800",
-    },
-    ativo: true,
-    produtoId: "prod-4",
-    produtoDescricao: "Oleo de Soja 900ml",
-    unidadeNegociada: "l",
-    pedidoMinimo: 60,
-    prazoEntregaDias: 6,
-    prazoPagamentoDias: 28,
-    preco: 102,
-    ibs: 0,
-    cbs: 0,
-    is: 0,
-    frete: 8,
-    flagsItem: { ncm: "1507.90.10", cesta: true, reducao: false },
-    cadeia: ["Cooperativa", "Armazenagem", "Atacadista", "Varejo"],
-  },
-  {
-    id: "forn-4",
-    nome: "Fornecedor Delta",
-    cnpj: "45.678.901/0001-55",
-    tipo: "industria",
-    regime: "normal",
-    uf: "PR",
-    municipio: "4106902",
-    contato: {
-      nome: "Daniela Torres",
-      email: "daniela.torres@deltaglobal.com",
-      telefone: "(41) 3111-4400",
-    },
-    ativo: true,
-    produtoId: "prod-5",
-    produtoDescricao: "Cafe Torrado e Moido 500g",
-    unidadeNegociada: "kg",
-    pedidoMinimo: 50,
-    prazoEntregaDias: 9,
-    prazoPagamentoDias: 45,
-    preco: 110,
-    ibs: 6,
-    cbs: 3,
-    is: 1,
-    frete: 15,
-    flagsItem: { ncm: "0901.21.00", cesta: true, reducao: true },
-    cadeia: ["Fabricante Exterior", "Importador", "Distribuidor", "Varejo"],
   },
 ];
 
