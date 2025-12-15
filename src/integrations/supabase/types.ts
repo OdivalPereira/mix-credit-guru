@@ -304,6 +304,98 @@ export type Database = {
         }
         Relationships: []
       }
+      ofertas_fornecedor: {
+        Row: {
+          ativa: boolean
+          cadeia: Json | null
+          cbs: number
+          conversoes: Json | null
+          created_at: string
+          explanation: string | null
+          flags_item: Json | null
+          fornecedor_id: string
+          freight_breaks: Json | null
+          frete: number
+          ibs: number
+          id: string
+          is_aliquota: number
+          is_refeicao_pronta: boolean | null
+          pedido_minimo: number | null
+          prazo_entrega_dias: number | null
+          prazo_pagamento_dias: number | null
+          preco: number
+          price_breaks: Json | null
+          produto_descricao: string | null
+          produto_id: string
+          unidade_negociada: string | null
+          updated_at: string
+          user_id: string
+          yield_config: Json | null
+        }
+        Insert: {
+          ativa?: boolean
+          cadeia?: Json | null
+          cbs?: number
+          conversoes?: Json | null
+          created_at?: string
+          explanation?: string | null
+          flags_item?: Json | null
+          fornecedor_id: string
+          freight_breaks?: Json | null
+          frete?: number
+          ibs?: number
+          id?: string
+          is_aliquota?: number
+          is_refeicao_pronta?: boolean | null
+          pedido_minimo?: number | null
+          prazo_entrega_dias?: number | null
+          prazo_pagamento_dias?: number | null
+          preco?: number
+          price_breaks?: Json | null
+          produto_descricao?: string | null
+          produto_id: string
+          unidade_negociada?: string | null
+          updated_at?: string
+          user_id: string
+          yield_config?: Json | null
+        }
+        Update: {
+          ativa?: boolean
+          cadeia?: Json | null
+          cbs?: number
+          conversoes?: Json | null
+          created_at?: string
+          explanation?: string | null
+          flags_item?: Json | null
+          fornecedor_id?: string
+          freight_breaks?: Json | null
+          frete?: number
+          ibs?: number
+          id?: string
+          is_aliquota?: number
+          is_refeicao_pronta?: boolean | null
+          pedido_minimo?: number | null
+          prazo_entrega_dias?: number | null
+          prazo_pagamento_dias?: number | null
+          preco?: number
+          price_breaks?: Json | null
+          produto_descricao?: string | null
+          produto_id?: string
+          unidade_negociada?: string | null
+          updated_at?: string
+          user_id?: string
+          yield_config?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ofertas_fornecedor_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           created_at: string
