@@ -4,7 +4,7 @@ export const suppliers: Supplier[] = [
   {
     id: "fornecedor-simples",
     nome: "Fornecedor Simples Nacional",
-    cnpj: "",
+    cnpj: "12.345.678/0001-90",
     tipo: "distribuidor",
     regime: "simples",
     uf: "SP",
@@ -19,11 +19,17 @@ export const suppliers: Supplier[] = [
     flagsItem: { cesta: false, reducao: false },
     isRefeicaoPronta: false,
     cadeia: ["", "", "", ""],
+    // Commercial conditions: price breaks only
+    priceBreaks: [
+      { quantidade: 10, preco: 24.0 },
+      { quantidade: 50, preco: 22.5 },
+      { quantidade: 100, preco: 21.0 },
+    ],
   },
   {
     id: "fornecedor-presumido",
     nome: "Fornecedor Lucro Presumido",
-    cnpj: "",
+    cnpj: "98.765.432/0001-10",
     tipo: "distribuidor",
     regime: "presumido",
     uf: "RJ",
@@ -38,12 +44,21 @@ export const suppliers: Supplier[] = [
     flagsItem: { cesta: false, reducao: false },
     isRefeicaoPronta: false,
     cadeia: ["", "", "", ""],
+    // Commercial conditions: price breaks + freight breaks
+    priceBreaks: [
+      { quantidade: 20, preco: 26.5 },
+      { quantidade: 100, preco: 24.0 },
+    ],
+    freightBreaks: [
+      { quantidade: 50, frete: 1.0 },
+      { quantidade: 200, frete: 0.5 },
+    ],
   },
   {
     id: "fornecedor-real",
     nome: "Fornecedor Lucro Real",
-    cnpj: "",
-    tipo: "distribuidor",
+    cnpj: "11.222.333/0001-44",
+    tipo: "industria",
     regime: "normal",
     uf: "MG",
     municipio: "",
@@ -57,6 +72,21 @@ export const suppliers: Supplier[] = [
     flagsItem: { cesta: false, reducao: false },
     isRefeicaoPronta: false,
     cadeia: ["", "", "", ""],
+    // Commercial conditions: all types (price, freight, yield)
+    priceBreaks: [
+      { quantidade: 30, preco: 21.0 },
+      { quantidade: 100, preco: 19.5 },
+      { quantidade: 500, preco: 18.0 },
+    ],
+    freightBreaks: [
+      { quantidade: 100, frete: 2.0 },
+      { quantidade: 300, frete: 1.0 },
+    ],
+    yield: {
+      entrada: "kg",
+      saida: "kg",
+      rendimento: 85,
+    },
   },
 ];
 
