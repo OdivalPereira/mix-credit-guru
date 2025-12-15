@@ -377,11 +377,8 @@ export const SupplierDetailsSheet = ({
             </Label>
             <SupplyChainEditor
               cadeia={supplier.cadeia ?? []}
-              onChange={(index, value) => {
-                const currentCadeia = [...(supplier.cadeia ?? Array.from({ length: SUPPLY_CHAIN_STAGES }, () => ""))];
-                currentCadeia[index] = value;
-                handleUpdate({ cadeia: currentCadeia });
-              }}
+              supplierTipo={supplier.tipo}
+              onChange={(newCadeia) => handleUpdate({ cadeia: newCadeia })}
               stagesCount={SUPPLY_CHAIN_STAGES}
             />
           </section>
