@@ -18,12 +18,27 @@ export const UNIT_LABELS: Readonly<Record<Unit, string>> = Object.freeze({
 });
 
 export const SUPPLIER_TIPO_OPTIONS: ReadonlyArray<LookupOption<SupplierTipo>> = [
-  { value: "industria", label: "Indústria" },
-  { value: "distribuidor", label: "Distribuidor" },
-  { value: "produtor", label: "Produtor" },
-  { value: "atacado", label: "Atacado" },
-  { value: "varejo", label: "Varejo" },
+  { value: "produtor", label: "Produtor", description: "Origem primária (agricultura, pecuária)" },
+  { value: "cooperativa", label: "Cooperativa", description: "Associação de produtores" },
+  { value: "industria", label: "Indústria", description: "Transformação industrial" },
+  { value: "processador", label: "Processador", description: "Beneficiamento de produtos" },
+  { value: "importador", label: "Importador", description: "Entrada de mercadorias no país" },
+  { value: "distribuidor", label: "Distribuidor", description: "Logística e distribuição regional" },
+  { value: "atacado", label: "Atacado", description: "Venda em larga escala" },
+  { value: "varejo", label: "Varejo", description: "Venda ao consumidor final" },
 ] as const;
+
+// Default supply chain suggestions based on supplier type
+export const DEFAULT_CHAIN_BY_TIPO: Readonly<Record<SupplierTipo, string[]>> = Object.freeze({
+  produtor: [],
+  cooperativa: ["Produtor"],
+  industria: ["Produtor"],
+  processador: ["Produtor", "Indústria"],
+  importador: [],
+  distribuidor: ["Produtor", "Indústria"],
+  atacado: ["Produtor", "Indústria", "Distribuidor"],
+  varejo: ["Distribuidor", "Atacado"],
+});
 
 export const SUPPLIER_TIPO_LABELS: Readonly<Record<SupplierTipo, string>> = SUPPLIER_TIPO_OPTIONS.reduce(
   (acc, option) => {

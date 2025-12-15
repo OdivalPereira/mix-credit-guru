@@ -12,7 +12,7 @@ export interface FlagsItem {
   cesta?: boolean;
 }
 
-export type SupplierTipo = "industria" | "distribuidor" | "produtor" | "atacado" | "varejo";
+export type SupplierTipo = "industria" | "distribuidor" | "produtor" | "atacado" | "varejo" | "processador" | "importador" | "cooperativa";
 
 export type SupplierRegime = "normal" | "simples" | "presumido";
 

@@ -155,15 +155,13 @@ export const SuppliersManager = () => {
     });
   };
 
-  const handleCadeiaChange = (id: string, index: number, value: string) => {
+  const handleCadeiaChange = (id: string, newCadeia: string[]) => {
     const current = fornecedores.find((item) => item.id === id);
     if (!current) return;
-    const cadeia = [...(current.cadeia ?? Array.from({ length: SUPPLY_CHAIN_STAGES }, () => ""))];
-    cadeia[index] = value;
     upsertFornecedor({
       id,
       ...current,
-      cadeia,
+      cadeia: newCadeia,
     });
   };
 
@@ -608,7 +606,8 @@ export const SuppliersManager = () => {
                       </Label>
                       <SupplyChainEditor
                         cadeia={cadeia}
-                        onChange={(index, value) => handleCadeiaChange(supplier.id, index, value)}
+                        supplierTipo={supplier.tipo}
+                        onChange={(newCadeia) => handleCadeiaChange(supplier.id, newCadeia)}
                         stagesCount={SUPPLY_CHAIN_STAGES}
                       />
                     </section>
