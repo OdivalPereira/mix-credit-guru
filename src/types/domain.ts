@@ -48,6 +48,54 @@ export interface Produto {
   componentes?: ProdutoComponente[];
 }
 
+/**
+ * Fornecedor - Dados cadastrais do fornecedor (pessoa jurídica)
+ */
+export interface Fornecedor {
+  id: string;
+  nome: string;
+  cnpj?: string;
+  tipo: SupplierTipo;
+  regime: SupplierRegime;
+  uf: string;
+  municipio?: string;
+  contato?: SupplierContato;
+  ativo: boolean;
+}
+
+/**
+ * OfertaFornecedor - Oferta específica de um fornecedor para um produto
+ * Inclui cadeia de fornecimento, preços, condições comerciais e tributos
+ */
+export interface OfertaFornecedor {
+  id: string;
+  fornecedorId: string;
+  produtoId: string;
+  produtoDescricao?: string;
+  unidadeNegociada?: Unit;
+  pedidoMinimo?: number;
+  prazoEntregaDias?: number;
+  prazoPagamentoDias?: number;
+  preco: number;
+  ibs: number;
+  cbs: number;
+  is: number;
+  frete: number;
+  cadeia?: string[];
+  flagsItem?: FlagsItem;
+  isRefeicaoPronta?: boolean;
+  explanation?: string;
+  priceBreaks?: PriceBreak[];
+  freightBreaks?: FreightBreak[];
+  yield?: YieldConfig;
+  conversoes?: UnitConv[];
+  ativa: boolean;
+}
+
+/**
+ * @deprecated Use `Fornecedor` + `OfertaFornecedor` separadamente.
+ * Mantido temporariamente para compatibilidade durante migração.
+ */
 export interface Supplier {
   id: string;
   nome: string;
@@ -73,7 +121,6 @@ export interface Supplier {
   flagsItem?: FlagsItem;
   isRefeicaoPronta?: boolean;
   explanation?: string;
-  // Condições comerciais opcionais (anteriormente em Contratos)
   priceBreaks?: PriceBreak[];
   freightBreaks?: FreightBreak[];
   yield?: YieldConfig;
