@@ -1,7 +1,8 @@
-import type { Supplier, Produto, Unit, SupplierTipo, SupplierRegime } from "@/types/domain";
+import type { Supplier, Produto, Unit, SupplierTipo, SupplierRegime, Fornecedor, OfertaFornecedor } from "@/types/domain";
 import { generateId } from "@/lib/utils";
 import { UNIT_OPTIONS, SUPPLIER_TIPO_OPTIONS, REGIME_OPTIONS } from "@/data/lookups";
 
+/** @deprecated Use fornecedorCadastroCsvHeaders + ofertaCsvHeaders */
 export const fornecedorCsvHeaders = [
   "nome",
   "tipo",
@@ -24,6 +25,46 @@ export const fornecedorCsvHeaders = [
   "flag_cesta",
   "flag_reducao",
   "refeicao_pronta",
+  "cadeia_1",
+  "cadeia_2",
+  "cadeia_3",
+  "cadeia_4",
+] as const;
+
+/** Headers para CSV de dados cadastrais de Fornecedor */
+export const fornecedorCadastroCsvHeaders = [
+  "id",
+  "nome",
+  "cnpj",
+  "tipo",
+  "regime",
+  "uf",
+  "municipio",
+  "contato_nome",
+  "contato_email",
+  "contato_telefone",
+  "ativo",
+] as const;
+
+/** Headers para CSV de OfertaFornecedor */
+export const ofertaCsvHeaders = [
+  "id",
+  "fornecedor_id",
+  "produto_id",
+  "produto_descricao",
+  "unidade",
+  "preco",
+  "ibs",
+  "cbs",
+  "is",
+  "frete",
+  "pedido_minimo",
+  "prazo_entrega",
+  "prazo_pagamento",
+  "flag_cesta",
+  "flag_reducao",
+  "refeicao_pronta",
+  "ativa",
   "cadeia_1",
   "cadeia_2",
   "cadeia_3",
@@ -441,5 +482,202 @@ export function writeProdutosCSV(produtos: Produto[]): string {
       formatCsvValue(p.flags.is ? "1" : "0"),
     ].join(","),
   );
+  return [header, ...rows].join("\n");
+}
+
+// ============================================
+// NOVAS FUNÇÕES PARA FORNECEDOR + OFERTA
+// ============================================
+
+/**
+ * Lê CSV de dados cadastrais de Fornecedor
+ */
+export function readFornecedoresCadastroCSV(csv: string): Fornecedor[] {
+  const rows = parseCsvRows(csv);
+  if (rows.length === 0) return [];
+
+  const headers = rows[0].map((h) => h.toLowerCase());
+  const dataRows = rows.slice(1);
+
+  const idx = (name: string, fallback = -1) => {
+    const i = headers.indexOf(name);
+    return i >= 0 ? i : fallback;
+  };
+
+  const idxId = idx("id");
+  const idxNome = idx("nome", 0);
+  const idxCnpj = idx("cnpj");
+  const idxTipo = idx("tipo", 1);
+  const idxRegime = idx("regime", 2);
+  const idxUf = idx("uf");
+  const idxMunicipio = idx("municipio");
+  const idxContatoNome = idx("contato_nome");
+  const idxContatoEmail = idx("contato_email");
+  const idxContatoTelefone = idx("contato_telefone");
+  const idxAtivo = idx("ativo");
+
+  const result: Fornecedor[] = [];
+
+  for (const cols of dataRows) {
+    const nome = cols[idxNome]?.trim() ?? "";
+    if (!nome) continue;
+
+    const contato = {
+      nome: idxContatoNome >= 0 ? cols[idxContatoNome]?.trim() : undefined,
+      email: idxContatoEmail >= 0 ? cols[idxContatoEmail]?.trim() : undefined,
+      telefone: idxContatoTelefone >= 0 ? cols[idxContatoTelefone]?.trim() : undefined,
+    };
+    const hasContato = contato.nome || contato.email || contato.telefone;
+
+    result.push({
+      id: idxId >= 0 && cols[idxId]?.trim() ? cols[idxId].trim() : generateId("forn"),
+      nome,
+      cnpj: idxCnpj >= 0 ? cols[idxCnpj]?.trim() : undefined,
+      tipo: normalizeSupplierTipo(cols[idxTipo]),
+      regime: normalizeSupplierRegime(cols[idxRegime]),
+      uf: idxUf >= 0 ? cols[idxUf]?.trim().toUpperCase() ?? "" : "",
+      municipio: idxMunicipio >= 0 ? cols[idxMunicipio]?.trim() : undefined,
+      contato: hasContato ? contato : undefined,
+      ativo: idxAtivo >= 0 ? parseBoolean(cols[idxAtivo], true) : true,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Escreve CSV de dados cadastrais de Fornecedor
+ */
+export function writeFornecedoresCadastroCSV(fornecedores: Fornecedor[]): string {
+  const header = fornecedorCadastroCsvHeaders.join(",");
+  const rows = fornecedores.map((f) =>
+    [
+      formatCsvValue(f.id),
+      formatCsvValue(f.nome),
+      formatCsvValue(f.cnpj),
+      formatCsvValue(f.tipo),
+      formatCsvValue(f.regime),
+      formatCsvValue(f.uf),
+      formatCsvValue(f.municipio),
+      formatCsvValue(f.contato?.nome),
+      formatCsvValue(f.contato?.email),
+      formatCsvValue(f.contato?.telefone),
+      formatCsvValue(f.ativo ? "1" : "0"),
+    ].join(","),
+  );
+  return [header, ...rows].join("\n");
+}
+
+/**
+ * Lê CSV de OfertaFornecedor
+ */
+export function readOfertasCSV(csv: string): OfertaFornecedor[] {
+  const rows = parseCsvRows(csv);
+  if (rows.length === 0) return [];
+
+  const headers = rows[0].map((h) => h.toLowerCase());
+  const dataRows = rows.slice(1);
+
+  const idx = (name: string, fallback = -1) => {
+    const i = headers.indexOf(name);
+    return i >= 0 ? i : fallback;
+  };
+
+  const idxId = idx("id");
+  const idxFornecedorId = idx("fornecedor_id", 0);
+  const idxProdutoId = idx("produto_id", 1);
+  const idxProdutoDescricao = idx("produto_descricao");
+  const idxUnidade = idx("unidade");
+  const idxPreco = idx("preco", 2);
+  const idxIbs = idx("ibs");
+  const idxCbs = idx("cbs");
+  const idxIs = idx("is");
+  const idxFrete = idx("frete");
+  const idxPedidoMinimo = idx("pedido_minimo");
+  const idxPrazoEntrega = idx("prazo_entrega");
+  const idxPrazoPagamento = idx("prazo_pagamento");
+  const idxFlagCesta = idx("flag_cesta");
+  const idxFlagReducao = idx("flag_reducao");
+  const idxRefPronta = idx("refeicao_pronta");
+  const idxAtiva = idx("ativa");
+  const idxCadeia1 = idx("cadeia_1");
+  const idxCadeia2 = idx("cadeia_2");
+  const idxCadeia3 = idx("cadeia_3");
+  const idxCadeia4 = idx("cadeia_4");
+
+  const result: OfertaFornecedor[] = [];
+
+  for (const cols of dataRows) {
+    const fornecedorId = cols[idxFornecedorId]?.trim() ?? "";
+    const produtoId = cols[idxProdutoId]?.trim() ?? "";
+    if (!fornecedorId) continue;
+
+    const flagsItem: OfertaFornecedor["flagsItem"] = {};
+    if (idxFlagCesta >= 0) flagsItem.cesta = parseBoolean(cols[idxFlagCesta], false);
+    if (idxFlagReducao >= 0) flagsItem.reducao = parseBoolean(cols[idxFlagReducao], false);
+    const hasFlags = Object.keys(flagsItem).length > 0;
+
+    const cadeiaRaw = [
+      idxCadeia1 >= 0 ? cols[idxCadeia1]?.trim() ?? "" : "",
+      idxCadeia2 >= 0 ? cols[idxCadeia2]?.trim() ?? "" : "",
+      idxCadeia3 >= 0 ? cols[idxCadeia3]?.trim() ?? "" : "",
+      idxCadeia4 >= 0 ? cols[idxCadeia4]?.trim() ?? "" : "",
+    ];
+    const cadeia = cadeiaRaw.every((v) => !v) ? [] : cadeiaRaw;
+
+    result.push({
+      id: idxId >= 0 && cols[idxId]?.trim() ? cols[idxId].trim() : generateId("oferta"),
+      fornecedorId,
+      produtoId,
+      produtoDescricao: idxProdutoDescricao >= 0 ? cols[idxProdutoDescricao]?.trim() : undefined,
+      unidadeNegociada: normalizeUnit(idxUnidade >= 0 ? cols[idxUnidade]?.trim() : undefined),
+      preco: parseNumber(cols[idxPreco]),
+      ibs: idxIbs >= 0 ? parseNumber(cols[idxIbs]) : 0,
+      cbs: idxCbs >= 0 ? parseNumber(cols[idxCbs]) : 0,
+      is: idxIs >= 0 ? parseNumber(cols[idxIs]) : 0,
+      frete: idxFrete >= 0 ? parseNumber(cols[idxFrete]) : 0,
+      pedidoMinimo: idxPedidoMinimo >= 0 ? parseNumber(cols[idxPedidoMinimo]) : 0,
+      prazoEntregaDias: idxPrazoEntrega >= 0 ? Math.max(0, Math.trunc(parseNumber(cols[idxPrazoEntrega]))) : 0,
+      prazoPagamentoDias: idxPrazoPagamento >= 0 ? Math.max(0, Math.trunc(parseNumber(cols[idxPrazoPagamento]))) : 0,
+      flagsItem: hasFlags ? flagsItem : undefined,
+      isRefeicaoPronta: idxRefPronta >= 0 ? parseBoolean(cols[idxRefPronta], false) : false,
+      cadeia,
+      ativa: idxAtiva >= 0 ? parseBoolean(cols[idxAtiva], true) : true,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Escreve CSV de OfertaFornecedor
+ */
+export function writeOfertasCSV(ofertas: OfertaFornecedor[]): string {
+  const header = ofertaCsvHeaders.join(",");
+  const rows = ofertas.map((o) => {
+    const flags = o.flagsItem ?? {};
+    const cadeia = Array.isArray(o.cadeia) ? o.cadeia : [];
+    const cadeiaValores = Array.from({ length: 4 }, (_, i) => formatCsvValue(cadeia[i] ?? ""));
+    return [
+      formatCsvValue(o.id),
+      formatCsvValue(o.fornecedorId),
+      formatCsvValue(o.produtoId),
+      formatCsvValue(o.produtoDescricao),
+      formatCsvValue(o.unidadeNegociada),
+      formatCsvValue(o.preco),
+      formatCsvValue(o.ibs),
+      formatCsvValue(o.cbs),
+      formatCsvValue(o.is),
+      formatCsvValue(o.frete),
+      formatCsvValue(o.pedidoMinimo ?? 0),
+      formatCsvValue(o.prazoEntregaDias ?? 0),
+      formatCsvValue(o.prazoPagamentoDias ?? 0),
+      formatCsvValue(flags.cesta ? "1" : "0"),
+      formatCsvValue(flags.reducao ? "1" : "0"),
+      formatCsvValue(o.isRefeicaoPronta ? "1" : "0"),
+      formatCsvValue(o.ativa ? "1" : "0"),
+      ...cadeiaValores,
+    ].join(",");
+  });
   return [header, ...rows].join("\n");
 }
