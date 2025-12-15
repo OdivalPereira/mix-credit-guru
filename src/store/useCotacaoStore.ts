@@ -545,27 +545,141 @@ export const useCotacaoStore = create<CotacaoStore>()(
       },
 
       // ============= Métodos legados (compatibilidade) =============
+      // Estes métodos atualizam as estruturas novas (fornecedoresCadastro + ofertas)
+      // e recomputam fornecedores para manter compatibilidade
       
-      upsertFornecedor: (fornecedor) =>
+      upsertFornecedor: (supplierData) =>
         set((state) => {
-          const id = fornecedor.id ?? generateId("fornecedor");
-          const exists = state.fornecedores.some((f) => f.id === id);
-          const fornecedoresLegacy = exists
-            ? state.fornecedores.map((f) =>
-              f.id === id ? applyFornecedorDefaults({ ...f, ...fornecedor, id }) : f
-            )
-            : [...state.fornecedores, applyFornecedorDefaults({ ...fornecedor, id })];
+          const supplierId = supplierData.id ?? generateId("oferta");
           
-          // Também atualiza as novas estruturas se existirem dados
-          // Para manter sincronização durante migração
-          return { fornecedores: fornecedoresLegacy };
+          // Procura oferta existente pelo ID
+          const existingOferta = state.ofertas.find((o) => o.id === supplierId);
+          
+          if (existingOferta) {
+            // Atualiza oferta existente
+            const fornecedor = state.fornecedoresCadastro.find(f => f.id === existingOferta.fornecedorId);
+            
+            // Atualiza dados do fornecedor se houver campos cadastrais
+            let fornecedoresCadastro = state.fornecedoresCadastro;
+            if (fornecedor && (supplierData.nome || supplierData.cnpj || supplierData.tipo || 
+                supplierData.regime || supplierData.uf || supplierData.municipio || supplierData.contato)) {
+              fornecedoresCadastro = state.fornecedoresCadastro.map(f => 
+                f.id === fornecedor.id 
+                  ? applyFornecedorCadastroDefaults({
+                      ...f,
+                      nome: supplierData.nome ?? f.nome,
+                      cnpj: supplierData.cnpj ?? f.cnpj,
+                      tipo: supplierData.tipo ?? f.tipo,
+                      regime: supplierData.regime ?? f.regime,
+                      uf: supplierData.uf ?? f.uf,
+                      municipio: supplierData.municipio ?? f.municipio,
+                      contato: supplierData.contato ?? f.contato,
+                      ativo: supplierData.ativo ?? f.ativo,
+                    })
+                  : f
+              );
+            }
+            
+            // Atualiza oferta
+            const ofertas = state.ofertas.map(o => 
+              o.id === supplierId 
+                ? applyOfertaDefaults({
+                    ...o,
+                    produtoId: supplierData.produtoId ?? o.produtoId,
+                    produtoDescricao: supplierData.produtoDescricao ?? o.produtoDescricao,
+                    unidadeNegociada: supplierData.unidadeNegociada ?? o.unidadeNegociada,
+                    pedidoMinimo: supplierData.pedidoMinimo ?? o.pedidoMinimo,
+                    prazoEntregaDias: supplierData.prazoEntregaDias ?? o.prazoEntregaDias,
+                    prazoPagamentoDias: supplierData.prazoPagamentoDias ?? o.prazoPagamentoDias,
+                    preco: supplierData.preco ?? o.preco,
+                    ibs: supplierData.ibs ?? o.ibs,
+                    cbs: supplierData.cbs ?? o.cbs,
+                    is: supplierData.is ?? o.is,
+                    frete: supplierData.frete ?? o.frete,
+                    cadeia: supplierData.cadeia ?? o.cadeia,
+                    flagsItem: supplierData.flagsItem ?? o.flagsItem,
+                    isRefeicaoPronta: supplierData.isRefeicaoPronta ?? o.isRefeicaoPronta,
+                    explanation: supplierData.explanation ?? o.explanation,
+                    priceBreaks: supplierData.priceBreaks ?? o.priceBreaks,
+                    freightBreaks: supplierData.freightBreaks ?? o.freightBreaks,
+                    yield: supplierData.yield ?? o.yield,
+                    conversoes: supplierData.conversoes ?? o.conversoes,
+                    ativa: supplierData.ativo ?? o.ativa,
+                  })
+                : o
+            );
+            
+            const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
+            return { fornecedoresCadastro, ofertas, fornecedores };
+          } else {
+            // Cria novo fornecedor + oferta
+            const fornecedorId = generateId("fornecedor");
+            
+            const novoFornecedor = applyFornecedorCadastroDefaults({
+              id: fornecedorId,
+              nome: supplierData.nome ?? "",
+              cnpj: supplierData.cnpj,
+              tipo: supplierData.tipo ?? "distribuidor",
+              regime: supplierData.regime ?? "normal",
+              uf: supplierData.uf ?? "",
+              municipio: supplierData.municipio,
+              contato: supplierData.contato,
+              ativo: supplierData.ativo ?? true,
+            });
+            
+            const novaOferta = applyOfertaDefaults({
+              id: supplierId,
+              fornecedorId,
+              produtoId: supplierData.produtoId ?? "",
+              produtoDescricao: supplierData.produtoDescricao,
+              unidadeNegociada: supplierData.unidadeNegociada,
+              pedidoMinimo: supplierData.pedidoMinimo,
+              prazoEntregaDias: supplierData.prazoEntregaDias,
+              prazoPagamentoDias: supplierData.prazoPagamentoDias,
+              preco: supplierData.preco ?? 0,
+              ibs: supplierData.ibs ?? 0,
+              cbs: supplierData.cbs ?? 0,
+              is: supplierData.is ?? 0,
+              frete: supplierData.frete ?? 0,
+              cadeia: supplierData.cadeia,
+              flagsItem: supplierData.flagsItem,
+              isRefeicaoPronta: supplierData.isRefeicaoPronta,
+              explanation: supplierData.explanation,
+              priceBreaks: supplierData.priceBreaks,
+              freightBreaks: supplierData.freightBreaks,
+              yield: supplierData.yield,
+              conversoes: supplierData.conversoes,
+              ativa: supplierData.ativo ?? true,
+            });
+            
+            const fornecedoresCadastro = [...state.fornecedoresCadastro, novoFornecedor];
+            const ofertas = [...state.ofertas, novaOferta];
+            const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
+            
+            return { fornecedoresCadastro, ofertas, fornecedores };
+          }
         }),
 
       removeFornecedor: (id) =>
-        set((state) => ({
-          fornecedores: state.fornecedores.filter((f) => f.id !== id),
-          ofertas: state.ofertas.filter((o) => o.id !== id),
-        })),
+        set((state) => {
+          // Remove a oferta com o ID especificado
+          const ofertaToRemove = state.ofertas.find(o => o.id === id);
+          const ofertas = state.ofertas.filter((o) => o.id !== id);
+          
+          // Se o fornecedor não tem mais ofertas, remove ele também
+          let fornecedoresCadastro = state.fornecedoresCadastro;
+          if (ofertaToRemove) {
+            const hasOtherOfertas = ofertas.some(o => o.fornecedorId === ofertaToRemove.fornecedorId);
+            if (!hasOtherOfertas) {
+              fornecedoresCadastro = state.fornecedoresCadastro.filter(
+                f => f.id !== ofertaToRemove.fornecedorId
+              );
+            }
+          }
+          
+          const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
+          return { fornecedoresCadastro, ofertas, fornecedores };
+        }),
 
       limpar: () =>
         set({
@@ -585,30 +699,67 @@ export const useCotacaoStore = create<CotacaoStore>()(
           console.warn("[cotacao] Nenhum fornecedor valido encontrado no CSV.");
           return;
         }
+        
         set((state) => {
-          const combinados = [...state.fornecedores];
-          for (const fornecedorOriginal of fornecedoresImportados) {
-            const fornecedor = fornecedorOriginal.id
-              ? fornecedorOriginal
-              : { ...fornecedorOriginal, id: generateId("fornecedor") };
-            const normalizado = applyFornecedorDefaults(fornecedor);
-            const idx = combinados.findIndex(
-              (item) =>
-                item.nome.toLowerCase() === fornecedor.nome.toLowerCase() &&
-                item.tipo.toLowerCase() === fornecedor.tipo.toLowerCase() &&
-                item.regime.toLowerCase() === fornecedor.regime.toLowerCase(),
-            );
-            if (idx >= 0) {
-              combinados[idx] = applyFornecedorDefaults({
-                ...combinados[idx],
-                ...normalizado,
-                id: combinados[idx].id,
+          const fornecedoresCadastro = [...state.fornecedoresCadastro];
+          const ofertas = [...state.ofertas];
+          
+          // Mapa para agrupar por nome+tipo+regime (encontrar fornecedor existente)
+          const fornecedorMap = new Map(
+            fornecedoresCadastro.map(f => [`${f.nome.toLowerCase()}|${f.tipo}|${f.regime}`, f])
+          );
+          
+          for (const supplierImportado of fornecedoresImportados) {
+            const key = `${supplierImportado.nome.toLowerCase()}|${supplierImportado.tipo}|${supplierImportado.regime}`;
+            let fornecedorExistente = fornecedorMap.get(key);
+            
+            if (!fornecedorExistente) {
+              // Criar novo fornecedor
+              const novoFornecedor = applyFornecedorCadastroDefaults({
+                id: generateId("fornecedor"),
+                nome: supplierImportado.nome,
+                cnpj: supplierImportado.cnpj,
+                tipo: supplierImportado.tipo,
+                regime: supplierImportado.regime,
+                uf: supplierImportado.uf,
+                municipio: supplierImportado.municipio,
+                contato: supplierImportado.contato,
+                ativo: supplierImportado.ativo,
               });
-            } else {
-              combinados.push(normalizado);
+              fornecedoresCadastro.push(novoFornecedor);
+              fornecedorMap.set(key, novoFornecedor);
+              fornecedorExistente = novoFornecedor;
             }
+            
+            // Criar oferta
+            const novaOferta = applyOfertaDefaults({
+              id: supplierImportado.id ?? generateId("oferta"),
+              fornecedorId: fornecedorExistente.id,
+              produtoId: supplierImportado.produtoId ?? "",
+              produtoDescricao: supplierImportado.produtoDescricao,
+              unidadeNegociada: supplierImportado.unidadeNegociada,
+              pedidoMinimo: supplierImportado.pedidoMinimo,
+              prazoEntregaDias: supplierImportado.prazoEntregaDias,
+              prazoPagamentoDias: supplierImportado.prazoPagamentoDias,
+              preco: supplierImportado.preco,
+              ibs: supplierImportado.ibs,
+              cbs: supplierImportado.cbs,
+              is: supplierImportado.is,
+              frete: supplierImportado.frete,
+              cadeia: supplierImportado.cadeia,
+              flagsItem: supplierImportado.flagsItem,
+              isRefeicaoPronta: supplierImportado.isRefeicaoPronta,
+              priceBreaks: supplierImportado.priceBreaks,
+              freightBreaks: supplierImportado.freightBreaks,
+              yield: supplierImportado.yield,
+              conversoes: supplierImportado.conversoes,
+              ativa: supplierImportado.ativo ?? true,
+            });
+            ofertas.push(novaOferta);
           }
-          return { fornecedores: combinados };
+          
+          const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
+          return { fornecedoresCadastro, ofertas, fornecedores };
         });
         get().calcular();
       },
