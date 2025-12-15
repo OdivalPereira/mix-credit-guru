@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { ESTADOS, getMunicipiosByUF } from "@/data/locations";
-import type { Produto, Supplier, SupplierRegime, SupplierTipo, Unit } from "@/types/domain";
+import type { Produto, Supplier, SupplierRegime, SupplierTipo, Unit, PriceBreak, FreightBreak, YieldConfig } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import {
   UNIT_OPTIONS,
@@ -38,6 +38,7 @@ import {
   SUPPLIER_TIPO_LABELS,
   REGIME_OPTIONS,
 } from "@/data/lookups";
+import { CommercialConditionsSection } from "@/components/cadastros/CommercialConditionsSection";
 
 const EMPTY_SELECT_VALUE = "__empty__";
 
@@ -333,7 +334,7 @@ export const SupplierDetailsSheet = ({
             </div>
           </section>
 
-                  <section className="space-y-3">
+          <section className="space-y-3">
             <Label className="text-sm font-medium text-muted-foreground">
               Contato
             </Label>
@@ -364,6 +365,18 @@ export const SupplierDetailsSheet = ({
                 />
               </div>
             </div>
+          </section>
+
+          {/* Commercial Conditions Section */}
+          <section className="space-y-3 border-t pt-4">
+            <CommercialConditionsSection
+              priceBreaks={supplier.priceBreaks}
+              freightBreaks={supplier.freightBreaks}
+              yieldConfig={supplier.yield}
+              onPriceBreaksChange={(breaks: PriceBreak[]) => handleUpdate({ priceBreaks: breaks })}
+              onFreightBreaksChange={(breaks: FreightBreak[]) => handleUpdate({ freightBreaks: breaks })}
+              onYieldChange={(config: YieldConfig | undefined) => handleUpdate({ yield: config })}
+            />
           </section>
         </div>
 
