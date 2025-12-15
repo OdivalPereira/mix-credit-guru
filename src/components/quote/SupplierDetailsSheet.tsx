@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Link2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +39,8 @@ import {
   REGIME_OPTIONS,
 } from "@/data/lookups";
 import { CommercialConditionsSection } from "@/components/cadastros/CommercialConditionsSection";
+import { SupplyChainEditor } from "@/components/cadastros/SupplyChainEditor";
+import { SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 
 const EMPTY_SELECT_VALUE = "__empty__";
 
@@ -365,6 +367,23 @@ export const SupplierDetailsSheet = ({
                 />
               </div>
             </div>
+          </section>
+
+          {/* Supply Chain Section */}
+          <section className="space-y-3 border-t pt-4">
+            <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              Etapas da cadeia de fornecimento
+            </Label>
+            <SupplyChainEditor
+              cadeia={supplier.cadeia ?? []}
+              onChange={(index, value) => {
+                const currentCadeia = [...(supplier.cadeia ?? Array.from({ length: SUPPLY_CHAIN_STAGES }, () => ""))];
+                currentCadeia[index] = value;
+                handleUpdate({ cadeia: currentCadeia });
+              }}
+              stagesCount={SUPPLY_CHAIN_STAGES}
+            />
           </section>
 
           {/* Commercial Conditions Section */}
