@@ -12,6 +12,7 @@ import {
   Phone,
   Mail,
   User,
+  Link2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import { SupplierDetailsSheet } from "@/components/quote/SupplierDetailsSheet";
+import { SupplyChainEditor } from "@/components/cadastros/SupplyChainEditor";
 import {
   useCotacaoStore,
   createEmptySupplier,
@@ -600,19 +602,15 @@ export const SuppliersManager = () => {
                     </section>
 
                     <section className="space-y-3">
-                      <Label className="text-sm font-medium text-muted-foreground">
+                      <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Link2 className="h-4 w-4" />
                         Etapas da cadeia de fornecimento
                       </Label>
-                      <div className="grid gap-2 md:grid-cols-2">
-                        {Array.from({ length: SUPPLY_CHAIN_STAGES }).map((_, index) => (
-                          <Input
-                            key={`${supplier.id}-chain-${index}`}
-                            placeholder={`Etapa ${index + 1}`}
-                            value={cadeia[index] ?? ""}
-                            onChange={(event) => handleCadeiaChange(supplier.id, index, event.target.value)}
-                          />
-                        ))}
-                      </div>
+                      <SupplyChainEditor
+                        cadeia={cadeia}
+                        onChange={(index, value) => handleCadeiaChange(supplier.id, index, value)}
+                        stagesCount={SUPPLY_CHAIN_STAGES}
+                      />
                     </section>
                   </CardContent>
                   <CardFooter className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
