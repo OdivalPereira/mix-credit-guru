@@ -134,6 +134,7 @@ export function DemoDataLoader() {
               <li><strong>{comboXTudo.length} produtos</strong> com NCM e flags tributárias</li>
               <li><strong>{demoSuppliers.length} fornecedores</strong> de diferentes regimes</li>
               <li>Preços e fretes de exemplo para comparação</li>
+              <li><strong>Condições comerciais</strong>: degraus de preço, faixas de frete e rendimento</li>
             </ul>
             <p className="text-xs text-muted-foreground">
               Você pode editar ou remover esses dados a qualquer momento.
