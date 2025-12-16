@@ -40,7 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { VirtualizedTableBody } from "@/components/ui/virtualized-table-body";
-import type { MixResultadoItem, Produto, Supplier } from "@/types/domain";
+import type { MixResultadoItem, Produto, Fornecedor, OfertaFornecedor } from "@/types/domain";
 
 import { OptimizationProgress } from "./OptimizationProgress";
 import { SupplierRow } from "./SupplierRow";
@@ -48,7 +48,8 @@ import { SupplierDetailsSheet } from "./SupplierDetailsSheet";
 
 interface SupplierTableProps {
   resultados: MixResultadoItem[];
-  fornecedoresOriginais: Supplier[];
+  fornecedoresCadastro: Fornecedor[];
+  ofertas: OfertaFornecedor[];
   produtos: Produto[];
   contextProductKey: string;
   formatCurrency: (value: number) => string;
@@ -63,7 +64,8 @@ interface SupplierTableProps {
   onToggleChart: () => void;
   onOptimize: () => void;
   getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
-  onPatchSupplier: (id: string, data: Partial<Supplier>) => void;
+  onUpdateFornecedor: (id: string, data: Partial<Fornecedor>) => void;
+  onUpdateOferta: (id: string, data: Partial<OfertaFornecedor>) => void;
   showChart: boolean;
   optimizing: boolean;
   optProgress: number;
@@ -73,7 +75,8 @@ interface SupplierTableProps {
 
 const SupplierTableComponent = ({
   resultados,
-  fornecedoresOriginais,
+  fornecedoresCadastro,
+  ofertas,
   produtos,
   contextProductKey,
   formatCurrency,
@@ -88,7 +91,8 @@ const SupplierTableComponent = ({
   onToggleChart,
   onOptimize,
   getCreditBadge,
-  onPatchSupplier,
+  onUpdateFornecedor,
+  onUpdateOferta,
   showChart,
   optimizing,
   optProgress,
@@ -96,36 +100,54 @@ const SupplierTableComponent = ({
   containerRef,
 }: SupplierTableProps) => {
   const shouldVirtualize = resultados.length >= 200;
-  const [detailsSupplierId, setDetailsSupplierId] = useState<string | null>(null);
-  const supplierIndex = useMemo(
-    () => new Map(fornecedoresOriginais.map((item) => [item.id, item])),
-    [fornecedoresOriginais],
+  const [detailsOfertaId, setDetailsOfertaId] = useState<string | null>(null);
+  
+  // Index ofertas by ID for quick lookup
+  const ofertaIndex = useMemo(
+    () => new Map(ofertas.map((item) => [item.id, item])),
+    [ofertas],
   );
-  const detailsSupplier = useMemo(() => {
-    if (!detailsSupplierId) {
+  
+  // Index fornecedores by ID for quick lookup
+  const fornecedorIndex = useMemo(
+    () => new Map(fornecedoresCadastro.map((item) => [item.id, item])),
+    [fornecedoresCadastro],
+  );
+  
+  // Get the details for the sheet
+  const detailsData = useMemo(() => {
+    if (!detailsOfertaId) {
       return null;
     }
-    return fornecedoresOriginais.find((item) => item.id === detailsSupplierId) ?? null;
-  }, [detailsSupplierId, fornecedoresOriginais]);
+    const oferta = ofertaIndex.get(detailsOfertaId);
+    if (!oferta) {
+      return null;
+    }
+    const fornecedor = fornecedorIndex.get(oferta.fornecedorId);
+    if (!fornecedor) {
+      return null;
+    }
+    return { fornecedor, oferta };
+  }, [detailsOfertaId, ofertaIndex, fornecedorIndex]);
 
   const renderSupplierRow = (supplier: MixResultadoItem) => {
-    const sourceSupplier = supplierIndex.get(supplier.id);
+    const sourceOferta = ofertaIndex.get(supplier.id);
     const hasConditions = !!(
-      sourceSupplier?.priceBreaks?.length ||
-      sourceSupplier?.freightBreaks?.length ||
-      sourceSupplier?.yield
+      sourceOferta?.priceBreaks?.length ||
+      sourceOferta?.freightBreaks?.length ||
+      sourceOferta?.yield
     );
     return (
       <SupplierRow
         key={supplier.id}
         supplier={supplier}
-        sourceSupplier={sourceSupplier}
+        sourceOferta={sourceOferta}
         hasCommercialConditions={hasConditions}
         formatCurrency={formatCurrency}
         getCreditBadge={getCreditBadge}
         onDuplicate={onDuplicate}
         onRemove={onRemove}
-        onOpenDetails={() => setDetailsSupplierId(supplier.id)}
+        onOpenDetails={() => setDetailsOfertaId(supplier.id)}
       />
     );
   };
@@ -282,13 +304,15 @@ const SupplierTableComponent = ({
           </Table>
         </div>
       </CardContent>
-      {detailsSupplier ? (
+      {detailsData ? (
         <SupplierDetailsSheet
           open
-          supplier={detailsSupplier}
+          fornecedor={detailsData.fornecedor}
+          oferta={detailsData.oferta}
           produtos={produtos}
-          onClose={() => setDetailsSupplierId(null)}
-          onUpdate={onPatchSupplier}
+          onClose={() => setDetailsOfertaId(null)}
+          onUpdateFornecedor={onUpdateFornecedor}
+          onUpdateOferta={onUpdateOferta}
         />
       ) : null}
     </Card>
