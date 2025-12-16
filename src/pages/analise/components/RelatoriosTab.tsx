@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ChartTooltip, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Tooltip, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 interface RelatoriosTabProps {
     mixData: any[];
@@ -82,7 +82,7 @@ export const RelatoriosTab = ({
                                                 width={150}
                                                 tick={{ fontSize: 12 }}
                                             />
-                                            <ChartTooltip
+                                            <Tooltip
                                                 content={({ active, payload }) => {
                                                     if (active && payload && payload.length) {
                                                         return (
