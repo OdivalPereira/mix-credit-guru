@@ -270,6 +270,7 @@ export type Database = {
           explanation_md: string | null
           id: string
           ncm: string
+          scenario: string
           uf: string
           updated_at: string
           user_id: string
@@ -284,6 +285,7 @@ export type Database = {
           explanation_md?: string | null
           id?: string
           ncm: string
+          scenario?: string
           uf: string
           updated_at?: string
           user_id: string
@@ -298,6 +300,7 @@ export type Database = {
           explanation_md?: string | null
           id?: string
           ncm?: string
+          scenario?: string
           uf?: string
           updated_at?: string
           user_id?: string
