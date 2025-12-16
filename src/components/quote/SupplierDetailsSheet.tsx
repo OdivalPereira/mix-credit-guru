@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { ESTADOS, getMunicipiosByUF } from "@/data/locations";
-import type { Produto, Supplier, SupplierRegime, SupplierTipo, Unit, PriceBreak, FreightBreak, YieldConfig } from "@/types/domain";
+import type { Produto, Fornecedor, OfertaFornecedor, SupplierRegime, SupplierTipo, Unit, PriceBreak, FreightBreak, YieldConfig } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import {
   UNIT_OPTIONS,
@@ -45,59 +45,68 @@ import { SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 const EMPTY_SELECT_VALUE = "__empty__";
 
 interface SupplierDetailsSheetProps {
-  supplier: Supplier;
+  fornecedor: Fornecedor;
+  oferta: OfertaFornecedor;
   produtos: Produto[];
   open: boolean;
   onClose: () => void;
-  onUpdate: (id: string, patch: Partial<Supplier>) => void;
+  onUpdateFornecedor: (id: string, patch: Partial<Fornecedor>) => void;
+  onUpdateOferta: (id: string, patch: Partial<OfertaFornecedor>) => void;
 }
 
 export const SupplierDetailsSheet = ({
-  supplier,
+  fornecedor,
+  oferta,
   produtos,
   open,
   onClose,
-  onUpdate,
+  onUpdateFornecedor,
+  onUpdateOferta,
 }: SupplierDetailsSheetProps) => {
   const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
   const municipios = useMemo(
-    () => getMunicipiosByUF(supplier.uf?.toUpperCase() ?? ""),
-    [supplier.uf],
+    () => getMunicipiosByUF(fornecedor.uf?.toUpperCase() ?? ""),
+    [fornecedor.uf],
   );
   const selectedMunicipio = useMemo(
-    () => municipios.find((item) => item.codigo === (supplier.municipio ?? "")),
-    [municipios, supplier.municipio],
+    () => municipios.find((item) => item.codigo === (fornecedor.municipio ?? "")),
+    [municipios, fornecedor.municipio],
   );
-  const handleUpdate = (patch: Partial<Supplier>) => {
-    onUpdate(supplier.id, patch);
+
+  const handleUpdateFornecedor = (patch: Partial<Fornecedor>) => {
+    onUpdateFornecedor(fornecedor.id, patch);
+  };
+
+  const handleUpdateOferta = (patch: Partial<OfertaFornecedor>) => {
+    onUpdateOferta(oferta.id, patch);
   };
 
   const handleProductChange = (produtoId: string | undefined) => {
     if (!produtoId) {
-      handleUpdate({
-        produtoId: undefined,
+      handleUpdateOferta({
+        produtoId: undefined as unknown as string,
         produtoDescricao: undefined,
-        unidadeNegociada: supplier.unidadeNegociada,
-        flagsItem: supplier.flagsItem ? { ...supplier.flagsItem, ncm: undefined } : supplier.flagsItem,
+        unidadeNegociada: oferta.unidadeNegociada,
+        flagsItem: oferta.flagsItem ? { ...oferta.flagsItem, ncm: undefined } : oferta.flagsItem,
       });
       return;
     }
     const produto = produtos.find((item) => item.id === produtoId);
-    handleUpdate({
+    handleUpdateOferta({
       produtoId,
-      produtoDescricao: produto?.descricao ?? supplier.produtoDescricao,
-      unidadeNegociada: produto?.unidadePadrao ?? supplier.unidadeNegociada,
+      produtoDescricao: produto?.descricao ?? oferta.produtoDescricao,
+      unidadeNegociada: produto?.unidadePadrao ?? oferta.unidadeNegociada,
       flagsItem: {
-        ...(supplier.flagsItem ?? {}),
+        ...(oferta.flagsItem ?? {}),
         ncm: produto?.ncm,
       },
     });
   };
 
   const handleContatoChange = (field: "nome" | "email" | "telefone", value: string) => {
-    handleUpdate({
+    handleUpdateFornecedor({
       contato: {
-        ...supplier.contato,
+        ...fornecedor.contato,
         [field]: value,
       },
     });
@@ -114,22 +123,23 @@ export const SupplierDetailsSheet = ({
         </SheetHeader>
 
         <div className="space-y-6">
-                  <section className="space-y-3">
+          {/* Seção: Dados Cadastrais do Fornecedor */}
+          <section className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-cnpj">CNPJ</Label>
                 <Input
                   id="fornecedor-cnpj"
                   placeholder="00.000.000/0000-00"
-                  value={supplier.cnpj ?? ""}
-                  onChange={(event) => handleUpdate({ cnpj: event.target.value })}
+                  value={fornecedor.cnpj ?? ""}
+                  onChange={(event) => handleUpdateFornecedor({ cnpj: event.target.value })}
                 />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-tipo">Tipo</Label>
                 <Select
-                  value={supplier.tipo}
-                  onValueChange={(value) => handleUpdate({ tipo: value as SupplierTipo })}
+                  value={fornecedor.tipo}
+                  onValueChange={(value) => handleUpdateFornecedor({ tipo: value as SupplierTipo })}
                 >
                   <SelectTrigger id="fornecedor-tipo">
                     <SelectValue />
@@ -146,8 +156,8 @@ export const SupplierDetailsSheet = ({
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-regime">Regime tributario</Label>
                 <Select
-                  value={supplier.regime}
-                  onValueChange={(value) => handleUpdate({ regime: value as SupplierRegime })}
+                  value={fornecedor.regime}
+                  onValueChange={(value) => handleUpdateFornecedor({ regime: value as SupplierRegime })}
                 >
                   <SelectTrigger id="fornecedor-regime">
                     <SelectValue />
@@ -165,19 +175,20 @@ export const SupplierDetailsSheet = ({
                 <Label htmlFor="fornecedor-ativo">Status</Label>
                 <div className="flex items-center justify-between rounded-md border border-dashed px-3 py-2">
                   <span className="text-sm text-muted-foreground">
-                    {supplier.ativo ? "Fornecedor ativo" : "Fornecedor inativo"}
+                    {fornecedor.ativo ? "Fornecedor ativo" : "Fornecedor inativo"}
                   </span>
                   <Switch
                     id="fornecedor-ativo"
-                    checked={supplier.ativo}
-                    onCheckedChange={(checked) => handleUpdate({ ativo: Boolean(checked) })}
+                    checked={fornecedor.ativo}
+                    onCheckedChange={(checked) => handleUpdateFornecedor({ ativo: Boolean(checked) })}
                   />
                 </div>
               </div>
             </div>
           </section>
 
-                  <section className="space-y-3">
+          {/* Seção: Localização */}
+          <section className="space-y-3">
             <Label className="text-sm font-medium text-muted-foreground">
               Localizacao
             </Label>
@@ -185,9 +196,9 @@ export const SupplierDetailsSheet = ({
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-uf">Estado (UF)</Label>
                 <Select
-                  value={supplier.uf ?? ""}
+                  value={fornecedor.uf ?? ""}
                   onValueChange={(value) => {
-                    handleUpdate({ uf: value, municipio: undefined });
+                    handleUpdateFornecedor({ uf: value, municipio: undefined });
                     setIsMunicipioOpen(false);
                   }}
                 >
@@ -211,10 +222,10 @@ export const SupplierDetailsSheet = ({
                       id="fornecedor-municipio"
                       variant="outline"
                       role="combobox"
-                      disabled={!supplier.uf}
+                      disabled={!fornecedor.uf}
                       className={cn(
                         "w-full justify-between",
-                        !supplier.municipio && "text-muted-foreground",
+                        !fornecedor.municipio && "text-muted-foreground",
                       )}
                     >
                       {selectedMunicipio ? selectedMunicipio.nome : "Selecione o municipio"}
@@ -232,14 +243,14 @@ export const SupplierDetailsSheet = ({
                               key={municipio.codigo}
                               value={`${municipio.codigo} ${municipio.nome}`}
                               onSelect={() => {
-                                handleUpdate({ municipio: municipio.codigo });
+                                handleUpdateFornecedor({ municipio: municipio.codigo });
                                 setIsMunicipioOpen(false);
                               }}
                             >
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  municipio.codigo === supplier.municipio ? "opacity-100" : "opacity-0",
+                                  municipio.codigo === fornecedor.municipio ? "opacity-100" : "opacity-0",
                                 )}
                               />
                               {municipio.nome}
@@ -254,6 +265,7 @@ export const SupplierDetailsSheet = ({
             </div>
           </section>
 
+          {/* Seção: Produto vinculado (dados da oferta) */}
           <section className="space-y-3">
             <Label className="text-sm font-medium text-muted-foreground">
               Produto vinculado
@@ -262,7 +274,7 @@ export const SupplierDetailsSheet = ({
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-produto">Produto</Label>
                 <Select
-                  value={supplier.produtoId ? supplier.produtoId : EMPTY_SELECT_VALUE}
+                  value={oferta.produtoId ? oferta.produtoId : EMPTY_SELECT_VALUE}
                   onValueChange={(value) =>
                     handleProductChange(value === EMPTY_SELECT_VALUE ? undefined : value)
                   }
@@ -283,9 +295,9 @@ export const SupplierDetailsSheet = ({
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-unidade">Unidade negociada</Label>
                 <Select
-                  value={supplier.unidadeNegociada ?? ""}
+                  value={oferta.unidadeNegociada ?? ""}
                   onValueChange={(value) =>
-                    handleUpdate({ unidadeNegociada: value as Unit })
+                    handleUpdateOferta({ unidadeNegociada: value as Unit })
                   }
                 >
                   <SelectTrigger id="fornecedor-unidade">
@@ -305,9 +317,9 @@ export const SupplierDetailsSheet = ({
                 <Input
                   id="fornecedor-pedido"
                   type="number"
-                  value={supplier.pedidoMinimo ?? 0}
+                  value={oferta.pedidoMinimo ?? 0}
                   onChange={(event) =>
-                    handleUpdate({ pedidoMinimo: Number(event.target.value) || 0 })
+                    handleUpdateOferta({ pedidoMinimo: Number(event.target.value) || 0 })
                   }
                 />
               </div>
@@ -316,9 +328,9 @@ export const SupplierDetailsSheet = ({
                 <Input
                   id="fornecedor-prazo-entrega"
                   type="number"
-                  value={supplier.prazoEntregaDias ?? 0}
+                  value={oferta.prazoEntregaDias ?? 0}
                   onChange={(event) =>
-                    handleUpdate({ prazoEntregaDias: Number(event.target.value) || 0 })
+                    handleUpdateOferta({ prazoEntregaDias: Number(event.target.value) || 0 })
                   }
                 />
               </div>
@@ -327,15 +339,16 @@ export const SupplierDetailsSheet = ({
                 <Input
                   id="fornecedor-prazo-pagamento"
                   type="number"
-                  value={supplier.prazoPagamentoDias ?? 0}
+                  value={oferta.prazoPagamentoDias ?? 0}
                   onChange={(event) =>
-                    handleUpdate({ prazoPagamentoDias: Number(event.target.value) || 0 })
+                    handleUpdateOferta({ prazoPagamentoDias: Number(event.target.value) || 0 })
                   }
                 />
               </div>
             </div>
           </section>
 
+          {/* Seção: Contato (dados do fornecedor) */}
           <section className="space-y-3">
             <Label className="text-sm font-medium text-muted-foreground">
               Contato
@@ -345,7 +358,7 @@ export const SupplierDetailsSheet = ({
                 <Label htmlFor="fornecedor-contato-nome">Responsavel</Label>
                 <Input
                   id="fornecedor-contato-nome"
-                  value={supplier.contato?.nome ?? ""}
+                  value={fornecedor.contato?.nome ?? ""}
                   onChange={(event) => handleContatoChange("nome", event.target.value)}
                 />
               </div>
@@ -354,7 +367,7 @@ export const SupplierDetailsSheet = ({
                 <Input
                   id="fornecedor-contato-email"
                   type="email"
-                  value={supplier.contato?.email ?? ""}
+                  value={fornecedor.contato?.email ?? ""}
                   onChange={(event) => handleContatoChange("email", event.target.value)}
                 />
               </div>
@@ -362,36 +375,36 @@ export const SupplierDetailsSheet = ({
                 <Label htmlFor="fornecedor-contato-telefone">Telefone</Label>
                 <Input
                   id="fornecedor-contato-telefone"
-                  value={supplier.contato?.telefone ?? ""}
+                  value={fornecedor.contato?.telefone ?? ""}
                   onChange={(event) => handleContatoChange("telefone", event.target.value)}
                 />
               </div>
             </div>
           </section>
 
-          {/* Supply Chain Section */}
+          {/* Supply Chain Section (dados da oferta) */}
           <section className="space-y-3 border-t pt-4">
             <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Link2 className="h-4 w-4" />
               Etapas da cadeia de fornecimento
             </Label>
             <SupplyChainEditor
-              cadeia={supplier.cadeia ?? []}
-              supplierTipo={supplier.tipo}
-              onChange={(newCadeia) => handleUpdate({ cadeia: newCadeia })}
+              cadeia={oferta.cadeia ?? []}
+              supplierTipo={fornecedor.tipo}
+              onChange={(newCadeia) => handleUpdateOferta({ cadeia: newCadeia })}
               stagesCount={SUPPLY_CHAIN_STAGES}
             />
           </section>
 
-          {/* Commercial Conditions Section */}
+          {/* Commercial Conditions Section (dados da oferta) */}
           <section className="space-y-3 border-t pt-4">
             <CommercialConditionsSection
-              priceBreaks={supplier.priceBreaks}
-              freightBreaks={supplier.freightBreaks}
-              yieldConfig={supplier.yield}
-              onPriceBreaksChange={(breaks: PriceBreak[]) => handleUpdate({ priceBreaks: breaks })}
-              onFreightBreaksChange={(breaks: FreightBreak[]) => handleUpdate({ freightBreaks: breaks })}
-              onYieldChange={(config: YieldConfig | undefined) => handleUpdate({ yield: config })}
+              priceBreaks={oferta.priceBreaks}
+              freightBreaks={oferta.freightBreaks}
+              yieldConfig={oferta.yield}
+              onPriceBreaksChange={(breaks: PriceBreak[]) => handleUpdateOferta({ priceBreaks: breaks })}
+              onFreightBreaksChange={(breaks: FreightBreak[]) => handleUpdateOferta({ freightBreaks: breaks })}
+              onYieldChange={(config: YieldConfig | undefined) => handleUpdateOferta({ yield: config })}
             />
           </section>
         </div>

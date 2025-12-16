@@ -4,13 +4,13 @@ import { Copy, Info, Trash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import type { MixResultadoItem, Supplier } from "@/types/domain";
+import type { MixResultadoItem, OfertaFornecedor } from "@/types/domain";
 import { getMunicipiosByUF } from "@/data/locations";
 import { REGIME_LABELS, SUPPLIER_TIPO_LABELS } from "@/data/lookups";
 
 interface SupplierRowProps {
   supplier: MixResultadoItem;
-  sourceSupplier?: Supplier;
+  sourceOferta?: OfertaFornecedor;
   hasCommercialConditions?: boolean;
   formatCurrency: (value: number) => string;
   getCreditBadge: (creditavel: boolean, credito: number) => JSX.Element;
@@ -21,7 +21,7 @@ interface SupplierRowProps {
 
 const SupplierRowComponent = ({
   supplier,
-  sourceSupplier,
+  sourceOferta,
   hasCommercialConditions,
   formatCurrency,
   getCreditBadge,
@@ -58,12 +58,12 @@ const SupplierRowComponent = ({
   ].filter(Boolean) as Array<{ key: string; label: string; variant: "secondary" | "warning" | "success" }>;
 
   const priceChanged =
-    sourceSupplier && Number.isFinite(sourceSupplier.preco)
-      ? sourceSupplier.preco !== supplier.preco
+    sourceOferta && Number.isFinite(sourceOferta.preco)
+      ? sourceOferta.preco !== supplier.preco
       : false;
   const freightChanged =
-    sourceSupplier && Number.isFinite(sourceSupplier.frete)
-      ? sourceSupplier.frete !== supplier.frete
+    sourceOferta && Number.isFinite(sourceOferta.frete)
+      ? sourceOferta.frete !== supplier.frete
       : false;
 
   const restrictions = supplier.restricoes ?? [];
@@ -112,19 +112,19 @@ const SupplierRowComponent = ({
             <Badge variant="secondary" className="gap-1">
               Condições configuradas
             </Badge>
-            {sourceSupplier?.priceBreaks?.length ? (
+            {sourceOferta?.priceBreaks?.length ? (
               <div className="text-xs text-muted-foreground">
-                {sourceSupplier.priceBreaks.length} degrau(s) de preço
+                {sourceOferta.priceBreaks.length} degrau(s) de preço
               </div>
             ) : null}
-            {sourceSupplier?.freightBreaks?.length ? (
+            {sourceOferta?.freightBreaks?.length ? (
               <div className="text-xs text-muted-foreground">
-                {sourceSupplier.freightBreaks.length} degrau(s) de frete
+                {sourceOferta.freightBreaks.length} degrau(s) de frete
               </div>
             ) : null}
-            {sourceSupplier?.yield ? (
+            {sourceOferta?.yield ? (
               <div className="text-xs text-muted-foreground">
-                Rendimento: {((sourceSupplier.yield.rendimento ?? 1) * 100).toFixed(0)}%
+                Rendimento: {((sourceOferta.yield.rendimento ?? 1) * 100).toFixed(0)}%
               </div>
             ) : null}
             {supplier.degrauAplicado ? (

@@ -48,7 +48,7 @@ import { useConfigStore } from "@/store/useConfigStore";
 import { useActivityLogStore } from "@/store/useActivityLogStore";
 import { validateEssentialData } from "@/lib/validation";
 import { NextStepButton } from "@/components/quote/NextStepButton";
-import type { MixResultadoItem, Supplier } from "@/types/domain";
+import type { MixResultadoItem, Supplier, Fornecedor, OfertaFornecedor } from "@/types/domain";
 import type { OptimizePerItemResult } from "@/lib/opt";
 import { OptimizerApiClient } from "@/services/OptimizerApiClient";
 
@@ -73,9 +73,13 @@ export default function Cotacao() {
     contexto,
     setContexto,
     fornecedores,
+    fornecedoresCadastro,
+    ofertas,
     resultado,
     ultimaOtimizacao,
     upsertFornecedor,
+    upsertFornecedorCadastro,
+    upsertOferta,
     removeFornecedor,
     importarCSV,
     exportarCSV,
@@ -170,6 +174,24 @@ export default function Cotacao() {
       });
     },
     [fornecedores, upsertFornecedor],
+  );
+
+  const handleUpdateFornecedor = useCallback(
+    (id: string, patch: Partial<Fornecedor>) => {
+      const current = fornecedoresCadastro.find((item) => item.id === id);
+      if (!current) return;
+      upsertFornecedorCadastro({ ...current, ...patch });
+    },
+    [fornecedoresCadastro, upsertFornecedorCadastro],
+  );
+
+  const handleUpdateOferta = useCallback(
+    (id: string, patch: Partial<OfertaFornecedor>) => {
+      const current = ofertas.find((item) => item.id === id);
+      if (!current) return;
+      upsertOferta({ ...current, ...patch });
+    },
+    [ofertas, upsertOferta],
   );
 
   const handleAddSupplier = useCallback(() => {
@@ -613,7 +635,8 @@ export default function Cotacao() {
 
           <SupplierTable
             resultados={resultados}
-            fornecedoresOriginais={fornecedores}
+            fornecedoresCadastro={fornecedoresCadastro}
+            ofertas={ofertas}
             produtos={produtosCatalogo}
             contextProductKey={contexto.produto}
             formatCurrency={formatCurrency}
@@ -628,7 +651,8 @@ export default function Cotacao() {
             onToggleChart={() => setShowChart((previous) => !previous)}
             onOptimize={handleOptimize}
             getCreditBadge={getCreditBadge}
-            onPatchSupplier={handlePatchFornecedor}
+            onUpdateFornecedor={handleUpdateFornecedor}
+            onUpdateOferta={handleUpdateOferta}
             showChart={showChart}
             optimizing={optimizing}
             optProgress={optProgress}
