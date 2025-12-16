@@ -12,6 +12,8 @@ import {
   User,
   Shield,
   History,
+  FlaskConical,
+  X,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -45,7 +47,7 @@ export function Layout() {
   const navigate = useNavigate();
   const { openModal } = useDonationModalStore();
   const { theme, setTheme } = useTheme();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, isDemo, signOut } = useAuth();
   
   const isDarkMode = theme === "dark";
   
@@ -156,6 +158,38 @@ export function Layout() {
           </div>
         </div>
       </header>
+
+      {/* Demo Mode Banner */}
+      {isDemo && (
+        <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white">
+          <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-2">
+              <FlaskConical className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                Modo Demonstração — Os dados não serão salvos.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-white hover:bg-white/20 hover:text-white"
+                onClick={() => navigate('/auth')}
+              >
+                Criar conta
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white hover:bg-white/20 hover:text-white"
+                onClick={signOut}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Premium Navigation */}
       <nav className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
