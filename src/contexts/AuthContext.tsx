@@ -28,15 +28,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const DEMO_MODE_KEY = 'mix-credit-guru-demo-mode';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isDemo, setIsDemo] = useState(false);
+  const [isDemo, setIsDemo] = useState(() => {
+    // Initialize from localStorage
+    return localStorage.getItem(DEMO_MODE_KEY) === 'true';
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If demo mode is active from localStorage, skip auth loading
+    if (isDemo) {
+      setLoading(false);
+      return;
+    }
+
     if (!supabase) {
       setLoading(false);
       return;
@@ -73,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isDemo]);
 
   async function fetchProfileAndRole(userId: string) {
     if (!supabase) return;
@@ -173,11 +184,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
     setIsAdmin(false);
     setIsDemo(false);
+    localStorage.removeItem(DEMO_MODE_KEY);
   }
 
   function enterDemoMode() {
     setIsDemo(true);
     setLoading(false);
+    localStorage.setItem(DEMO_MODE_KEY, 'true');
     useActivityLogStore.getState().logActivity({
       activity_type: 'demo_carregado',
       entity_type: 'auth',
