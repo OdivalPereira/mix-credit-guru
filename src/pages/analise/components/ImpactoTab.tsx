@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertCircle, ArrowRight, Plus, ShoppingCart, Trash2, TrendingDown, TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ChartTooltip, Legend, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Tooltip, Legend, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import type { ProdutoSelecionado } from "../hooks/useAnaliseData";
 import { type ProdutoAnalise } from "@/lib/impacto";
 
@@ -260,7 +260,7 @@ export const ImpactoTab = ({
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                     <XAxis dataKey="nome" className="text-xs" />
                                     <YAxis />
-                                    <ChartTooltip
+                                    <Tooltip
                                         content={({ active, payload }) => {
                                             if (active && payload && payload.length) {
                                                 return (
