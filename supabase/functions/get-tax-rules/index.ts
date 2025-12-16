@@ -33,10 +33,10 @@ serve(async (req) => {
             id: r.id,
             ncm: r.ncm,
             uf: r.uf,
-            municipio: r.municipio,
+            municipio: r.municipio || null,
             scenario: r.scenario || 'default',
-            validFrom: r.valid_from,
-            validTo: r.valid_to,
+            validFrom: r.date_start,
+            validTo: r.date_end,
             rates: {
                 ibs: Number(r.aliquota_ibs) || 0,
                 cbs: Number(r.aliquota_cbs) || 0,
@@ -53,8 +53,9 @@ serve(async (req) => {
         );
 
     } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: message }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 400
