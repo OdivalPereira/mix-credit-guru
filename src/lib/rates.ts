@@ -54,6 +54,9 @@ export function hydrateRules(rules: HydrationRule[]) {
     municipios: {},
   };
 
+  // Helper to check if value is a wildcard (null, undefined, or '*')
+  const isWildcard = (val?: string | null) => !val || val === '*';
+
   // Helper to get or create nested structure
   const getScenarioRules = (target: Record<string, ScenarioRules>, key: string) => {
     if (!target[key]) target[key] = {};
@@ -68,39 +71,44 @@ export function hydrateRules(rules: HydrationRule[]) {
       scenarios: [r.scenario]
     };
 
-    // Global
-    if (!r.ncm && !r.uf) {
+    const ncmIsWildcard = isWildcard(r.ncm);
+    const ufIsWildcard = isWildcard(r.uf);
+
+    // Global rule (both NCM and UF are wildcards)
+    if (ncmIsWildcard && ufIsWildcard) {
       if (!newSource.global![r.scenario]) newSource.global![r.scenario] = [];
       newSource.global![r.scenario].push(rule);
       continue;
     }
 
-    // NCM Specific (Federal if UF is null)
-    if (r.ncm && !r.uf) {
-      const ncmRules = getScenarioRules(newSource.ncm!, r.ncm);
+    // NCM Specific (UF is wildcard = federal rule)
+    if (!ncmIsWildcard && ufIsWildcard) {
+      const ncmRules = getScenarioRules(newSource.ncm!, r.ncm!);
       if (!ncmRules[r.scenario]) ncmRules[r.scenario] = [];
       ncmRules[r.scenario].push(rule);
       continue;
     }
 
-    // Item ID Specific
-    /* Implementation detail: The DB schema has item_id. 
-       We map it to source.items */
-    // @ts-ignore - DB payload allows extra fields not in interface strictly yet
-    if (r.itemId) { // Assuming HydrationRule might have itemId mapped
-      // ... logic for items
+    // UF Specific (NCM is wildcard) - future implementation
+    if (ncmIsWildcard && !ufIsWildcard) {
+      continue;
+    }
+
+    // NCM + UF Specific (most specific)
+    if (!ncmIsWildcard && !ufIsWildcard) {
+      const ncmRules = getScenarioRules(newSource.ncm!, r.ncm!);
+      if (!ncmRules[r.scenario]) ncmRules[r.scenario] = [];
+      ncmRules[r.scenario].push(rule);
     }
   }
 
   // Update the singleton
   if (Object.keys(newSource.global || {}).length > 0 || Object.keys(newSource.ncm || {}).length > 0) {
-    console.log("[Rates] Applying hydrated rules...", {
-      globalCount: Object.keys(newSource.global || {}).length,
-      ncmRulesCount: Object.keys(newSource.ncm || {}).length
+    console.log("[Rates] Applying hydrated rules:", {
+      globalScenarios: Object.keys(newSource.global || {}),
+      ncmKeys: Object.keys(newSource.ncm || {})
     });
 
-    // We merge into the existing baseSource to preserve anything not yet in DB (if partial hydration)
-    // or to ensure structure continuity.
     if (newSource.global) {
       baseSource.global = { ...baseSource.global, ...newSource.global };
     }
@@ -110,8 +118,6 @@ export function hydrateRules(rules: HydrationRule[]) {
     if (newSource.items) {
       baseSource.items = { ...baseSource.items, ...newSource.items };
     }
-    // Note: OverridesUF are handled separately via overridesUF variable, 
-    // but could be hydrated here if we map them.
   }
 }
 
