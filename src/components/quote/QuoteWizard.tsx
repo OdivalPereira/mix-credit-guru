@@ -21,6 +21,7 @@ interface QuoteWizardProps {
   onOptimize: () => void;
   optimizing: boolean;
   optProgress: number;
+  isCalculating: boolean;
 }
 
 const WIZARD_STEPS = [
@@ -42,6 +43,7 @@ export function QuoteWizard({
   onOptimize,
   optimizing,
   optProgress,
+  isCalculating,
 }: QuoteWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -72,13 +74,12 @@ export function QuoteWizard({
               className="flex items-center gap-3 group"
             >
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${
-                  currentStep === step.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : currentStep > step.id
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-background text-muted-foreground"
-                }`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${currentStep === step.id
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : currentStep > step.id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-background text-muted-foreground"
+                  }`}
               >
                 {currentStep > step.id ? (
                   <CheckCircle2 className="h-5 w-5" />
@@ -88,11 +89,10 @@ export function QuoteWizard({
               </div>
               <div className="text-left">
                 <div
-                  className={`text-sm font-medium ${
-                    currentStep === step.id
-                      ? "text-foreground"
-                      : "text-muted-foreground"
-                  }`}
+                  className={`text-sm font-medium ${currentStep === step.id
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                    }`}
                 >
                   {step.title}
                 </div>
@@ -103,9 +103,8 @@ export function QuoteWizard({
             </button>
             {index < WIZARD_STEPS.length - 1 && (
               <div
-                className={`h-0.5 flex-1 mx-4 ${
-                  currentStep > step.id ? "bg-primary" : "bg-border"
-                }`}
+                className={`h-0.5 flex-1 mx-4 ${currentStep > step.id ? "bg-primary" : "bg-border"
+                  }`}
               />
             )}
           </div>
@@ -137,6 +136,7 @@ export function QuoteWizard({
                 goToNextStep();
               }}
               onBack={goToPreviousStep}
+              isCalculating={isCalculating}
             />
           )}
           {currentStep === 4 && (

@@ -88,6 +88,7 @@ export default function Cotacao() {
     limpar,
     calcular,
     registrarOtimizacao,
+    isCalculating,
   } = useCotacaoStore();
   const conversoesGlobais = useUnidadesStore((state) => state.conversoes);
   const yieldGlobais = useUnidadesStore((state) => state.yields);
@@ -131,10 +132,12 @@ export default function Cotacao() {
   }, [config.defaultUf, config.defaultRegime, config.defaultDestino, contexto, setContexto]);
 
   useEffect(() => {
-    if (config.autoCalculate) {
+    // Only calculate if autoCalculate is on AND (we have no results OR explicitly needed)
+    // Minimizing recalculation on mount if persistence already has data
+    if (config.autoCalculate && resultado.itens.length === 0) {
       calcular();
     }
-  }, [contexto, fornecedores, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate]);
+  }, [contexto, fornecedores, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate, resultado.itens.length]);
 
   // Worker cleanup removed
 
@@ -347,7 +350,7 @@ export default function Cotacao() {
             activity_type: 'cotacao_atualizada',
             entity_type: 'cotacao',
             entity_name: contexto.produto || 'Cotação',
-            metadata: { 
+            metadata: {
               action: 'otimizacao',
               cost: result.cost,
               fornecedores: fornecedores.length,
@@ -501,6 +504,7 @@ export default function Cotacao() {
           onOptimize={handleOptimize}
           optimizing={optimizing}
           optProgress={optProgress}
+          isCalculating={isCalculating}
         />
       ) : (
         <>

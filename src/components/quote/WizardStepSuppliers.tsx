@@ -30,6 +30,7 @@ interface WizardStepSuppliersProps {
   onRemoveSupplier: (id: string) => void;
   onNext: () => void;
   onBack: () => void;
+  isCalculating: boolean;
 }
 
 export function WizardStepSuppliers({
@@ -39,6 +40,7 @@ export function WizardStepSuppliers({
   onRemoveSupplier,
   onNext,
   onBack,
+  isCalculating,
 }: WizardStepSuppliersProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -203,9 +205,18 @@ export function WizardStepSuppliers({
         <Button variant="outline" onClick={onBack}>
           Voltar
         </Button>
-        <Button onClick={onNext} disabled={!hasFornecedores} size="lg">
-          Calcular e Ver Resultados
-          <ArrowRight className="h-4 w-4 ml-2" />
+        <Button onClick={onNext} disabled={!hasFornecedores || isCalculating} size="lg">
+          {isCalculating ? (
+            <>
+              Calculando...
+              {/* Add spinner here if desired, or relying on text context */}
+            </>
+          ) : (
+            <>
+              Calcular e Ver Resultados
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>

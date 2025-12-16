@@ -42,23 +42,23 @@ export interface CotacaoStore {
   constraints: SupplierConstraints[];
   prefs: OptimizePrefs;
   ultimaOtimizacao: OptimizePerItemResult | null;
-  
+
   setContexto: (contexto: Partial<Contexto>) => void;
-  
+
   // Métodos para Fornecedor (cadastro)
   upsertFornecedorCadastro: (fornecedor: Omit<Fornecedor, "id"> & { id?: string }) => string;
   removeFornecedorCadastro: (id: string) => void;
-  
+
   // Métodos para Oferta
   upsertOferta: (oferta: Omit<OfertaFornecedor, "id"> & { id?: string }) => string;
   removeOferta: (id: string) => void;
   getOfertasByFornecedor: (fornecedorId: string) => OfertaFornecedor[];
-  
+
   /** @deprecated Use upsertFornecedorCadastro + upsertOferta */
   upsertFornecedor: (fornecedor: Omit<Supplier, "id"> & { id?: string }) => void;
   /** @deprecated Use removeFornecedorCadastro ou removeOferta */
   removeFornecedor: (id: string) => void;
-  
+
   setConstraints: (constraints: SupplierConstraints[]) => void;
   setPrefs: (prefs: OptimizePrefs) => void;
   limpar: () => void;
@@ -70,6 +70,7 @@ export interface CotacaoStore {
   registrarOtimizacao: (resultado: OptimizePerItemResult) => void;
   computeResultado: (scenario?: string, contextOverride?: Partial<Contexto>) => MixResultado;
   enrichSuppliersWithTaxes: () => Promise<void>;
+  isCalculating: boolean;
 }
 
 const initialContexto: Contexto = {
@@ -108,7 +109,7 @@ function applyOfertaDefaults(o: Partial<OfertaFornecedor> & { id: string; fornec
   if (cadeia.length < supplyChainLength) {
     cadeia.push(...Array.from({ length: supplyChainLength - cadeia.length }, () => ""));
   }
-  
+
   return {
     id: o.id,
     fornecedorId: o.fornecedorId,
@@ -144,7 +145,7 @@ function joinFornecedoresOfertas(
   ofertas: OfertaFornecedor[]
 ): Supplier[] {
   const fornecedorMap = new Map(fornecedoresCadastro.map(f => [f.id, f]));
-  
+
   return ofertas.map(oferta => {
     const fornecedor = fornecedorMap.get(oferta.fornecedorId);
     if (!fornecedor) {
@@ -177,7 +178,7 @@ function joinFornecedoresOfertas(
         conversoes: oferta.conversoes,
       };
     }
-    
+
     return {
       // ID da oferta (para identificação única no resultado)
       id: oferta.id,
@@ -220,7 +221,7 @@ function joinFornecedoresOfertas(
 function migrateSupplierToNewFormat(supplier: Supplier): { fornecedor: Fornecedor; oferta: OfertaFornecedor } {
   const fornecedorId = generateId("fornecedor");
   const ofertaId = supplier.id; // Manter ID original na oferta para compatibilidade
-  
+
   const fornecedor: Fornecedor = {
     id: fornecedorId,
     nome: supplier.nome,
@@ -232,7 +233,7 @@ function migrateSupplierToNewFormat(supplier: Supplier): { fornecedor: Fornecedo
     contato: supplier.contato,
     ativo: supplier.ativo,
   };
-  
+
   const oferta: OfertaFornecedor = {
     id: ofertaId,
     fornecedorId,
@@ -257,7 +258,7 @@ function migrateSupplierToNewFormat(supplier: Supplier): { fornecedor: Fornecedo
     conversoes: supplier.conversoes,
     ativa: supplier.ativo,
   };
-  
+
   return { fornecedor, oferta };
 }
 
@@ -357,7 +358,7 @@ function buildResultado({ fornecedores, contexto, scenario }: BuildResultadoPara
         ...unidadesState.conversoes,
         ...(fornecedor.conversoes ?? []),
       ];
-      
+
       const unidadeFornecedor = fornecedor.unidadeNegociada ?? 'un';
       const yieldConfig = fornecedor.yield ??
         unidadesState.findYield(fornecedor.produtoId, unidadeFornecedor);
@@ -469,6 +470,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
       constraints: [],
       prefs: initialPrefs,
       ultimaOtimizacao: null,
+      isCalculating: false,
 
       setContexto: (ctx) =>
         set((state) => {
@@ -489,17 +491,17 @@ export const useCotacaoStore = create<CotacaoStore>()(
         set((state) => ({ prefs: { ...state.prefs, ...prefs, constraints: state.constraints } })),
 
       // ============= Novos métodos =============
-      
+
       upsertFornecedorCadastro: (fornecedor) => {
         const id = fornecedor.id ?? generateId("fornecedor");
         set((state) => {
           const exists = state.fornecedoresCadastro.some((f) => f.id === id);
           const fornecedoresCadastro = exists
             ? state.fornecedoresCadastro.map((f) =>
-                f.id === id ? applyFornecedorCadastroDefaults({ ...f, ...fornecedor, id }) : f
-              )
+              f.id === id ? applyFornecedorCadastroDefaults({ ...f, ...fornecedor, id }) : f
+            )
             : [...state.fornecedoresCadastro, applyFornecedorCadastroDefaults({ ...fornecedor, id })];
-          
+
           const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, state.ofertas);
           return { fornecedoresCadastro, fornecedores };
         });
@@ -521,12 +523,12 @@ export const useCotacaoStore = create<CotacaoStore>()(
           const exists = state.ofertas.some((o) => o.id === id);
           const ofertas = exists
             ? state.ofertas.map((o) =>
-                o.id === id 
-                  ? applyOfertaDefaults({ ...o, ...oferta, id, fornecedorId: oferta.fornecedorId, produtoId: oferta.produtoId }) 
-                  : o
-              )
+              o.id === id
+                ? applyOfertaDefaults({ ...o, ...oferta, id, fornecedorId: oferta.fornecedorId, produtoId: oferta.produtoId })
+                : o
+            )
             : [...state.ofertas, applyOfertaDefaults({ ...oferta, id, fornecedorId: oferta.fornecedorId, produtoId: oferta.produtoId })];
-          
+
           const fornecedores = joinFornecedoresOfertas(state.fornecedoresCadastro, ofertas);
           return { ofertas, fornecedores };
         });
@@ -547,74 +549,74 @@ export const useCotacaoStore = create<CotacaoStore>()(
       // ============= Métodos legados (compatibilidade) =============
       // Estes métodos atualizam as estruturas novas (fornecedoresCadastro + ofertas)
       // e recomputam fornecedores para manter compatibilidade
-      
+
       upsertFornecedor: (supplierData) =>
         set((state) => {
           const supplierId = supplierData.id ?? generateId("oferta");
-          
+
           // Procura oferta existente pelo ID
           const existingOferta = state.ofertas.find((o) => o.id === supplierId);
-          
+
           if (existingOferta) {
             // Atualiza oferta existente
             const fornecedor = state.fornecedoresCadastro.find(f => f.id === existingOferta.fornecedorId);
-            
+
             // Atualiza dados do fornecedor se houver campos cadastrais
             let fornecedoresCadastro = state.fornecedoresCadastro;
-            if (fornecedor && (supplierData.nome || supplierData.cnpj || supplierData.tipo || 
-                supplierData.regime || supplierData.uf || supplierData.municipio || supplierData.contato)) {
-              fornecedoresCadastro = state.fornecedoresCadastro.map(f => 
-                f.id === fornecedor.id 
+            if (fornecedor && (supplierData.nome || supplierData.cnpj || supplierData.tipo ||
+              supplierData.regime || supplierData.uf || supplierData.municipio || supplierData.contato)) {
+              fornecedoresCadastro = state.fornecedoresCadastro.map(f =>
+                f.id === fornecedor.id
                   ? applyFornecedorCadastroDefaults({
-                      ...f,
-                      nome: supplierData.nome ?? f.nome,
-                      cnpj: supplierData.cnpj ?? f.cnpj,
-                      tipo: supplierData.tipo ?? f.tipo,
-                      regime: supplierData.regime ?? f.regime,
-                      uf: supplierData.uf ?? f.uf,
-                      municipio: supplierData.municipio ?? f.municipio,
-                      contato: supplierData.contato ?? f.contato,
-                      ativo: supplierData.ativo ?? f.ativo,
-                    })
+                    ...f,
+                    nome: supplierData.nome ?? f.nome,
+                    cnpj: supplierData.cnpj ?? f.cnpj,
+                    tipo: supplierData.tipo ?? f.tipo,
+                    regime: supplierData.regime ?? f.regime,
+                    uf: supplierData.uf ?? f.uf,
+                    municipio: supplierData.municipio ?? f.municipio,
+                    contato: supplierData.contato ?? f.contato,
+                    ativo: supplierData.ativo ?? f.ativo,
+                  })
                   : f
               );
             }
-            
+
             // Atualiza oferta
-            const ofertas = state.ofertas.map(o => 
-              o.id === supplierId 
+            const ofertas = state.ofertas.map(o =>
+              o.id === supplierId
                 ? applyOfertaDefaults({
-                    ...o,
-                    produtoId: supplierData.produtoId ?? o.produtoId,
-                    produtoDescricao: supplierData.produtoDescricao ?? o.produtoDescricao,
-                    unidadeNegociada: supplierData.unidadeNegociada ?? o.unidadeNegociada,
-                    pedidoMinimo: supplierData.pedidoMinimo ?? o.pedidoMinimo,
-                    prazoEntregaDias: supplierData.prazoEntregaDias ?? o.prazoEntregaDias,
-                    prazoPagamentoDias: supplierData.prazoPagamentoDias ?? o.prazoPagamentoDias,
-                    preco: supplierData.preco ?? o.preco,
-                    ibs: supplierData.ibs ?? o.ibs,
-                    cbs: supplierData.cbs ?? o.cbs,
-                    is: supplierData.is ?? o.is,
-                    frete: supplierData.frete ?? o.frete,
-                    cadeia: supplierData.cadeia ?? o.cadeia,
-                    flagsItem: supplierData.flagsItem ?? o.flagsItem,
-                    isRefeicaoPronta: supplierData.isRefeicaoPronta ?? o.isRefeicaoPronta,
-                    explanation: supplierData.explanation ?? o.explanation,
-                    priceBreaks: supplierData.priceBreaks ?? o.priceBreaks,
-                    freightBreaks: supplierData.freightBreaks ?? o.freightBreaks,
-                    yield: supplierData.yield ?? o.yield,
-                    conversoes: supplierData.conversoes ?? o.conversoes,
-                    ativa: supplierData.ativo ?? o.ativa,
-                  })
+                  ...o,
+                  produtoId: supplierData.produtoId ?? o.produtoId,
+                  produtoDescricao: supplierData.produtoDescricao ?? o.produtoDescricao,
+                  unidadeNegociada: supplierData.unidadeNegociada ?? o.unidadeNegociada,
+                  pedidoMinimo: supplierData.pedidoMinimo ?? o.pedidoMinimo,
+                  prazoEntregaDias: supplierData.prazoEntregaDias ?? o.prazoEntregaDias,
+                  prazoPagamentoDias: supplierData.prazoPagamentoDias ?? o.prazoPagamentoDias,
+                  preco: supplierData.preco ?? o.preco,
+                  ibs: supplierData.ibs ?? o.ibs,
+                  cbs: supplierData.cbs ?? o.cbs,
+                  is: supplierData.is ?? o.is,
+                  frete: supplierData.frete ?? o.frete,
+                  cadeia: supplierData.cadeia ?? o.cadeia,
+                  flagsItem: supplierData.flagsItem ?? o.flagsItem,
+                  isRefeicaoPronta: supplierData.isRefeicaoPronta ?? o.isRefeicaoPronta,
+                  explanation: supplierData.explanation ?? o.explanation,
+                  priceBreaks: supplierData.priceBreaks ?? o.priceBreaks,
+                  freightBreaks: supplierData.freightBreaks ?? o.freightBreaks,
+                  yield: supplierData.yield ?? o.yield,
+                  conversoes: supplierData.conversoes ?? o.conversoes,
+                  ativa: supplierData.ativo ?? o.ativa,
+                })
                 : o
             );
-            
+
             const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
             return { fornecedoresCadastro, ofertas, fornecedores };
           } else {
             // Cria novo fornecedor + oferta
             const fornecedorId = generateId("fornecedor");
-            
+
             const novoFornecedor = applyFornecedorCadastroDefaults({
               id: fornecedorId,
               nome: supplierData.nome ?? "",
@@ -626,7 +628,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
               contato: supplierData.contato,
               ativo: supplierData.ativo ?? true,
             });
-            
+
             const novaOferta = applyOfertaDefaults({
               id: supplierId,
               fornecedorId,
@@ -651,11 +653,11 @@ export const useCotacaoStore = create<CotacaoStore>()(
               conversoes: supplierData.conversoes,
               ativa: supplierData.ativo ?? true,
             });
-            
+
             const fornecedoresCadastro = [...state.fornecedoresCadastro, novoFornecedor];
             const ofertas = [...state.ofertas, novaOferta];
             const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
-            
+
             return { fornecedoresCadastro, ofertas, fornecedores };
           }
         }),
@@ -665,7 +667,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
           // Remove a oferta com o ID especificado
           const ofertaToRemove = state.ofertas.find(o => o.id === id);
           const ofertas = state.ofertas.filter((o) => o.id !== id);
-          
+
           // Se o fornecedor não tem mais ofertas, remove ele também
           let fornecedoresCadastro = state.fornecedoresCadastro;
           if (ofertaToRemove) {
@@ -676,7 +678,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
               );
             }
           }
-          
+
           const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
           return { fornecedoresCadastro, ofertas, fornecedores };
         }),
@@ -699,20 +701,20 @@ export const useCotacaoStore = create<CotacaoStore>()(
           console.warn("[cotacao] Nenhum fornecedor valido encontrado no CSV.");
           return;
         }
-        
+
         set((state) => {
           const fornecedoresCadastro = [...state.fornecedoresCadastro];
           const ofertas = [...state.ofertas];
-          
+
           // Mapa para agrupar por nome+tipo+regime (encontrar fornecedor existente)
           const fornecedorMap = new Map(
             fornecedoresCadastro.map(f => [`${f.nome.toLowerCase()}|${f.tipo}|${f.regime}`, f])
           );
-          
+
           for (const supplierImportado of fornecedoresImportados) {
             const key = `${supplierImportado.nome.toLowerCase()}|${supplierImportado.tipo}|${supplierImportado.regime}`;
             let fornecedorExistente = fornecedorMap.get(key);
-            
+
             if (!fornecedorExistente) {
               // Criar novo fornecedor
               const novoFornecedor = applyFornecedorCadastroDefaults({
@@ -730,7 +732,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
               fornecedorMap.set(key, novoFornecedor);
               fornecedorExistente = novoFornecedor;
             }
-            
+
             // Criar oferta
             const novaOferta = applyOfertaDefaults({
               id: supplierImportado.id ?? generateId("oferta"),
@@ -757,7 +759,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
             });
             ofertas.push(novaOferta);
           }
-          
+
           const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
           return { fornecedoresCadastro, ofertas, fornecedores };
         });
@@ -776,18 +778,18 @@ export const useCotacaoStore = create<CotacaoStore>()(
           constraints: SupplierConstraints[];
           prefs: OptimizePrefs;
         }>;
-        
+
         set((state) => {
           // Se tiver dados no novo formato, usa direto
           if (data.fornecedoresCadastro && data.ofertas) {
-            const fornecedoresCadastro = data.fornecedoresCadastro.map(f => 
+            const fornecedoresCadastro = data.fornecedoresCadastro.map(f =>
               applyFornecedorCadastroDefaults({ ...f, id: f.id ?? generateId("fornecedor") })
             );
-            const ofertas = data.ofertas.map(o => 
+            const ofertas = data.ofertas.map(o =>
               applyOfertaDefaults({ ...o, id: o.id ?? generateId("oferta"), fornecedorId: o.fornecedorId, produtoId: o.produtoId })
             );
             const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, ofertas);
-            
+
             return {
               contexto: data.contexto
                 ? { ...initialContexto, ...data.contexto, uf: (data.contexto.uf ?? "").toUpperCase() }
@@ -801,7 +803,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
               prefs: data.prefs ?? { ...initialPrefs, constraints: data.constraints ?? [] },
             };
           }
-          
+
           // Fallback: formato legado
           const fornecedoresLegacy = data.fornecedores
             ? (() => {
@@ -825,7 +827,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
               return Array.from(atual.values());
             })()
             : state.fornecedores;
-            
+
           return {
             contexto: data.contexto
               ? { ...initialContexto, ...data.contexto, uf: (data.contexto.uf ?? "").toUpperCase() }
@@ -842,28 +844,33 @@ export const useCotacaoStore = create<CotacaoStore>()(
 
       exportarJSON: () => {
         const { contexto, fornecedoresCadastro, ofertas, fornecedores, resultado, constraints, prefs } = get();
-        return JSON.stringify({ 
-          contexto, 
-          fornecedoresCadastro, 
-          ofertas, 
+        return JSON.stringify({
+          contexto,
+          fornecedoresCadastro,
+          ofertas,
           fornecedores, // Inclui para compatibilidade
-          resultado, 
-          constraints, 
-          prefs 
+          resultado,
+          constraints,
+          prefs
         });
       },
 
       calcular: async () => {
-        await get().enrichSuppliersWithTaxes();
-        set((state) => {
-          const scenario = useAppStore.getState().scenario;
-          const resultado = buildResultado({
-            fornecedores: state.fornecedores,
-            contexto: state.contexto,
-            scenario,
+        set({ isCalculating: true });
+        try {
+          await get().enrichSuppliersWithTaxes();
+          set((state) => {
+            const scenario = useAppStore.getState().scenario;
+            const resultado = buildResultado({
+              fornecedores: state.fornecedores,
+              contexto: state.contexto,
+              scenario,
+            });
+            return { resultado, ultimaOtimizacao: null };
           });
-          return { resultado, ultimaOtimizacao: null };
-        });
+        } finally {
+          set({ isCalculating: false });
+        }
       },
 
       registrarOtimizacao: (resultadoOtimizacao) =>
@@ -898,12 +905,20 @@ export const useCotacaoStore = create<CotacaoStore>()(
 
       enrichSuppliersWithTaxes: async () => {
         const { ofertas, fornecedoresCadastro, contexto } = get();
-        
+
         // Atualiza as ofertas com dados de impostos
         const updatedOfertas = await Promise.all(
           ofertas.map(async (oferta) => {
             if (!oferta.ativa) return oferta;
-            
+
+            // Check if tax is already calculated (cache hit)
+            // We assume cost 0 is not valid, but if taxes are 0 it might be valid (isencao).
+            // Better check: if we have IBS/CBS/IS data (or if they are explicitly 0 from a previous calc).
+            // Simple heuristic: if explanation is present, it was likely calculated.
+            if (oferta.explanation && (oferta.ibs !== 0 || oferta.cbs !== 0 || oferta.is !== 0)) {
+              return oferta;
+            }
+
             // Encontra o fornecedor para pegar a UF
             const fornecedor = fornecedoresCadastro.find(f => f.id === oferta.fornecedorId);
             if (!fornecedor) return oferta;
@@ -948,7 +963,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
         if (!persistedState) {
           return persistedState;
         }
-        
+
         const state = persistedState as {
           contexto?: Partial<Contexto>;
           fornecedores?: Supplier[];
@@ -957,7 +972,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
           constraints?: SupplierConstraints[];
           prefs?: OptimizePrefs;
         };
-        
+
         // Migração v0/v1 -> v2: converter fornecedores legado para novo formato
         if (version < 2) {
           const destinoMap: Record<string, DestinoTipo> = {
@@ -967,7 +982,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
             producao: "E",
             comercializacao: "E",
           };
-          
+
           const contextoMigrado: Contexto = {
             ...initialContexto,
             ...state.contexto,
@@ -981,7 +996,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
               return destinoMap[normalizado] ?? (bruto.toUpperCase() as DestinoTipo);
             })(),
           };
-          
+
           // Se já tem novo formato, usar
           if (state.fornecedoresCadastro && state.ofertas) {
             return {
@@ -993,18 +1008,18 @@ export const useCotacaoStore = create<CotacaoStore>()(
               prefs: state.prefs ?? initialPrefs,
             };
           }
-          
+
           // Migrar formato legado
           const fornecedoresLegado = state.fornecedores ?? [];
           const fornecedoresCadastro: Fornecedor[] = [];
           const ofertas: OfertaFornecedor[] = [];
-          
+
           // Agrupar por nome+cnpj para evitar duplicatas de fornecedor
           const fornecedorMap = new Map<string, Fornecedor>();
-          
+
           for (const supplier of fornecedoresLegado) {
             const key = `${supplier.nome.toLowerCase()}|${supplier.cnpj ?? ""}`;
-            
+
             if (!fornecedorMap.has(key)) {
               const { fornecedor, oferta } = migrateSupplierToNewFormat(supplier);
               fornecedorMap.set(key, fornecedor);
@@ -1039,9 +1054,9 @@ export const useCotacaoStore = create<CotacaoStore>()(
               ofertas.push(oferta);
             }
           }
-          
+
           fornecedoresCadastro.push(...fornecedorMap.values());
-          
+
           return {
             contexto: contextoMigrado,
             fornecedoresCadastro,
@@ -1051,7 +1066,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
             prefs: state.prefs ?? initialPrefs,
           };
         }
-        
+
         return persistedState;
       },
     },
