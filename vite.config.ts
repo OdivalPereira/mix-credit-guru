@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => ({
       "src/**/*.{test,spec}.{ts,tsx}",
       "src/**/__tests__/**/*.{test,spec}.{ts,tsx}",
       "tests/unit/**/*.{test,spec}.{ts,tsx}",
+      "tests/integration/**/*.{test,spec}.{ts,tsx}",
     ],
     exclude: ["node_modules/**", "tests/e2e/**"],
   }

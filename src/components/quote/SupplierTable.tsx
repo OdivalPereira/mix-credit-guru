@@ -12,6 +12,18 @@ import {
   Trash2,
 } from "lucide-react";
 import { fornecedorCsvHeaders } from "@/lib/csv";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -104,6 +116,20 @@ const SupplierTableComponent = ({
   const shouldVirtualize = resultados.length >= 200;
   const [detailsOfertaId, setDetailsOfertaId] = useState<string | null>(null);
 
+  const { isDemo } = useAuth();
+  const navigate = useNavigate();
+  const [showDemoAlert, setShowDemoAlert] = useState(false);
+  const [demoFeature, setDemoFeature] = useState("");
+
+  const handleRestrictedAction = (action: () => void, featureName: string) => {
+    if (isDemo) {
+      setDemoFeature(featureName);
+      setShowDemoAlert(true);
+    } else {
+      action();
+    }
+  };
+
   // Index ofertas by ID for quick lookup
   const ofertaIndex = useMemo(
     () => new Map(ofertas.map((item) => [item.id, item])),
@@ -154,8 +180,6 @@ const SupplierTableComponent = ({
     );
   };
 
-
-
   const handleDownloadTemplate = () => {
     // Generate CSV Header row
     const headers = fornecedorCsvHeaders.join(",");
@@ -186,7 +210,7 @@ const SupplierTableComponent = ({
             variant="outline"
             size="sm"
             data-testid="add-fornecedor"
-            onClick={onAddSupplier}
+            onClick={() => handleRestrictedAction(onAddSupplier, "adicionar novos fornecedores")}
           >
             <Plus className="mr-2 h-4 w-4" />
             Adicionar
@@ -200,11 +224,11 @@ const SupplierTableComponent = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>Importar</DropdownMenuLabel>
-              <DropdownMenuItem onSelect={() => onImportCSV()}>
+              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleRestrictedAction(onImportCSV, "importar arquivos CSV"); }}>
                 <FileUp className="mr-2 h-4 w-4" />
                 CSV (planilha)
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onImportJSON()}>
+              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleRestrictedAction(onImportJSON, "importar projetos JSON"); }}>
                 <FileJson className="mr-2 h-4 w-4" />
                 JSON (projeto)
               </DropdownMenuItem>
@@ -339,6 +363,24 @@ const SupplierTableComponent = ({
           onUpdateOferta={onUpdateOferta}
         />
       ) : null}
+
+      <AlertDialog open={showDemoAlert} onOpenChange={setShowDemoAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modo Demonstração</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está usando a versão de demonstração.
+              Para {demoFeature}, é necessário criar uma conta gratuita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar testando</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/auth?view=signup")}>
+              Criar Conta
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

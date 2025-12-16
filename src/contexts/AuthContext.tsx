@@ -16,12 +16,14 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isDemo: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
+  enterDemoMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
     });
-    
+
     if (!error) {
       // Log activity after successful login
       setTimeout(() => {
@@ -117,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }, 100);
     }
-    
+
     return { error };
   }
 
@@ -153,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     if (!supabase) return;
-    
+
     // Log activity before signing out
     const currentEmail = user?.email;
     await useActivityLogStore.getState().logActivity({
@@ -161,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       entity_type: 'auth',
       entity_name: currentEmail || undefined,
     });
-    
+
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -184,17 +186,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   }
 
+  // --- Demo Mode ---
+  const [isDemo, setIsDemo] = useState(false);
+
+  const enterDemoMode = () => {
+    setIsDemo(true);
+    // Optional: Log activity
+    useActivityLogStore.getState().logActivity({
+      activity_type: 'login',
+      entity_type: 'auth',
+      entity_name: 'demo_user',
+    });
+  };
+
   const value = {
     user,
     session,
     profile,
     isAdmin,
+    isDemo,
     loading,
     signIn,
     signUp,
     signInWithGoogle,
     signOut,
     updateProfile,
+    enterDemoMode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

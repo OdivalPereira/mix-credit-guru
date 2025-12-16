@@ -10,10 +10,10 @@ Este arquivo controla o fluxo de trabalho da equipe de agentes do Mix Credit Gur
 
 | Agente | Status | Tarefa Atual |
 | :--- | :--- | :--- |
-| **Arquiteto** | [STANDBY] | Aguardando novos requisitos. |
-| **Frontend** | [STANDBY] | Aguardando novos requisitos. |
-| **Backend** | [STANDBY] | Aguardando novos requisitos. |
-| **QA** | [STANDBY] | Aguardando novos requisitos. |
+| **Arquiteto** | [WAITING] | Monitorar implementação. |
+| **Frontend** | [WAITING] | Aguardando novos requisitos. |
+| **Backend** | [WAITING] | Aguardando diretrizes. |
+| **QA** | [WAITING] | QA da Fase 4 concluído. Aguardando nova versão. |
 
 ---
 
@@ -33,9 +33,17 @@ Este arquivo controla o fluxo de trabalho da equipe de agentes do Mix Credit Gur
 - [x] **Frontend**: Criar UI em `/config` para "Regime Global".
 - [x] **Frontend**: Adicionar botão de "Download Template" na tela de Importação.
 
+### Fase 4: Modo Demo (Sem Cadastro)
+- [x] **Frontend**: Atualizar `AuthContext` com estado `isDemo` e função `enterDemoMode`.
+- [x] **Frontend**: Ajustar `ProtectedRoute` para permitir acesso se `isDemo` for verdadeiro.
+- [x] **Frontend**: Adicionar botão "Testar sem cadastro" na tela de Login (`/auth`).
+- [x] **Frontend**: Criar componente `AuthGate` (ou lógica equivalente) para bloquear ações.
+- [x] **Frontend**: Proteger ações de criação/importação na `SupplierTable` e popular dados de exemplo.
+
 ---
 
 ## Log de Execução
 
 *   **[2025-12-16] Arquiteto**: Equipe inicializada. Aguardando primeira análise do plano.
 *   **[2025-12-16] QA**: Roadmap de implementação (Fases 1, 2 e 3) concluído e verificado com sucesso.
+*   **[2025-12-16] Frontend**: Fase 4 (Demo Mode) implementada. Restrições e dados de exemplo adicionados. Entregue para QA.

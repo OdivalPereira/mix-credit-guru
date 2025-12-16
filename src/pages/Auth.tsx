@@ -52,7 +52,7 @@ type AuthView = 'login' | 'forgot-password' | 'reset-password';
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, loading: authLoading, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signInWithGoogle, enterDemoMode } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [view, setView] = useState<AuthView>('login');
@@ -315,9 +315,19 @@ export default function Auth() {
     );
   }
 
+  async function handleDemoLogin() {
+    setIsLoading(true);
+    enterDemoMode();
+    // Small delay to ensure state update propagates (though usually instant)
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate('/', { replace: true });
+    }, 500);
+  }
+
   // Login/Signup View
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted p-4 space-y-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -502,6 +512,15 @@ export default function Auth() {
           </Tabs>
         </CardContent>
       </Card>
+
+      <Button
+        variant="ghost"
+        className="text-muted-foreground hover:text-primary"
+        onClick={handleDemoLogin}
+        disabled={isLoading}
+      >
+        Experimentar sem cadastro (Modo Demo)
+      </Button>
     </div>
   );
 }

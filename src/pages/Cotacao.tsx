@@ -40,6 +40,7 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Factory, PiggyBank, Sparkles, Trophy, HelpCircle, FileText, ArrowRight, Wand2, Calculator } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { useCotacaoStore, createEmptySupplier, SUPPLY_CHAIN_STAGES } from "@/store/useCotacaoStore";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
@@ -57,6 +58,7 @@ import { OptimizerApiClient } from "@/services/OptimizerApiClient";
  * @returns O componente da página de cotação.
  */
 export default function Cotacao() {
+  const { isDemo } = useAuth();
   const navigate = useNavigate();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +91,7 @@ export default function Cotacao() {
     calcular,
     registrarOtimizacao,
     isCalculating,
+    loadDemoData,
   } = useCotacaoStore();
   const conversoesGlobais = useUnidadesStore((state) => state.conversoes);
   const yieldGlobais = useUnidadesStore((state) => state.yields);
@@ -140,6 +143,15 @@ export default function Cotacao() {
       calcular();
     }
   }, [contexto, fornecedores, conversoesGlobais, yieldGlobais, calcular, config.autoCalculate, resultado.itens.length]);
+
+  const demoInitialized = useRef(false);
+  useEffect(() => {
+    if (isDemo && !demoInitialized.current && fornecedoresCadastro.length === 0) {
+      loadDemoData();
+      demoInitialized.current = true;
+      toast({ title: "Modo Demonstração", description: "Dados de exemplo carregados para simulação." });
+    }
+  }, [isDemo, fornecedoresCadastro.length, loadDemoData]);
 
   // Worker cleanup removed
 

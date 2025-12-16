@@ -66,6 +66,7 @@ export interface CotacaoStore {
   exportarCSV: () => string;
   importarJSON: (json: string) => void;
   exportarJSON: () => string;
+  loadDemoData: () => void;
   calcular: () => Promise<void>;
   registrarOtimizacao: (resultado: OptimizePerItemResult) => void;
   computeResultado: (scenario?: string, contextOverride?: Partial<Contexto>) => MixResultado;
@@ -791,6 +792,76 @@ export const useCotacaoStore = create<CotacaoStore>()(
       },
 
       exportarCSV: () => writeFornecedoresCSV(get().fornecedores),
+
+      loadDemoData: () => {
+        const demoSuppliers: Fornecedor[] = [
+          applyFornecedorCadastroDefaults({
+            id: "demo-f1",
+            nome: "Distribuidora Exemplo (SC)",
+            tipo: "distribuidor",
+            regime: "normal",
+            uf: "SC",
+            municipio: "Joinville",
+            cnpj: "00.000.000/0001-01"
+          }),
+          applyFornecedorCadastroDefaults({
+            id: "demo-f2",
+            nome: "Indústria de Alimentos (SP)",
+            tipo: "industria",
+            regime: "normal",
+            uf: "SP",
+            municipio: "São Paulo",
+            cnpj: "00.000.000/0002-02"
+          }),
+          applyFornecedorCadastroDefaults({
+            id: "demo-f3",
+            nome: "Atacado Simples (SP)",
+            tipo: "distribuidor",
+            regime: "simples",
+            uf: "SP",
+            municipio: "Campinas",
+            cnpj: "00.000.000/0003-03"
+          })
+        ];
+
+        const demoOfertas: OfertaFornecedor[] = [
+          applyOfertaDefaults({
+            id: "demo-o1",
+            fornecedorId: "demo-f1",
+            produtoId: "demo-p1",
+            produtoDescricao: "Arroz Branco 5kg",
+            preco: 22.50,
+            unidadeNegociada: "un",
+            prazoEntregaDias: 2
+          }),
+          applyOfertaDefaults({
+            id: "demo-o2",
+            fornecedorId: "demo-f2",
+            produtoId: "demo-p1",
+            produtoDescricao: "Arroz Branco 5kg",
+            preco: 21.00,
+            unidadeNegociada: "un",
+            prazoEntregaDias: 5
+          }),
+          applyOfertaDefaults({
+            id: "demo-o3",
+            fornecedorId: "demo-f3",
+            produtoId: "demo-p1",
+            produtoDescricao: "Arroz Branco 5kg",
+            preco: 23.00,
+            unidadeNegociada: "un",
+            prazoEntregaDias: 1
+          })
+        ];
+
+        set({
+          fornecedoresCadastro: demoSuppliers,
+          ofertas: demoOfertas,
+          fornecedores: joinFornecedoresOfertas(demoSuppliers, demoOfertas),
+          contexto: { ...initialContexto, produto: "Arroz Branco 5kg", uf: "SP" }
+        });
+        get().calcular();
+      },
 
       importarJSON: (json) => {
         const data = JSON.parse(json) as Partial<{
