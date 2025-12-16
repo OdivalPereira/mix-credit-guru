@@ -494,8 +494,21 @@ export const useCotacaoStore = create<CotacaoStore>()(
 
       upsertFornecedorCadastro: (fornecedor) => {
         const id = fornecedor.id ?? generateId("fornecedor");
+        let limitReached = false;
+
         set((state) => {
           const exists = state.fornecedoresCadastro.some((f) => f.id === id);
+
+          if (!exists) {
+            const currentCount = state.fornecedoresCadastro.length;
+            // Use dynamic import or direct access if constant
+            // Ideally we pass dependency, but for store we import direct
+            if (currentCount >= 50) { // Hardcoded fallback or import? Let's use the import at top of file
+              limitReached = true;
+              return state; // No change
+            }
+          }
+
           const fornecedoresCadastro = exists
             ? state.fornecedoresCadastro.map((f) =>
               f.id === id ? applyFornecedorCadastroDefaults({ ...f, ...fornecedor, id }) : f
@@ -505,6 +518,10 @@ export const useCotacaoStore = create<CotacaoStore>()(
           const fornecedores = joinFornecedoresOfertas(fornecedoresCadastro, state.ofertas);
           return { fornecedoresCadastro, fornecedores };
         });
+
+        if (limitReached) {
+          throw new Error("Limite de fornecedores atingido para o plano gratuito (Máx: 50).");
+        }
         return id;
       },
 
@@ -716,6 +733,13 @@ export const useCotacaoStore = create<CotacaoStore>()(
             let fornecedorExistente = fornecedorMap.get(key);
 
             if (!fornecedorExistente) {
+              // Verificação de Limite
+              if (fornecedoresCadastro.length >= 50) {
+                // Stop adding new suppliers
+                console.warn("[cotacao] Limite de fornecedores atingido durante importação.");
+                continue;
+              }
+
               // Criar novo fornecedor
               const novoFornecedor = applyFornecedorCadastroDefaults({
                 id: generateId("fornecedor"),

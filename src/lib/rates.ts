@@ -36,8 +36,85 @@ export interface ComputeRatesContext {
   flagsItem?: FlagsItem;
 }
 
-const baseSource = normalizeSource(baseAliquotas);
-const overridesByUF = mapRecord(overridesUF as Record<string, unknown>, normalizeSource);
+import type { HydrationRule } from "@/services/HydrationService";
+
+let baseSource = normalizeSource(baseAliquotas);
+let overridesByUF = mapRecord(overridesUF as Record<string, unknown>, normalizeSource);
+
+/**
+ * Updates the internal rules engine with data fetched from the backend.
+ */
+export function hydrateRules(rules: HydrationRule[]) {
+  if (!rules || rules.length === 0) return;
+
+  const newSource: RateSource = {
+    global: {},
+    ncm: {},
+    items: {},
+    municipios: {},
+  };
+
+  // Helper to get or create nested structure
+  const getScenarioRules = (target: Record<string, ScenarioRules>, key: string) => {
+    if (!target[key]) target[key] = {};
+    return target[key];
+  };
+
+  for (const r of rules) {
+    const rule: RateRule = {
+      rates: r.rates,
+      validFrom: r.validFrom,
+      validTo: r.validTo,
+      scenarios: [r.scenario]
+    };
+
+    // Global
+    if (!r.ncm && !r.uf) {
+      if (!newSource.global![r.scenario]) newSource.global![r.scenario] = [];
+      newSource.global![r.scenario].push(rule);
+      continue;
+    }
+
+    // NCM Specific (Federal if UF is null)
+    if (r.ncm && !r.uf) {
+      const ncmRules = getScenarioRules(newSource.ncm!, r.ncm);
+      if (!ncmRules[r.scenario]) ncmRules[r.scenario] = [];
+      ncmRules[r.scenario].push(rule);
+      continue;
+    }
+
+    // Item ID Specific
+    /* Implementation detail: The DB schema has item_id. 
+       We map it to source.items */
+    // @ts-ignore - DB payload allows extra fields not in interface strictly yet
+    if (r.itemId) { // Assuming HydrationRule might have itemId mapped
+      // ... logic for items
+    }
+  }
+
+  // Update the singleton
+  if (Object.keys(newSource.global || {}).length > 0 || Object.keys(newSource.ncm || {}).length > 0) {
+    console.log("[Rates] Applying hydrated rules...", {
+      globalCount: Object.keys(newSource.global || {}).length,
+      ncmRulesCount: Object.keys(newSource.ncm || {}).length
+    });
+
+    // We merge into the existing baseSource to preserve anything not yet in DB (if partial hydration)
+    // or to ensure structure continuity.
+    if (newSource.global) {
+      baseSource.global = { ...baseSource.global, ...newSource.global };
+    }
+    if (newSource.ncm) {
+      baseSource.ncm = { ...baseSource.ncm, ...newSource.ncm };
+    }
+    if (newSource.items) {
+      baseSource.items = { ...baseSource.items, ...newSource.items };
+    }
+    // Note: OverridesUF are handled separately via overridesUF variable, 
+    // but could be hydrated here if we map them.
+  }
+}
+
 
 /**
  * @description Calcula as alíquotas de imposto (IBS, CBS, IS) com base no cenário, data e contexto fornecidos.
@@ -314,9 +391,9 @@ function normalizeScenarioRules(raw: unknown): ScenarioRules {
     const normalized = Array.isArray(value)
       ? (value.map(normalizeRule).filter(Boolean) as RateRule[])
       : (() => {
-          const rule = normalizeRule(value);
-          return rule ? [rule] : [];
-        })();
+        const rule = normalizeRule(value);
+        return rule ? [rule] : [];
+      })();
     if (normalized.length) {
       result[scenario] = normalized;
     }

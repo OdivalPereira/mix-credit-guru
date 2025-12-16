@@ -6,6 +6,7 @@ export interface ConfigStore {
   defaultUf: string;
   defaultRegime: SupplierRegime | "";
   defaultDestino: DestinoTipo | "";
+  globalCompanyRegime: SupplierRegime | ""; // Regime da Empresa (Usuário)
   autoCalculate: boolean;
   showTooltips: boolean;
   setConfig: (config: Partial<Omit<ConfigStore, "setConfig" | "resetDefaults">>) => void;
@@ -16,6 +17,7 @@ const defaultConfig = {
   defaultUf: "",
   defaultRegime: "" as SupplierRegime | "",
   defaultDestino: "" as DestinoTipo | "",
+  globalCompanyRegime: "normal" as SupplierRegime, // Default to Normal
   autoCalculate: true,
   showTooltips: true,
 };

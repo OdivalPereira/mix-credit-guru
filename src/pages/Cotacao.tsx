@@ -122,14 +122,16 @@ export default function Cotacao() {
   // Apply default config values on mount
   useEffect(() => {
     const hasEmptyContext = !contexto.uf || !contexto.regime || !contexto.destino;
-    if (hasEmptyContext && (config.defaultUf || config.defaultRegime || config.defaultDestino)) {
+    const hasDefaults = config.defaultUf || config.globalCompanyRegime || config.defaultDestino;
+
+    if (hasEmptyContext && hasDefaults) {
       setContexto({
         ...(config.defaultUf && !contexto.uf ? { uf: config.defaultUf } : {}),
-        ...(config.defaultRegime && !contexto.regime ? { regime: config.defaultRegime } : {}),
+        ...(config.globalCompanyRegime && !contexto.regime ? { regime: config.globalCompanyRegime } : {}),
         ...(config.defaultDestino && !contexto.destino ? { destino: config.defaultDestino } : {}),
       });
     }
-  }, [config.defaultUf, config.defaultRegime, config.defaultDestino, contexto, setContexto]);
+  }, [config.defaultUf, config.globalCompanyRegime, config.defaultDestino, contexto, setContexto]);
 
   useEffect(() => {
     // Only calculate if autoCalculate is on AND (we have no results OR explicitly needed)

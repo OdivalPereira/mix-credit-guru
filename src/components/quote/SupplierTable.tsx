@@ -4,12 +4,14 @@ import {
   Database,
   FileDown,
   FileJson,
+  FileText,
   FileUp,
   Loader2,
   Plus,
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { fornecedorCsvHeaders } from "@/lib/csv";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -101,19 +103,19 @@ const SupplierTableComponent = ({
 }: SupplierTableProps) => {
   const shouldVirtualize = resultados.length >= 200;
   const [detailsOfertaId, setDetailsOfertaId] = useState<string | null>(null);
-  
+
   // Index ofertas by ID for quick lookup
   const ofertaIndex = useMemo(
     () => new Map(ofertas.map((item) => [item.id, item])),
     [ofertas],
   );
-  
+
   // Index fornecedores by ID for quick lookup
   const fornecedorIndex = useMemo(
     () => new Map(fornecedoresCadastro.map((item) => [item.id, item])),
     [fornecedoresCadastro],
   );
-  
+
   // Get the details for the sheet
   const detailsData = useMemo(() => {
     if (!detailsOfertaId) {
@@ -152,6 +154,24 @@ const SupplierTableComponent = ({
     );
   };
 
+
+
+  const handleDownloadTemplate = () => {
+    // Generate CSV Header row
+    const headers = fornecedorCsvHeaders.join(",");
+    // Create a blob
+    const blob = new Blob([headers], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    // Create link and click
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "modelo_importacao_fornecedores.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -187,6 +207,10 @@ const SupplierTableComponent = ({
               <DropdownMenuItem onSelect={() => onImportJSON()}>
                 <FileJson className="mr-2 h-4 w-4" />
                 JSON (projeto)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleDownloadTemplate}>
+                <FileText className="mr-2 h-4 w-4" />
+                Baixar Modelo (CSV)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Exportar</DropdownMenuLabel>

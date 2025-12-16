@@ -14,6 +14,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 
+import { HydrationController } from "./components/HydrationController";
+
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
 const MeusDados = lazy(() => import("./pages/MeusDados"));
@@ -50,6 +52,7 @@ const App = () => (
         <AuthProvider>
           <GlossaryProvider>
             <TooltipProvider>
+              <HydrationController />
               <Toaster />
               <Sonner />
               <DonationModal />
@@ -76,7 +79,7 @@ const App = () => (
                       <Route path="analise" element={<Analise />} />
                       <Route path="config" element={<Config />} />
                       <Route path="perfil" element={<Perfil />} />
-                      
+
                       {/* Admin only route */}
                       <Route path="admin" element={
                         <AdminRoute>
