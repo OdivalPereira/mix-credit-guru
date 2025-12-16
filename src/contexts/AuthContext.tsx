@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -154,21 +155,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    if (!supabase) return;
-
+    if (!supabase && !isDemo) return;
+    
     // Log activity before signing out
-    const currentEmail = user?.email;
+    const currentEmail = isDemo ? 'demo_user' : user?.email;
     await useActivityLogStore.getState().logActivity({
       activity_type: 'logout',
       entity_type: 'auth',
       entity_name: currentEmail || undefined,
     });
-
-    await supabase.auth.signOut();
+    
+    if (supabase && !isDemo) {
+      await supabase.auth.signOut();
+    }
     setUser(null);
     setSession(null);
     setProfile(null);
     setIsAdmin(false);
+    setIsDemo(false);
+  }
+
+  function enterDemoMode() {
+    setIsDemo(true);
+    setLoading(false);
+    useActivityLogStore.getState().logActivity({
+      activity_type: 'demo_carregado',
+      entity_type: 'auth',
+      entity_name: 'demo_user',
+    });
   }
 
   async function updateProfile(updates: Partial<Profile>) {
@@ -185,19 +199,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return { error };
   }
-
-  // --- Demo Mode ---
-  const [isDemo, setIsDemo] = useState(false);
-
-  const enterDemoMode = () => {
-    setIsDemo(true);
-    // Optional: Log activity
-    useActivityLogStore.getState().logActivity({
-      activity_type: 'login',
-      entity_type: 'auth',
-      entity_name: 'demo_user',
-    });
-  };
 
   const value = {
     user,

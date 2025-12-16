@@ -279,7 +279,7 @@ const SupplierTableComponent = ({
                 variant="ghost"
                 size="icon"
                 aria-label="Limpar cotação atual"
-                onClick={onClear}
+                onClick={() => handleRestrictedAction(onClear, "limpar a cotação")}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

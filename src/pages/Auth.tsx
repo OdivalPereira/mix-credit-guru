@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, User, Chrome, ArrowLeft } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Chrome, ArrowLeft, Play } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 
@@ -52,7 +52,7 @@ type AuthView = 'login' | 'forgot-password' | 'reset-password';
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, loading: authLoading, signIn, signUp, signInWithGoogle, enterDemoMode } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signInWithGoogle, enterDemoMode, isDemo } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [view, setView] = useState<AuthView>('login');
@@ -66,10 +66,23 @@ export default function Auth() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!authLoading && user && view !== 'reset-password') {
+    if (!authLoading && (user || isDemo) && view !== 'reset-password') {
       navigate('/', { replace: true });
     }
-  }, [user, authLoading, navigate, view]);
+  }, [user, authLoading, navigate, view, isDemo]);
+
+  function handleDemoLogin() {
+    setIsLoading(true);
+    enterDemoMode();
+    toast({
+      title: 'Modo Demonstração',
+      description: 'Você está usando a versão de demonstração. Dados de exemplo serão carregados.',
+    });
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate('/', { replace: true });
+    }, 300);
+  }
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -315,15 +328,7 @@ export default function Auth() {
     );
   }
 
-  async function handleDemoLogin() {
-    setIsLoading(true);
-    enterDemoMode();
-    // Small delay to ensure state update propagates (though usually instant)
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/', { replace: true });
-    }, 500);
-  }
+  // Login/Signup View
 
   // Login/Signup View
   return (
@@ -411,6 +416,23 @@ export default function Auth() {
               >
                 <Chrome className="mr-2 h-4 w-4" />
                 Entrar com Google
+              </Button>
+
+              <div className="relative my-4">
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                  ou teste sem conta
+                </span>
+              </div>
+
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={handleDemoLogin}
+                disabled={isLoading}
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Testar sem criar conta
               </Button>
             </TabsContent>
 
