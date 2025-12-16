@@ -418,22 +418,6 @@ export default function Auth() {
                 Entrar com Google
               </Button>
 
-              <div className="relative my-4">
-                <Separator />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                  ou teste sem conta
-                </span>
-              </div>
-
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={handleDemoLogin}
-                disabled={isLoading}
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Testar sem criar conta
-              </Button>
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4">
@@ -537,11 +521,12 @@ export default function Auth() {
 
       <Button
         variant="ghost"
-        className="text-muted-foreground hover:text-primary"
+        className="text-muted-foreground hover:text-primary gap-2"
         onClick={handleDemoLogin}
         disabled={isLoading}
       >
-        Experimentar sem cadastro (Modo Demo)
+        <Play className="h-4 w-4" />
+        Testar sem criar conta (Demo)
       </Button>
     </div>
   );
