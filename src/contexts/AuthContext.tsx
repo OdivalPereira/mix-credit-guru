@@ -2,6 +2,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogStore } from '@/store/useActivityLogStore';
+import { useCotacaoStore } from '@/store/useCotacaoStore';
+import { useCatalogoStore } from '@/store/useCatalogoStore';
+import { useAppStore } from '@/store/useAppStore';
 
 interface Profile {
   id: string;
@@ -191,6 +194,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsDemo(true);
     setLoading(false);
     localStorage.setItem(DEMO_MODE_KEY, 'true');
+    
+    // Carrega todos os dados de demonstração
+    useCotacaoStore.getState().loadDemoData();
+    useCatalogoStore.getState().loadDemoData();
+    useAppStore.getState().loadDemoData();
+    
     useActivityLogStore.getState().logActivity({
       activity_type: 'demo_carregado',
       entity_type: 'auth',
