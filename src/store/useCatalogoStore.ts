@@ -20,6 +20,8 @@ interface CatalogoStore {
   removeProduto: (id: string) => void;
   importarCSV: (csv: string) => void;
   exportarCSV: () => string;
+  loadDemoData: () => void;
+  limpar: () => void;
 }
 
 export const useCatalogoStore = create<CatalogoStore>()(
@@ -82,6 +84,12 @@ export const useCatalogoStore = create<CatalogoStore>()(
         });
       },
       exportarCSV: () => writeProdutosCSV(get().produtos),
+      loadDemoData: () => {
+        import("@/data/demoData").then(({ demoProdutos }) => {
+          set({ produtos: demoProdutos });
+        });
+      },
+      limpar: () => set({ produtos: [] }),
     }),
     {
       name: "cmx_v04_catalogo",

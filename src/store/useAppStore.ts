@@ -43,6 +43,8 @@ interface AppStore {
   addReceita: (receita: Receita) => void;
   updateReceita: (codigo: string, data: Partial<Receita>) => void;
   removeReceita: (codigo: string) => void;
+  loadDemoData: () => void;
+  limpar: () => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -103,6 +105,26 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           receitas: state.receitas.filter((r) => r.codigo !== codigo),
         })),
+      loadDemoData: () => {
+        import("@/data/demoData").then(({ demoRegras, demoReceitas }) => {
+          const regras = demoRegras.map((r) => ({
+            ...r,
+            validFrom: r.vigencia?.inicio ?? "2026-01-01",
+            validTo: r.vigencia?.fim,
+          }));
+          set((state) => ({
+            regras,
+            scenarios: { ...state.scenarios, [state.scenario]: regras },
+            receitas: demoReceitas,
+          }));
+        });
+      },
+      limpar: () =>
+        set({
+          regras: [],
+          scenarios: { default: [] },
+          receitas: [],
+        }),
     }),
     {
       name: "cmx_v04_app",
