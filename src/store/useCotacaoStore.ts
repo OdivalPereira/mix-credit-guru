@@ -794,73 +794,58 @@ export const useCotacaoStore = create<CotacaoStore>()(
       exportarCSV: () => writeFornecedoresCSV(get().fornecedores),
 
       loadDemoData: () => {
-        const demoSuppliers: Fornecedor[] = [
-          applyFornecedorCadastroDefaults({
-            id: "demo-f1",
-            nome: "Distribuidora Exemplo (SC)",
-            tipo: "distribuidor",
-            regime: "normal",
-            uf: "SC",
-            municipio: "Joinville",
-            cnpj: "00.000.000/0001-01"
-          }),
-          applyFornecedorCadastroDefaults({
-            id: "demo-f2",
-            nome: "Indústria de Alimentos (SP)",
-            tipo: "industria",
-            regime: "normal",
-            uf: "SP",
-            municipio: "São Paulo",
-            cnpj: "00.000.000/0002-02"
-          }),
-          applyFornecedorCadastroDefaults({
-            id: "demo-f3",
-            nome: "Atacado Simples (SP)",
-            tipo: "distribuidor",
-            regime: "simples",
-            uf: "SP",
-            municipio: "Campinas",
-            cnpj: "00.000.000/0003-03"
-          })
-        ];
+        // Importar dados do arquivo demoData.ts
+        import("@/data/demoData").then(({ demoFornecedores, demoOfertas, demoContexto }) => {
+          const fornecedoresCadastro = demoFornecedores.map(f => 
+            applyFornecedorCadastroDefaults({
+              id: f.id,
+              nome: f.nome,
+              cnpj: f.cnpj,
+              tipo: f.tipo,
+              regime: f.regime,
+              uf: f.uf,
+              municipio: f.municipio,
+              contato: f.contato,
+              ativo: f.ativo,
+            })
+          );
+          
+          const ofertas = demoOfertas.map(o => 
+            applyOfertaDefaults({
+              id: o.id,
+              fornecedorId: o.fornecedorId,
+              produtoId: o.produtoId,
+              produtoDescricao: o.produtoDescricao,
+              preco: o.preco,
+              ibs: o.ibs,
+              cbs: o.cbs,
+              is: o.is,
+              frete: o.frete,
+              unidadeNegociada: o.unidadeNegociada,
+              prazoEntregaDias: o.prazoEntregaDias,
+              prazoPagamentoDias: o.prazoPagamentoDias,
+              pedidoMinimo: o.pedidoMinimo,
+              cadeia: o.cadeia,
+              flagsItem: o.flagsItem,
+              isRefeicaoPronta: o.isRefeicaoPronta,
+              priceBreaks: o.priceBreaks,
+              freightBreaks: o.freightBreaks,
+              ativa: o.ativa,
+            })
+          );
 
-        const demoOfertas: OfertaFornecedor[] = [
-          applyOfertaDefaults({
-            id: "demo-o1",
-            fornecedorId: "demo-f1",
-            produtoId: "demo-p1",
-            produtoDescricao: "Arroz Branco 5kg",
-            preco: 22.50,
-            unidadeNegociada: "un",
-            prazoEntregaDias: 2
-          }),
-          applyOfertaDefaults({
-            id: "demo-o2",
-            fornecedorId: "demo-f2",
-            produtoId: "demo-p1",
-            produtoDescricao: "Arroz Branco 5kg",
-            preco: 21.00,
-            unidadeNegociada: "un",
-            prazoEntregaDias: 5
-          }),
-          applyOfertaDefaults({
-            id: "demo-o3",
-            fornecedorId: "demo-f3",
-            produtoId: "demo-p1",
-            produtoDescricao: "Arroz Branco 5kg",
-            preco: 23.00,
-            unidadeNegociada: "un",
-            prazoEntregaDias: 1
-          })
-        ];
-
-        set({
-          fornecedoresCadastro: demoSuppliers,
-          ofertas: demoOfertas,
-          fornecedores: joinFornecedoresOfertas(demoSuppliers, demoOfertas),
-          contexto: { ...initialContexto, produto: "Arroz Branco 5kg", uf: "SP" }
+          set({
+            fornecedoresCadastro,
+            ofertas,
+            fornecedores: joinFornecedoresOfertas(fornecedoresCadastro, ofertas),
+            contexto: { 
+              ...initialContexto, 
+              ...demoContexto,
+              uf: demoContexto?.uf?.toUpperCase() ?? "SP"
+            }
+          });
+          get().calcular();
         });
-        get().calcular();
       },
 
       importarJSON: (json) => {
