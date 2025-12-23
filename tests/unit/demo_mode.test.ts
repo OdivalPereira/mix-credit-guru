@@ -18,16 +18,17 @@ describe('Demo Mode Logic', () => {
 
         // Assert
         const updatedStore = useCotacaoStore.getState();
-        expect(updatedStore.fornecedoresCadastro).toHaveLength(3);
-        expect(updatedStore.ofertas).toHaveLength(3);
-        expect(updatedStore.fornecedores).toHaveLength(3);
+        expect(updatedStore.fornecedoresCadastro).toHaveLength(5);
+        expect(updatedStore.ofertas).toHaveLength(5);
+        expect(updatedStore.fornecedores).toHaveLength(5);
 
         // Verify content
         const f1 = updatedStore.fornecedoresCadastro.find(f => f.id === 'demo-f1');
         expect(f1).toBeDefined();
-        expect(f1?.nome).toContain('Distribuidora Exemplo');
+        expect(f1?.nome).toContain('Indústria de Alimentos (Lucro Real)');
 
         // Check context update
-        expect(updatedStore.contexto.produto).toBe('Arroz Branco 5kg');
+        expect(updatedStore.contexto.produto).toBe('Item de Exemplo');
+        expect(updatedStore.contexto.destino).toBe('B');
     });
 });
