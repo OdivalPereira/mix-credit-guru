@@ -1,34 +1,42 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useCotacaoStore } from '@/store/useCotacaoStore';
+import { useCatalogoStore } from '@/store/useCatalogoStore';
+import { useAppStore } from '@/store/useAppStore';
 
 describe('Demo Mode Logic', () => {
     beforeEach(() => {
         useCotacaoStore.getState().limpar();
+        useCatalogoStore.getState().limpar();
+        useAppStore.getState().limpar();
     });
 
-    it('loadDemoData should populate store with sample data', () => {
-        const store = useCotacaoStore.getState();
+    describe('useCotacaoStore.loadDemoData', () => {
+        it('should populate store with sample suppliers', async () => {
+            useCotacaoStore.getState().loadDemoData();
 
-        // Initial state check
-        expect(store.fornecedoresCadastro).toHaveLength(0);
-        expect(store.ofertas).toHaveLength(0);
+            await vi.waitFor(() => {
+                return useCotacaoStore.getState().fornecedoresCadastro.length > 0;
+            }, { timeout: 2000 });
 
-        // Act
-        store.loadDemoData();
+            // Initial state check
+            expect(store.fornecedoresCadastro).toHaveLength(0);
+            expect(store.ofertas).toHaveLength(0);
 
-        // Assert
-        const updatedStore = useCotacaoStore.getState();
-        expect(updatedStore.fornecedoresCadastro).toHaveLength(5);
-        expect(updatedStore.ofertas).toHaveLength(5);
-        expect(updatedStore.fornecedores).toHaveLength(5);
+            // Act
+            store.loadDemoData();
 
-        // Verify content
-        const f1 = updatedStore.fornecedoresCadastro.find(f => f.id === 'demo-f1');
-        expect(f1).toBeDefined();
-        expect(f1?.nome).toContain('Indústria de Alimentos (Lucro Real)');
+            // Assert
+            const updatedStore = useCotacaoStore.getState();
+            expect(updatedStore.fornecedoresCadastro).toHaveLength(3);
+            expect(updatedStore.ofertas).toHaveLength(3);
+            expect(updatedStore.fornecedores).toHaveLength(3);
 
-        // Check context update
-        expect(updatedStore.contexto.produto).toBe('Item de Exemplo');
-        expect(updatedStore.contexto.destino).toBe('B');
+            // Verify content
+            const f1 = updatedStore.fornecedoresCadastro.find(f => f.id === 'demo-f1');
+            expect(f1).toBeDefined();
+            expect(f1?.nome).toContain('Distribuidora Exemplo');
+
+            // Check context update
+            expect(updatedStore.contexto.produto).toBe('Arroz Branco 5kg');
+        });
     });
-});

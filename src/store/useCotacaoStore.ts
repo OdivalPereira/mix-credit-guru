@@ -797,48 +797,30 @@ export const useCotacaoStore = create<CotacaoStore>()(
         const demoSuppliers: Fornecedor[] = [
           applyFornecedorCadastroDefaults({
             id: "demo-f1",
-            nome: "Indústria de Alimentos (Lucro Real)",
-            tipo: "industria",
+            nome: "Distribuidora Exemplo (SC)",
+            tipo: "distribuidor",
             regime: "normal",
-            uf: "SP",
-            municipio: "São Paulo",
+            uf: "SC",
+            municipio: "Joinville",
             cnpj: "00.000.000/0001-01"
           }),
           applyFornecedorCadastroDefaults({
             id: "demo-f2",
-            nome: "Distribuidora Log (Lucro Presumido)",
-            tipo: "distribuidor",
+            nome: "Indústria de Alimentos (SP)",
+            tipo: "industria",
             regime: "normal",
             uf: "SP",
-            municipio: "Campinas",
+            municipio: "São Paulo",
             cnpj: "00.000.000/0002-02"
           }),
           applyFornecedorCadastroDefaults({
             id: "demo-f3",
-            nome: "Atacado Simples (Simples Trap)",
-            tipo: "distribuidor",
-            regime: "simples",
-            uf: "MG",
-            municipio: "Extrema",
-            cnpj: "00.000.000/0003-03"
-          }),
-          applyFornecedorCadastroDefaults({
-            id: "demo-f4",
-            nome: "Produtor Regional (Simples Eficiente)",
+            nome: "Atacado Simples (SP)",
             tipo: "distribuidor",
             regime: "simples",
             uf: "SP",
-            municipio: "Atibaia",
-            cnpj: "00.000.000/0004-04"
-          }),
-          applyFornecedorCadastroDefaults({
-            id: "demo-f5",
-            nome: "Parceiro Simples (Repasse Híbrido)",
-            tipo: "distribuidor",
-            regime: "simples",
-            uf: "PR",
-            municipio: "Curitiba",
-            cnpj: "00.000.000/0005-05"
+            municipio: "Campinas",
+            cnpj: "00.000.000/0003-03"
           })
         ];
 
@@ -847,61 +829,28 @@ export const useCotacaoStore = create<CotacaoStore>()(
             id: "demo-o1",
             fornecedorId: "demo-f1",
             produtoId: "demo-p1",
-            produtoDescricao: "Item de Exemplo",
-            preco: 145.00,
+            produtoDescricao: "Arroz Branco 5kg",
+            preco: 22.50,
             unidadeNegociada: "un",
-            prazoEntregaDias: 2,
-            ibs: 12.0,
-            cbs: 9.0,
-            explanation: "Este fornecedor parece o mais caro, mas como gera créditos integrais de IBS e CBS, seu custo líquido é surpreendentemente competitivo."
+            prazoEntregaDias: 2
           }),
           applyOfertaDefaults({
             id: "demo-o2",
             fornecedorId: "demo-f2",
             produtoId: "demo-p1",
-            produtoDescricao: "Item de Exemplo",
-            preco: 138.00,
+            produtoDescricao: "Arroz Branco 5kg",
+            preco: 21.00,
             unidadeNegociada: "un",
-            prazoEntregaDias: 1,
-            ibs: 12.0,
-            cbs: 9.0,
-            explanation: "Empresa de Lucro Presumido que, no novo sistema, simplifica sua vida: crédito total no valor da compra."
+            prazoEntregaDias: 5
           }),
           applyOfertaDefaults({
             id: "demo-o3",
             fornecedorId: "demo-f3",
             produtoId: "demo-p1",
-            produtoDescricao: "Item de Exemplo",
-            preco: 132.00,
+            produtoDescricao: "Arroz Branco 5kg",
+            preco: 23.00,
             unidadeNegociada: "un",
-            prazoEntregaDias: 3,
-            ibs: 0,
-            cbs: 0,
-            explanation: "ARMADILHA: O preço é R$ 132, mas sem gerar créditos, custa para você muito mais do que a Indústria de R$ 145."
-          }),
-          applyOfertaDefaults({
-            id: "demo-o4",
-            fornecedorId: "demo-f4",
-            produtoId: "demo-p1",
-            produtoDescricao: "Item de Exemplo",
-            preco: 105.00,
-            unidadeNegociada: "un",
-            prazoEntregaDias: 1,
-            ibs: 0,
-            cbs: 0,
-            explanation: "Mesmo sem dar crédito nenhum, o preço é imbatível. A eficiência operacional aqui supera qualquer vantagem tributária."
-          }),
-          applyOfertaDefaults({
-            id: "demo-o5",
-            fornecedorId: "demo-f5",
-            produtoId: "demo-p1",
-            produtoDescricao: "Item de Exemplo",
-            preco: 125.00,
-            unidadeNegociada: "un",
-            prazoEntregaDias: 2,
-            ibs: 3.5,
-            cbs: 1.5,
-            explanation: "Exemplo do 'Simples Nacional Híbrido': você recupera um crédito parcial, proporcional ao imposto pago pelo fornecedor."
+            prazoEntregaDias: 1
           })
         ];
 
@@ -909,7 +858,7 @@ export const useCotacaoStore = create<CotacaoStore>()(
           fornecedoresCadastro: demoSuppliers,
           ofertas: demoOfertas,
           fornecedores: joinFornecedoresOfertas(demoSuppliers, demoOfertas),
-          contexto: { ...initialContexto, produto: "Item de Exemplo", uf: "SP", destino: "B", regime: "normal" }
+          contexto: { ...initialContexto, produto: "Arroz Branco 5kg", uf: "SP" }
         });
         get().calcular();
       },
