@@ -991,11 +991,10 @@ export const useCotacaoStore = create<CotacaoStore>()(
           ofertas.map(async (oferta) => {
             if (!oferta.ativa) return oferta;
 
-            // Check if tax is already calculated (cache hit)
-            // We assume cost 0 is not valid, but if taxes are 0 it might be valid (isencao).
-            // Better check: if we have IBS/CBS/IS data (or if they are explicitly 0 from a previous calc).
-            // Simple heuristic: if explanation is present, it was likely calculated.
-            if (oferta.explanation && (oferta.ibs !== 0 || oferta.cbs !== 0 || oferta.is !== 0)) {
+            // Check if tax data is already present (demo, import, manual entry, or previous calc)
+            // Preserve existing values if: has explanation OR has any non-zero tax value
+            const hasNonZeroTax = (oferta.ibs ?? 0) > 0 || (oferta.cbs ?? 0) > 0 || (oferta.is ?? 0) > 0;
+            if (oferta.explanation || hasNonZeroTax) {
               return oferta;
             }
 
