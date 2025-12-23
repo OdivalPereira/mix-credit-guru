@@ -12,10 +12,38 @@ serve(async (req) => {
     }
 
     try {
+        // Create Supabase client with user's Authorization header for proper RLS enforcement
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            return new Response(
+                JSON.stringify({ error: 'Missing Authorization header' }),
+                {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 401
+                }
+            );
+        }
+
         const supabase = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            { global: { headers: { Authorization: authHeader } } }
         );
+
+        // Verify user is authenticated
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+            console.error('Authentication failed:', authError?.message);
+            return new Response(
+                JSON.stringify({ error: 'Unauthorized' }),
+                {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 401
+                }
+            );
+        }
+
+        console.log('Authenticated user:', user.id);
 
         // Fetch all rules. 
         // In a real scenario with strict limits, we might want pagination or 'updated_since' filter.
