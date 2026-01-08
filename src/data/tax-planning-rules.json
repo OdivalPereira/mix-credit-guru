@@ -1,0 +1,565 @@
+{
+    "metadata": {
+        "version": "1.0.0",
+        "updated_at": "2026-01-07",
+        "description": "Regras tributárias para cálculo de regimes (Simples, LP, LR, Reforma)",
+        "fonte_legal": "LC 123/2006, LC 214/2025, IN RFB 1700/2017"
+    },
+    "simples_nacional": {
+        "limite_faturamento_anual": 4800000,
+        "limite_faturamento_mensal": 400000,
+        "limite_mei": 81000,
+        "anexos": {
+            "I": {
+                "nome": "Comércio",
+                "faixas": [
+                    {
+                        "limite": 180000,
+                        "aliquota": 0.04,
+                        "deducao": 0
+                    },
+                    {
+                        "limite": 360000,
+                        "aliquota": 0.073,
+                        "deducao": 5940
+                    },
+                    {
+                        "limite": 720000,
+                        "aliquota": 0.095,
+                        "deducao": 13860
+                    },
+                    {
+                        "limite": 1800000,
+                        "aliquota": 0.107,
+                        "deducao": 22500
+                    },
+                    {
+                        "limite": 3600000,
+                        "aliquota": 0.143,
+                        "deducao": 87300
+                    },
+                    {
+                        "limite": 4800000,
+                        "aliquota": 0.19,
+                        "deducao": 378000
+                    }
+                ],
+                "distribuicao_tributos": {
+                    "irpj": 0.055,
+                    "csll": 0.035,
+                    "cofins": 0.1285,
+                    "pis": 0.0278,
+                    "cpp": 0.4175,
+                    "icms": 0.3362
+                }
+            },
+            "II": {
+                "nome": "Indústria",
+                "faixas": [
+                    {
+                        "limite": 180000,
+                        "aliquota": 0.045,
+                        "deducao": 0
+                    },
+                    {
+                        "limite": 360000,
+                        "aliquota": 0.078,
+                        "deducao": 5940
+                    },
+                    {
+                        "limite": 720000,
+                        "aliquota": 0.10,
+                        "deducao": 13860
+                    },
+                    {
+                        "limite": 1800000,
+                        "aliquota": 0.112,
+                        "deducao": 22500
+                    },
+                    {
+                        "limite": 3600000,
+                        "aliquota": 0.147,
+                        "deducao": 85500
+                    },
+                    {
+                        "limite": 4800000,
+                        "aliquota": 0.30,
+                        "deducao": 720000
+                    }
+                ],
+                "distribuicao_tributos": {
+                    "irpj": 0.055,
+                    "csll": 0.035,
+                    "cofins": 0.1285,
+                    "pis": 0.0278,
+                    "cpp": 0.4175,
+                    "icms": 0.32,
+                    "ipi": 0.05
+                }
+            },
+            "III": {
+                "nome": "Serviços (locação, transporte, etc)",
+                "faixas": [
+                    {
+                        "limite": 180000,
+                        "aliquota": 0.06,
+                        "deducao": 0
+                    },
+                    {
+                        "limite": 360000,
+                        "aliquota": 0.112,
+                        "deducao": 9360
+                    },
+                    {
+                        "limite": 720000,
+                        "aliquota": 0.135,
+                        "deducao": 17640
+                    },
+                    {
+                        "limite": 1800000,
+                        "aliquota": 0.16,
+                        "deducao": 35640
+                    },
+                    {
+                        "limite": 3600000,
+                        "aliquota": 0.21,
+                        "deducao": 125640
+                    },
+                    {
+                        "limite": 4800000,
+                        "aliquota": 0.33,
+                        "deducao": 648000
+                    }
+                ],
+                "distribuicao_tributos": {
+                    "irpj": 0.04,
+                    "csll": 0.035,
+                    "cofins": 0.1282,
+                    "pis": 0.0278,
+                    "cpp": 0.4340,
+                    "iss": 0.335
+                }
+            },
+            "IV": {
+                "nome": "Serviços (construção, vigilância, limpeza)",
+                "faixas": [
+                    {
+                        "limite": 180000,
+                        "aliquota": 0.045,
+                        "deducao": 0
+                    },
+                    {
+                        "limite": 360000,
+                        "aliquota": 0.09,
+                        "deducao": 8100
+                    },
+                    {
+                        "limite": 720000,
+                        "aliquota": 0.102,
+                        "deducao": 12420
+                    },
+                    {
+                        "limite": 1800000,
+                        "aliquota": 0.14,
+                        "deducao": 39780
+                    },
+                    {
+                        "limite": 3600000,
+                        "aliquota": 0.22,
+                        "deducao": 183780
+                    },
+                    {
+                        "limite": 4800000,
+                        "aliquota": 0.33,
+                        "deducao": 828000
+                    }
+                ],
+                "distribuicao_tributos": {
+                    "irpj": 0.185,
+                    "csll": 0.15,
+                    "cofins": 0.165,
+                    "pis": 0.035,
+                    "iss": 0.465
+                },
+                "cpp_separado": true,
+                "cpp_aliquota": 0.20,
+                "nota": "CPP (20%) deve ser recolhido separadamente via GPS"
+            },
+            "V": {
+                "nome": "Serviços (intelectuais, profissionais liberais)",
+                "faixas": [
+                    {
+                        "limite": 180000,
+                        "aliquota": 0.155,
+                        "deducao": 0
+                    },
+                    {
+                        "limite": 360000,
+                        "aliquota": 0.18,
+                        "deducao": 4500
+                    },
+                    {
+                        "limite": 720000,
+                        "aliquota": 0.195,
+                        "deducao": 9900
+                    },
+                    {
+                        "limite": 1800000,
+                        "aliquota": 0.205,
+                        "deducao": 17100
+                    },
+                    {
+                        "limite": 3600000,
+                        "aliquota": 0.23,
+                        "deducao": 62100
+                    },
+                    {
+                        "limite": 4800000,
+                        "aliquota": 0.305,
+                        "deducao": 540000
+                    }
+                ],
+                "distribuicao_tributos": {
+                    "irpj": 0.14,
+                    "csll": 0.15,
+                    "cofins": 0.1382,
+                    "pis": 0.03,
+                    "cpp": 0.2895,
+                    "iss": 0.2523
+                },
+                "fator_r": {
+                    "limite_migracao": 0.28,
+                    "anexo_destino": "III",
+                    "descricao": "Se Fator R >= 28%, tributa pelo Anexo III"
+                }
+            }
+        },
+        "fator_r": {
+            "formula": "folha_12_meses / receita_bruta_12_meses",
+            "componentes_folha": [
+                "salarios",
+                "pro_labore",
+                "encargos_fgts",
+                "encargos_inss_patronal",
+                "13o_salario",
+                "ferias",
+                "vale_transporte_excedente"
+            ],
+            "nota": "Folha inclui encargos mas NÃO inclui distribuição de lucros"
+        }
+    },
+    "lucro_presumido": {
+        "limite_faturamento_anual": 78000000,
+        "regime_caixa_permitido": true,
+        "presuncao": {
+            "comercio": {
+                "irpj": 0.08,
+                "csll": 0.12
+            },
+            "industria": {
+                "irpj": 0.08,
+                "csll": 0.12
+            },
+            "servicos": {
+                "irpj": 0.32,
+                "csll": 0.32
+            },
+            "servicos_hospitalares": {
+                "irpj": 0.08,
+                "csll": 0.12,
+                "requisitos": "Sociedade empresária com estrutura hospitalar"
+            },
+            "transporte_carga": {
+                "irpj": 0.08,
+                "csll": 0.12
+            },
+            "transporte_passageiros": {
+                "irpj": 0.16,
+                "csll": 0.12
+            },
+            "revenda_combustiveis": {
+                "irpj": 0.016,
+                "csll": 0.12
+            }
+        },
+        "aliquotas": {
+            "irpj": {
+                "normal": 0.15,
+                "adicional": 0.10,
+                "base_adicional_mensal": 20000,
+                "base_adicional_trimestral": 60000,
+                "base_adicional_anual": 240000
+            },
+            "csll": 0.09,
+            "pis": {
+                "aliquota": 0.0065,
+                "regime": "cumulativo"
+            },
+            "cofins": {
+                "aliquota": 0.03,
+                "regime": "cumulativo"
+            }
+        },
+        "obrigacoes_acessorias": [
+            "DCTF",
+            "EFD-Contribuições",
+            "ECF",
+            "ECD (se receita > 78M ou optar)"
+        ]
+    },
+    "lucro_real": {
+        "obrigatorio_quando": [
+            "Receita bruta > R$ 78 milhões/ano",
+            "Instituições financeiras",
+            "Empresas com lucros do exterior",
+            "Factoring",
+            "Empresas com benefícios fiscais (SUDENE, SUDAM, etc.)"
+        ],
+        "aliquotas": {
+            "irpj": {
+                "normal": 0.15,
+                "adicional": 0.10,
+                "base_adicional_mensal": 20000,
+                "base_adicional_trimestral": 60000,
+                "base_adicional_anual": 240000
+            },
+            "csll": 0.09,
+            "pis": {
+                "aliquota": 0.0165,
+                "regime": "nao_cumulativo",
+                "creditos_permitidos": [
+                    "aquisicao_insumos",
+                    "energia_eletrica",
+                    "alugueis_pagos",
+                    "depreciacao",
+                    "arrendamento_mercantil"
+                ]
+            },
+            "cofins": {
+                "aliquota": 0.076,
+                "regime": "nao_cumulativo",
+                "creditos_permitidos": [
+                    "aquisicao_insumos",
+                    "energia_eletrica",
+                    "alugueis_pagos",
+                    "depreciacao",
+                    "arrendamento_mercantil"
+                ]
+            }
+        },
+        "lalur": {
+            "adicoes_comuns": [
+                "multas_fiscais",
+                "brindes",
+                "doacao_excedente",
+                "depreciacao_acelerada_incentivada"
+            ],
+            "exclusoes_comuns": [
+                "receitas_isentas",
+                "dividendos_recebidos",
+                "lucro_ME_exterior_2014"
+            ],
+            "compensacao_prejuizo": {
+                "limite": 0.30,
+                "descricao": "Pode compensar até 30% do lucro do período"
+            }
+        },
+        "obrigacoes_acessorias": [
+            "ECD (obrigatória)",
+            "ECF (obrigatória)",
+            "EFD-Contribuições",
+            "EFD-ICMS/IPI",
+            "DCTF",
+            "DIRF"
+        ]
+    },
+    "reforma_tributaria": {
+        "lei_complementar": "214/2025",
+        "transicao": {
+            "2026": {
+                "cbs": 0.009,
+                "ibs": 0,
+                "reducao_tributos_atuais": 0,
+                "fase": "teste",
+                "nota": "CBS de 0.9% apenas para teste (compensável com PIS/COFINS)"
+            },
+            "2027": {
+                "cbs": 0.009,
+                "ibs": 0.01,
+                "reducao_tributos_atuais": 0.10,
+                "fase": "transicao_inicial"
+            },
+            "2028": {
+                "cbs": 0.018,
+                "ibs": 0.02,
+                "reducao_tributos_atuais": 0.20,
+                "fase": "transicao"
+            },
+            "2029": {
+                "cbs": 0.027,
+                "ibs": 0.04,
+                "reducao_tributos_atuais": 0.30,
+                "fase": "transicao"
+            },
+            "2030": {
+                "cbs": 0.036,
+                "ibs": 0.06,
+                "reducao_tributos_atuais": 0.40,
+                "fase": "transicao"
+            },
+            "2031": {
+                "cbs": 0.054,
+                "ibs": 0.10,
+                "reducao_tributos_atuais": 0.60,
+                "fase": "transicao"
+            },
+            "2032": {
+                "cbs": 0.072,
+                "ibs": 0.14,
+                "reducao_tributos_atuais": 0.80,
+                "fase": "transicao"
+            },
+            "2033": {
+                "cbs": 0.085,
+                "ibs": 0.17,
+                "reducao_tributos_atuais": 1.0,
+                "fase": "plena",
+                "nota": "Extinção completa de PIS, COFINS, IPI, ICMS, ISS"
+            }
+        },
+        "aliquotas_plenas_2033": {
+            "cbs_federal": 0.085,
+            "ibs_estadual_municipal": 0.17,
+            "is_seletivo": {
+                "cigarros": 0.30,
+                "bebidas_alcoolicas": 0.25,
+                "bebidas_acucaradas": 0.20,
+                "veiculos": 0.03,
+                "combustiveis_fosseis": 0.10
+            },
+            "aliquota_padrao_total": 0.255,
+            "nota": "Alíquota de referência ~25.5% (CBS 8.5% + IBS 17%)"
+        },
+        "reducoes_setoriais": {
+            "saude": {
+                "reducao": 0.60,
+                "aliquota_efetiva": 0.102,
+                "atividades": [
+                    "hospitais",
+                    "clinicas",
+                    "laboratorios",
+                    "home_care"
+                ]
+            },
+            "educacao": {
+                "reducao": 0.60,
+                "aliquota_efetiva": 0.102,
+                "atividades": [
+                    "escolas",
+                    "universidades",
+                    "cursos_tecnicos"
+                ]
+            },
+            "transporte_publico": {
+                "reducao": 0.60,
+                "aliquota_efetiva": 0.102,
+                "atividades": [
+                    "onibus_urbano",
+                    "metro",
+                    "trem"
+                ]
+            },
+            "agropecuaria": {
+                "reducao": 0.60,
+                "aliquota_efetiva": 0.102,
+                "atividades": [
+                    "producao_rural",
+                    "cooperativas_agricolas"
+                ]
+            },
+            "cultura": {
+                "reducao": 0.60,
+                "aliquota_efetiva": 0.102,
+                "atividades": [
+                    "livros",
+                    "jornais",
+                    "producao_cultural"
+                ]
+            },
+            "cesta_basica": {
+                "reducao": 1.0,
+                "aliquota_efetiva": 0,
+                "atividades": [
+                    "alimentos_basicos"
+                ],
+                "nota": "Isenção total para cesta básica"
+            }
+        },
+        "creditos": {
+            "principio": "credito_financeiro",
+            "prazo_ressarcimento": 60,
+            "split_payment": {
+                "obrigatorio": true,
+                "inicio": 2026,
+                "descricao": "Recolhimento automático pelo sistema de pagamentos"
+            }
+        },
+        "simples_nacional_pos_reforma": {
+            "optativo": true,
+            "pode_gerar_credito": true,
+            "credito_proporcional": "Crédito de IBS/CBS proporcional à participação no valor adicionado"
+        }
+    },
+    "outros_tributos": {
+        "inss_patronal": {
+            "aliquota_padrao": 0.20,
+            "rat": {
+                "grau_1": 0.01,
+                "grau_2": 0.02,
+                "grau_3": 0.03
+            },
+            "terceiros": {
+                "sesi_senai": 0.015,
+                "incra": 0.002,
+                "salario_educacao": 0.025,
+                "outras": 0.016
+            },
+            "desoneração_folha": {
+                "setores_beneficiados": [
+                    "TI",
+                    "call_center",
+                    "transporte",
+                    "construcao_civil"
+                ],
+                "aliquota_receita": 0.045,
+                "vigencia": "Até 2027 (com extinção gradual)"
+            }
+        },
+        "iss": {
+            "aliquota_minima": 0.02,
+            "aliquota_maxima": 0.05,
+            "local_tributacao": "domicilio_prestador",
+            "excecoes_local": [
+                "construcao_civil",
+                "limpeza",
+                "vigilancia"
+            ]
+        },
+        "icms": {
+            "aliquota_interna_media": 0.18,
+            "aliquota_interestadual": {
+                "sul_sudeste_origem": 0.07,
+                "outras_regioes": 0.12
+            },
+            "substituicao_tributaria": {
+                "produtos_comuns": [
+                    "combustiveis",
+                    "bebidas",
+                    "automoveis",
+                    "auto_pecas",
+                    "eletronicos"
+                ]
+            }
+        }
+    }
+}

@@ -32,6 +32,7 @@ const Cadastros = lazy(() => import("./pages/Cadastros"));
 const Cenarios = lazy(() => import("./pages/Cenarios"));
 const Regras = lazy(() => import("./pages/Regras"));
 const ImpactoReforma = lazy(() => import("./pages/ImpactoReforma"));
+const PlanejamentoTributario = lazy(() => import("./pages/PlanejamentoTributario"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const UnidadesConversoes = lazy(() => import("./pages/UnidadesConversoes"));
 const Historico = lazy(() => import("./pages/Historico"));
@@ -93,6 +94,7 @@ const App = () => (
                       <Route path="cenarios" element={<Cenarios />} />
                       <Route path="regras" element={<Regras />} />
                       <Route path="impacto-reforma" element={<ImpactoReforma />} />
+                      <Route path="planejamento" element={<PlanejamentoTributario />} />
                       <Route path="relatorios" element={<Relatorios />} />
                       <Route path="unidades-conversoes" element={<UnidadesConversoes />} />
                       <Route path="historico" element={<Historico />} />

@@ -1,0 +1,1503 @@
+{
+    "metadata": {
+        "version": "1.0.0",
+        "updated_at": "2026-01-07",
+        "description": "Base de dados de CNAEs com regras tributárias para análise de regime",
+        "source": "IBGE CNAE 2.3 + legislação tributária vigente"
+    },
+    "cnaes": {
+        "6201-5/00": {
+            "descricao": "Desenvolvimento de programas de computador sob encomenda",
+            "divisao": "62",
+            "grupo": "62.0",
+            "classe": "62.01-5",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "1.04",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade intelectual não permitida no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "tecnologia",
+            "observacoes": [
+                "Sujeito a retenção de 11% de INSS sobre serviços tomados",
+                "Possibilidade de isenção de ISS em alguns municípios para startups"
+            ]
+        },
+        "6202-3/00": {
+            "descricao": "Desenvolvimento e licenciamento de programas de computador customizáveis",
+            "divisao": "62",
+            "grupo": "62.0",
+            "classe": "62.02-3",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "1.04",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade intelectual não permitida no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "tecnologia",
+            "observacoes": []
+        },
+        "6203-1/00": {
+            "descricao": "Desenvolvimento e licenciamento de programas de computador não-customizáveis",
+            "divisao": "62",
+            "grupo": "62.0",
+            "classe": "62.03-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12,
+                "nota": "Venda de software de prateleira pode ser tributado como mercadoria"
+            },
+            "iss": {
+                "lista_servicos": "1.05",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Faturamento geralmente excede limite MEI"
+            },
+            "tipo_atividade": "misto",
+            "setor": "tecnologia",
+            "observacoes": [
+                "Pode haver discussão sobre incidência de ICMS vs ISS",
+                "Software de prateleira tem tratamento tributário diferenciado"
+            ]
+        },
+        "6204-0/00": {
+            "descricao": "Consultoria em tecnologia da informação",
+            "divisao": "62",
+            "grupo": "62.0",
+            "classe": "62.04-0",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "1.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade intelectual não permitida no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "tecnologia",
+            "observacoes": []
+        },
+        "6209-1/00": {
+            "descricao": "Suporte técnico, manutenção e outros serviços em tecnologia da informação",
+            "divisao": "62",
+            "grupo": "62.0",
+            "classe": "62.09-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "1.07",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "servicos",
+            "setor": "tecnologia",
+            "observacoes": [
+                "Anexo III direto (sem necessidade de Fator R)"
+            ]
+        },
+        "4712-1/00": {
+            "descricao": "Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - minimercados, mercearias e armazéns",
+            "divisao": "47",
+            "grupo": "47.1",
+            "classe": "47.12-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "I",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "icms": {
+                "substituicao_tributaria": true,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "comercio",
+            "setor": "varejo",
+            "observacoes": [
+                "Sujeito a substituição tributária de ICMS em diversos produtos",
+                "Margem de lucro geralmente baixa"
+            ]
+        },
+        "4711-3/01": {
+            "descricao": "Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - hipermercados",
+            "divisao": "47",
+            "grupo": "47.1",
+            "classe": "47.11-3",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "I",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null,
+                "nota": "Faturamento geralmente excede limite do Simples"
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "icms": {
+                "substituicao_tributaria": true,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Faturamento incompatível com limite MEI"
+            },
+            "tipo_atividade": "comercio",
+            "setor": "varejo",
+            "observacoes": []
+        },
+        "4781-4/00": {
+            "descricao": "Comércio varejista de artigos do vestuário e acessórios",
+            "divisao": "47",
+            "grupo": "47.8",
+            "classe": "47.81-4",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "I",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "icms": {
+                "substituicao_tributaria": false,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "comercio",
+            "setor": "varejo",
+            "observacoes": []
+        },
+        "4530-7/01": {
+            "descricao": "Comércio por atacado de peças e acessórios novos para veículos automotores",
+            "divisao": "45",
+            "grupo": "45.3",
+            "classe": "45.30-7",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "I",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "icms": {
+                "substituicao_tributaria": true,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atacado não permitido no MEI"
+            },
+            "tipo_atividade": "comercio",
+            "setor": "automotivo",
+            "observacoes": [
+                "ST de ICMS em autopeças"
+            ]
+        },
+        "4520-0/01": {
+            "descricao": "Serviços de manutenção e reparação mecânica de veículos automotores",
+            "divisao": "45",
+            "grupo": "45.2",
+            "classe": "45.20-0",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "14.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "servicos",
+            "setor": "automotivo",
+            "observacoes": [
+                "Anexo III direto"
+            ]
+        },
+        "6911-7/01": {
+            "descricao": "Serviços advocatícios",
+            "divisao": "69",
+            "grupo": "69.1",
+            "classe": "69.11-7",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "IV",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "17.14",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada não permitida no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "juridico",
+            "observacoes": [
+                "Anexo IV - não inclui CPP na alíquota",
+                "Sociedade uniprofissional pode ter ISS fixo"
+            ]
+        },
+        "6920-6/01": {
+            "descricao": "Atividades de contabilidade",
+            "divisao": "69",
+            "grupo": "69.2",
+            "classe": "69.20-6",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "17.19",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada não permitida no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "contabilidade",
+            "observacoes": [
+                "Fator R muito importante para reduzir alíquota"
+            ]
+        },
+        "6920-6/02": {
+            "descricao": "Atividades de consultoria e auditoria contábil e tributária",
+            "divisao": "69",
+            "grupo": "69.2",
+            "classe": "69.20-6",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "17.19",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada não permitida no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "contabilidade",
+            "observacoes": []
+        },
+        "8630-5/01": {
+            "descricao": "Atividade médica ambulatorial com recursos para realização de procedimentos cirúrgicos",
+            "divisao": "86",
+            "grupo": "86.3",
+            "classe": "86.30-5",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12,
+                "nota": "Alíquota reduzida para serviços hospitalares (Lei 11.727/2008)"
+            },
+            "iss": {
+                "lista_servicos": "4.03",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada não permitida no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "saude",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60,
+                "nota": "Saúde tem redução de 60% na alíquota do IBS/CBS"
+            },
+            "observacoes": [
+                "Presunção reduzida se enquadrada como sociedade empresária",
+                "Reforma Tributária: redução de 60% na alíquota"
+            ]
+        },
+        "8630-5/02": {
+            "descricao": "Atividade médica ambulatorial com recursos para realização de exames complementares",
+            "divisao": "86",
+            "grupo": "86.3",
+            "classe": "86.30-5",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12,
+                "nota": "Alíquota reduzida para serviços hospitalares"
+            },
+            "iss": {
+                "lista_servicos": "4.02",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "saude",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": []
+        },
+        "8630-5/03": {
+            "descricao": "Atividade médica ambulatorial restrita a consultas",
+            "divisao": "86",
+            "grupo": "86.3",
+            "classe": "86.30-5",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32,
+                "nota": "Consultas sem estrutura hospitalar = presunção cheia"
+            },
+            "iss": {
+                "lista_servicos": "4.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "saude",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": [
+                "Médicos em consultório particular sem estrutura hospitalar"
+            ]
+        },
+        "8640-2/01": {
+            "descricao": "Laboratórios de anatomia patológica e citológica",
+            "divisao": "86",
+            "grupo": "86.4",
+            "classe": "86.40-2",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "iss": {
+                "lista_servicos": "4.02",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "saude",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": []
+        },
+        "8650-0/01": {
+            "descricao": "Atividades de enfermagem",
+            "divisao": "86",
+            "grupo": "86.5",
+            "classe": "86.50-0",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "4.06",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "saude",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": []
+        },
+        "8511-2/00": {
+            "descricao": "Educação infantil - creche",
+            "divisao": "85",
+            "grupo": "85.1",
+            "classe": "85.11-2",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "8.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Responsabilidade técnica exigida"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "educacao",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60,
+                "nota": "Educação tem redução de 60% na alíquota do IBS/CBS"
+            },
+            "observacoes": [
+                "Anexo III direto para educação"
+            ]
+        },
+        "8512-1/00": {
+            "descricao": "Educação infantil - pré-escola",
+            "divisao": "85",
+            "grupo": "85.1",
+            "classe": "85.12-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "8.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Responsabilidade técnica exigida"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "educacao",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": []
+        },
+        "8513-9/00": {
+            "descricao": "Ensino fundamental",
+            "divisao": "85",
+            "grupo": "85.1",
+            "classe": "85.13-9",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "8.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Responsabilidade técnica exigida"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "educacao",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": []
+        },
+        "8520-1/00": {
+            "descricao": "Ensino médio",
+            "divisao": "85",
+            "grupo": "85.2",
+            "classe": "85.20-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "8.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Responsabilidade técnica exigida"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "educacao",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": []
+        },
+        "8531-7/00": {
+            "descricao": "Educação superior - graduação",
+            "divisao": "85",
+            "grupo": "85.3",
+            "classe": "85.31-7",
+            "simples": {
+                "permitido": false,
+                "motivo": "Faturamento geralmente excede limite"
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "8.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Incompatível"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "educacao",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60
+            },
+            "observacoes": []
+        },
+        "4110-7/00": {
+            "descricao": "Incorporação de empreendimentos imobiliários",
+            "divisao": "41",
+            "grupo": "41.1",
+            "classe": "41.10-7",
+            "simples": {
+                "permitido": false,
+                "motivo": "Atividade vedada ao Simples Nacional"
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade imobiliária vedada"
+            },
+            "tipo_atividade": "comercio",
+            "setor": "imobiliario",
+            "observacoes": [
+                "Atividade vedada ao Simples Nacional",
+                "RET - Regime Especial de Tributação pode ser vantajoso"
+            ]
+        },
+        "4120-4/00": {
+            "descricao": "Construção de edifícios",
+            "divisao": "41",
+            "grupo": "41.2",
+            "classe": "41.20-4",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "IV",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "iss": {
+                "lista_servicos": "7.02",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Faturamento e responsabilidade técnica"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "construcao",
+            "observacoes": [
+                "Anexo IV - CPP não incluso na alíquota",
+                "Retenção de 11% INSS sobre cessão de mão de obra"
+            ]
+        },
+        "4330-4/04": {
+            "descricao": "Serviços de pintura de edifícios em geral",
+            "divisao": "43",
+            "grupo": "43.3",
+            "classe": "43.30-4",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "IV",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "7.02",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "servicos",
+            "setor": "construcao",
+            "observacoes": []
+        },
+        "4399-1/01": {
+            "descricao": "Administração de obras",
+            "divisao": "43",
+            "grupo": "43.9",
+            "classe": "43.99-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "IV",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "7.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Responsabilidade técnica exigida"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "construcao",
+            "observacoes": []
+        },
+        "7111-1/00": {
+            "descricao": "Serviços de arquitetura",
+            "divisao": "71",
+            "grupo": "71.1",
+            "classe": "71.11-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "7.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "engenharia",
+            "observacoes": []
+        },
+        "7112-0/00": {
+            "descricao": "Serviços de engenharia",
+            "divisao": "71",
+            "grupo": "71.1",
+            "classe": "71.12-0",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "7.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Profissão regulamentada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "engenharia",
+            "observacoes": []
+        },
+        "5611-2/01": {
+            "descricao": "Restaurantes e similares",
+            "divisao": "56",
+            "grupo": "56.1",
+            "classe": "56.11-2",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "I",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null,
+                "nota": "Tributado como comércio quando há preparo de alimentos"
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "icms": {
+                "substituicao_tributaria": false,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "comercio",
+            "setor": "alimentacao",
+            "observacoes": [
+                "Anexo I (comércio) e não III (serviços)"
+            ]
+        },
+        "5611-2/03": {
+            "descricao": "Lanchonetes, casas de chá, de sucos e similares",
+            "divisao": "56",
+            "grupo": "56.1",
+            "classe": "56.11-2",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "I",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "icms": {
+                "substituicao_tributaria": false,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "comercio",
+            "setor": "alimentacao",
+            "observacoes": []
+        },
+        "4921-3/01": {
+            "descricao": "Transporte rodoviário coletivo de passageiros, com itinerário fixo, municipal",
+            "divisao": "49",
+            "grupo": "49.2",
+            "classe": "49.21-3",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.16,
+                "presuncao_csll": 0.12
+            },
+            "iss": {
+                "lista_servicos": "16.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Transporte coletivo não permitido no MEI"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "transporte",
+            "reforma_tributaria": {
+                "reducao_aliquota": 0.60,
+                "nota": "Transporte público tem redução de 60%"
+            },
+            "observacoes": [
+                "Presunção reduzida (16%) para transporte de passageiros"
+            ]
+        },
+        "4930-2/01": {
+            "descricao": "Transporte rodoviário de carga, exceto produtos perigosos e mudanças, municipal",
+            "divisao": "49",
+            "grupo": "49.3",
+            "classe": "49.30-2",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "iss": {
+                "lista_servicos": "16.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000,
+                "nota": "Caminhoneiro MEI tem limite diferenciado"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "transporte",
+            "observacoes": [
+                "Presunção de 8% para transporte de carga"
+            ]
+        },
+        "7810-8/00": {
+            "descricao": "Seleção e agenciamento de mão-de-obra",
+            "divisao": "78",
+            "grupo": "78.1",
+            "classe": "78.10-8",
+            "simples": {
+                "permitido": false,
+                "motivo": "Cessão de mão de obra vedada ao Simples Nacional"
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "17.04",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade vedada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "recursos_humanos",
+            "observacoes": [
+                "Vedado ao Simples Nacional por ser cessão de mão de obra"
+            ]
+        },
+        "7820-5/00": {
+            "descricao": "Locação de mão-de-obra temporária",
+            "divisao": "78",
+            "grupo": "78.2",
+            "classe": "78.20-5",
+            "simples": {
+                "permitido": false,
+                "motivo": "Cessão de mão de obra vedada ao Simples Nacional"
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "17.05",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade vedada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "recursos_humanos",
+            "observacoes": []
+        },
+        "7311-4/00": {
+            "descricao": "Agências de publicidade",
+            "divisao": "73",
+            "grupo": "73.1",
+            "classe": "73.11-4",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "17.06",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade intelectual"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "marketing",
+            "observacoes": []
+        },
+        "7319-0/99": {
+            "descricao": "Outras atividades de publicidade não especificadas anteriormente",
+            "divisao": "73",
+            "grupo": "73.1",
+            "classe": "73.19-0",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "V",
+                "anexo_fator_r": "III",
+                "fator_r_minimo": 0.28
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "17.06",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "servicos",
+            "setor": "marketing",
+            "observacoes": []
+        },
+        "9602-5/01": {
+            "descricao": "Cabeleireiros, manicure e pedicure",
+            "divisao": "96",
+            "grupo": "96.0",
+            "classe": "96.02-5",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "6.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "servicos",
+            "setor": "beleza",
+            "observacoes": [
+                "Anexo III direto (serviços pessoais)"
+            ]
+        },
+        "9602-5/02": {
+            "descricao": "Atividades de estética e outros serviços de cuidados com a beleza",
+            "divisao": "96",
+            "grupo": "96.0",
+            "classe": "96.02-5",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "III",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "6.01",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "servicos",
+            "setor": "beleza",
+            "observacoes": []
+        },
+        "8011-1/01": {
+            "descricao": "Atividades de vigilância e segurança privada",
+            "divisao": "80",
+            "grupo": "80.1",
+            "classe": "80.11-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "IV",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "11.02",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Atividade regulamentada"
+            },
+            "tipo_atividade": "servicos",
+            "setor": "seguranca",
+            "observacoes": [
+                "Anexo IV - CPP não incluso, recolher à parte"
+            ]
+        },
+        "8121-4/00": {
+            "descricao": "Limpeza em prédios e em domicílios",
+            "divisao": "81",
+            "grupo": "81.2",
+            "classe": "81.21-4",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "IV",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.32,
+                "presuncao_csll": 0.32
+            },
+            "iss": {
+                "lista_servicos": "7.10",
+                "aliquota_minima": 0.02,
+                "aliquota_maxima": 0.05
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "servicos",
+            "setor": "limpeza",
+            "observacoes": [
+                "Anexo IV quando fornece mão de obra"
+            ]
+        },
+        "1011-2/01": {
+            "descricao": "Frigorífico - abate de bovinos",
+            "divisao": "10",
+            "grupo": "10.1",
+            "classe": "10.11-2",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "II",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "ipi": {
+                "aliquota": 0,
+                "nota": "Produto alimentício básico geralmente isento"
+            },
+            "icms": {
+                "substituicao_tributaria": true,
+                "aliquota_interna_media": 0.12
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Indústria com fiscalização sanitária"
+            },
+            "tipo_atividade": "industria",
+            "setor": "agroindustria",
+            "observacoes": [
+                "Anexo II (indústria)"
+            ]
+        },
+        "1091-1/01": {
+            "descricao": "Fabricação de produtos de panificação",
+            "divisao": "10",
+            "grupo": "10.9",
+            "classe": "10.91-1",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "II",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "ipi": {
+                "aliquota": 0,
+                "nota": "Pão geralmente isento de IPI"
+            },
+            "icms": {
+                "substituicao_tributaria": false,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "industria",
+            "setor": "alimentacao",
+            "observacoes": []
+        },
+        "2511-0/00": {
+            "descricao": "Fabricação de estruturas metálicas",
+            "divisao": "25",
+            "grupo": "25.1",
+            "classe": "25.11-0",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "II",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "ipi": {
+                "aliquota": 0.05,
+                "nota": "Verificar NCM específico"
+            },
+            "icms": {
+                "substituicao_tributaria": false,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": false,
+                "motivo": "Indústria geralmente excede limite"
+            },
+            "tipo_atividade": "industria",
+            "setor": "metalurgia",
+            "observacoes": []
+        },
+        "2599-3/99": {
+            "descricao": "Fabricação de outros produtos de metal não especificados anteriormente",
+            "divisao": "25",
+            "grupo": "25.9",
+            "classe": "25.99-3",
+            "simples": {
+                "permitido": true,
+                "anexo_padrao": "II",
+                "anexo_fator_r": null,
+                "fator_r_minimo": null
+            },
+            "lucro_presumido": {
+                "presuncao_irpj": 0.08,
+                "presuncao_csll": 0.12
+            },
+            "ipi": {
+                "aliquota": 0.05,
+                "nota": "Verificar NCM específico"
+            },
+            "icms": {
+                "substituicao_tributaria": false,
+                "aliquota_interna_media": 0.18
+            },
+            "mei": {
+                "permitido": true,
+                "limite_faturamento": 81000
+            },
+            "tipo_atividade": "industria",
+            "setor": "metalurgia",
+            "observacoes": []
+        }
+    },
+    "setores": {
+        "tecnologia": {
+            "margem_lucro_tipica": 0.25,
+            "fator_r_medio": 0.35,
+            "principais_despesas": [
+                "pessoal",
+                "tecnologia",
+                "marketing"
+            ],
+            "tendencia_reforma": "neutro"
+        },
+        "saude": {
+            "margem_lucro_tipica": 0.20,
+            "fator_r_medio": 0.40,
+            "principais_despesas": [
+                "pessoal",
+                "insumos",
+                "equipamentos"
+            ],
+            "tendencia_reforma": "favoravel",
+            "reducao_reforma": 0.60
+        },
+        "educacao": {
+            "margem_lucro_tipica": 0.15,
+            "fator_r_medio": 0.50,
+            "principais_despesas": [
+                "pessoal",
+                "infraestrutura"
+            ],
+            "tendencia_reforma": "favoravel",
+            "reducao_reforma": 0.60
+        },
+        "varejo": {
+            "margem_lucro_tipica": 0.08,
+            "fator_r_medio": 0.15,
+            "principais_despesas": [
+                "mercadorias",
+                "aluguel",
+                "pessoal"
+            ],
+            "tendencia_reforma": "neutro"
+        },
+        "construcao": {
+            "margem_lucro_tipica": 0.12,
+            "fator_r_medio": 0.45,
+            "principais_despesas": [
+                "materiais",
+                "mao_de_obra"
+            ],
+            "tendencia_reforma": "neutro"
+        },
+        "transporte": {
+            "margem_lucro_tipica": 0.10,
+            "fator_r_medio": 0.30,
+            "principais_despesas": [
+                "combustivel",
+                "manutencao",
+                "pessoal"
+            ],
+            "tendencia_reforma": "favoravel_publico"
+        },
+        "alimentacao": {
+            "margem_lucro_tipica": 0.12,
+            "fator_r_medio": 0.25,
+            "principais_despesas": [
+                "insumos",
+                "aluguel",
+                "pessoal"
+            ],
+            "tendencia_reforma": "neutro"
+        },
+        "contabilidade": {
+            "margem_lucro_tipica": 0.30,
+            "fator_r_medio": 0.45,
+            "principais_despesas": [
+                "pessoal",
+                "tecnologia"
+            ],
+            "tendencia_reforma": "neutro"
+        },
+        "juridico": {
+            "margem_lucro_tipica": 0.35,
+            "fator_r_medio": 0.40,
+            "principais_despesas": [
+                "pessoal",
+                "infraestrutura"
+            ],
+            "tendencia_reforma": "neutro"
+        },
+        "engenharia": {
+            "margem_lucro_tipica": 0.20,
+            "fator_r_medio": 0.35,
+            "principais_despesas": [
+                "pessoal",
+                "software"
+            ],
+            "tendencia_reforma": "neutro"
+        }
+    },
+    "anexos_simples": {
+        "I": {
+            "nome": "Comércio",
+            "atividades": [
+                "comercio_varejo",
+                "comercio_atacado"
+            ],
+            "inclui_cpp": true
+        },
+        "II": {
+            "nome": "Indústria",
+            "atividades": [
+                "industria",
+                "fabricacao"
+            ],
+            "inclui_cpp": true
+        },
+        "III": {
+            "nome": "Serviços (gerais)",
+            "atividades": [
+                "servicos_gerais",
+                "locacao_bens_moveis",
+                "transporte"
+            ],
+            "inclui_cpp": true
+        },
+        "IV": {
+            "nome": "Serviços (obras, vigilância)",
+            "atividades": [
+                "construcao_civil",
+                "vigilancia",
+                "limpeza"
+            ],
+            "inclui_cpp": false,
+            "nota": "CPP deve ser recolhido à parte (20%)"
+        },
+        "V": {
+            "nome": "Serviços (intelectuais)",
+            "atividades": [
+                "consultoria",
+                "advocacia",
+                "contabilidade",
+                "engenharia",
+                "medicina"
+            ],
+            "inclui_cpp": true,
+            "fator_r_regra": "Se Fator R >= 28%, tributa no Anexo III"
+        }
+    }
+}

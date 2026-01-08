@@ -14,6 +14,7 @@ import {
   History,
   FlaskConical,
   X,
+  Target,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -38,6 +39,7 @@ const navigation = [
   { name: "Cadastros", href: "/cadastros", icon: FolderOpen },
   { name: "Cotação", href: "/cotacao", icon: Calculator },
   { name: "Análise", href: "/analise", icon: BarChart3 },
+  { name: "Planejamento", href: "/planejamento", icon: Target },
   { name: "Histórico", href: "/historico", icon: History },
   { name: "Configurações", href: "/config", icon: Settings },
 ];
@@ -48,9 +50,9 @@ export function Layout() {
   const { openModal } = useDonationModalStore();
   const { theme, setTheme } = useTheme();
   const { user, profile, isAdmin, isDemo, signOut } = useAuth();
-  
+
   const isDarkMode = theme === "dark";
-  
+
   const toggleTheme = () => {
     setTheme(isDarkMode ? "light" : "dark");
   };
@@ -98,9 +100,9 @@ export function Layout() {
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={openModal}
               className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
             >
@@ -199,10 +201,10 @@ export function Layout() {
               item.href === "/"
                 ? location.pathname === item.href
                 : location.pathname.startsWith(item.href);
-            const tourId = item.href === '/cadastros' ? 'nav-cadastros' 
+            const tourId = item.href === '/cadastros' ? 'nav-cadastros'
               : item.href === '/cotacao' ? 'nav-cotacao'
-              : item.href === '/analise' ? 'nav-analise'
-              : undefined;
+                : item.href === '/analise' ? 'nav-analise'
+                  : undefined;
             return (
               <Link
                 key={item.href}
