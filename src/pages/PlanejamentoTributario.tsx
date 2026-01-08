@@ -26,7 +26,7 @@ import {
     Loader2, X, Info, BarChart3, Target, Lightbulb,
     Home, Zap, Receipt, Truck, Wrench, Package,
     Wallet, CreditCard, Scale, AlertTriangle, FileDown, ScrollText, Map as MapIcon,
-    Store
+    Store, Percent
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
@@ -1012,6 +1012,30 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                         </div>
                                         <p className="text-xs text-muted-foreground mt-2">
                                             ⚠️ Fornecedores do Simples geram crédito reduzido (~7%). O restante (Regime Normal) gera crédito cheio (26.5%).
+                                        </p>
+                                    </div>
+
+                                    {/* Percentual de Compras que Geram Crédito */}
+                                    <div className="md:col-span-2 lg:col-span-3 pt-4 border-t mt-2">
+                                        <Label className="mb-4 block flex items-center gap-2">
+                                            <Percent className="h-4 w-4" />
+                                            % das Compras que Efetivamente Geram Crédito (IBS/CBS)
+                                        </Label>
+                                        <div className="flex items-center gap-4 px-2">
+                                            <Slider
+                                                defaultValue={[100]}
+                                                max={100}
+                                                step={5}
+                                                value={[profile.percentual_compras_creditaveis ?? 100]}
+                                                onValueChange={(vals) => updateProfile('percentual_compras_creditaveis', vals[0])}
+                                                className="flex-1"
+                                            />
+                                            <span className="w-16 text-right font-bold border rounded p-1 bg-muted">
+                                                {profile.percentual_compras_creditaveis ?? 100}%
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            💡 Indique quanto das suas compras totais gera crédito. Ex: se 30% são uso pessoal/veículos, coloque 70%.
                                         </p>
                                     </div>
                                 </CardContent>

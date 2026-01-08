@@ -447,8 +447,12 @@ export function calcularReforma(
   const percRegular = 1 - percSimples;
   const ratioSimples = 0.07 / ALIQUOTA_IBS_CBS_PADRAO; // ~27% do crédito cheio
 
+  // Percentual de compras que efetivamente geram crédito (default 100%)
+  const percCreditaveis = (perfil.percentual_compras_creditaveis ?? 100) / 100;
+
   // Crédito ponderado: (Despesas * %Regular * AliqCheia) + (Despesas * %Simples * AliqCheia * Ratio)
-  const fatorPonderacao = (percRegular * 1.0) + (percSimples * ratioSimples);
+  // Multiplicado pelo percentual de compras que geram crédito
+  const fatorPonderacao = ((percRegular * 1.0) + (percSimples * ratioSimples)) * percCreditaveis;
 
   const creditoIbsCbs = despesasComCredito * aliquotaEfetiva * fatorPonderacao;
 

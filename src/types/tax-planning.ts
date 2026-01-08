@@ -97,6 +97,8 @@ export interface TaxProfile {
 
   /** Percentual de compras vindas de fornecedores do Simples Nacional (0-100) */
   percentual_fornecedores_simples?: number;
+  /** Percentual das compras totais que efetivamente geram crédito de IBS/CBS (0-100) */
+  percentual_compras_creditaveis?: number;
 
   // === SALDOS CREDORES LEGADOS ===
   /** Saldo acumulado de PIS/COFINS (para compensar com CBS a partir de 2027) */
