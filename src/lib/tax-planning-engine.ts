@@ -543,7 +543,7 @@ export function compararTodosRegimes(perfil: TaxProfile): TaxComparisonResult {
     : 0;
 
   // Gerar insights
-  const insights = gerarInsights(perfil, simples, presumido, real, reformaPlena);
+  const insights = gerarInsights(perfil, simples, presumido, real, reformaPlena, melhorAtual, menorImpostoAtual);
 
   return {
     perfil,
@@ -571,7 +571,9 @@ function gerarInsights(
   simples: TaxScenarioResult,
   presumido: TaxScenarioResult,
   real: TaxScenarioResult,
-  reforma: TaxScenarioResult
+  reforma: TaxScenarioResult,
+  melhorAtual: 'simples' | 'presumido' | 'real',
+  menorImpostoAtual: number
 ): TaxInsight[] {
   const insights: TaxInsight[] = [];
   const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
@@ -615,13 +617,14 @@ function gerarInsights(
     });
   }
 
-  // Insight: Comparação Reforma vs Atual
-  const diferencaReforma = reforma.imposto_liquido_anual - presumido.imposto_liquido_anual;
+  // Insight: Comparação Reforma vs MELHOR REGIME ATUAL (dinâmico)
+  const nomeRegimeAtual = melhorAtual === 'simples' ? 'Simples Nacional' : melhorAtual === 'presumido' ? 'Lucro Presumido' : 'Lucro Real';
+  const diferencaReforma = reforma.imposto_liquido_anual - menorImpostoAtual;
   if (diferencaReforma > 0) {
     insights.push({
       tipo: 'negativo',
       titulo: 'Reforma pode aumentar sua carga tributária',
-      descricao: `No cenário pleno (2033), você pagará R$ ${Math.abs(diferencaReforma).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} a mais do que no Lucro Presumido atual.`,
+      descricao: `No cenário pleno (2033), você pagará R$ ${Math.abs(diferencaReforma).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} a mais do que no ${nomeRegimeAtual} atual.`,
       impacto_financeiro: -diferencaReforma,
       acao_sugerida: 'Avalie aumentar despesas com fornecedores PJ para maximizar créditos'
     });
@@ -629,7 +632,7 @@ function gerarInsights(
     insights.push({
       tipo: 'positivo',
       titulo: 'Reforma pode reduzir sua carga tributária',
-      descricao: `No cenário pleno (2033), você economizará R$ ${Math.abs(diferencaReforma).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} em relação ao Lucro Presumido atual.`,
+      descricao: `No cenário pleno (2033), você economizará R$ ${Math.abs(diferencaReforma).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} em relação ao ${nomeRegimeAtual} atual.`,
       impacto_financeiro: -diferencaReforma,
       acao_sugerida: 'Prepare sua contabilidade para gestão de créditos desde já'
     });

@@ -219,16 +219,26 @@ export default function PlanejamentoTributario() {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value || 0);
+    };
+
+    const formatNumberForInput = (value: number) => {
+        if (value === 0) return '';
+        return new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }).format(value);
     };
 
-    const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+    const formatPercent = (value: number) => `${(value || 0).toFixed(1)}%`;
 
     const parseCurrency = (value: string): number => {
-        const clean = value.split(',')[0].replace(/\D/g, '');
-        return parseInt(clean) || 0;
+        if (!value) return 0;
+        // Remove tudo que não é dígito ou vírgula
+        const clean = value.replace(/[^\d,]/g, '').replace(',', '.');
+        return parseFloat(clean) || 0;
     };
 
     const updateProfile = useCallback((field: string, value: any) => {
@@ -251,14 +261,16 @@ export default function PlanejamentoTributario() {
 
     const totalDespesasComCredito = useMemo(() => {
         const d = profile.despesas_com_credito;
-        return (d.cmv + d.aluguel + d.energia_telecom + d.servicos_pj +
+        const total = (d.cmv + d.aluguel + d.energia_telecom + d.servicos_pj +
             d.outros_insumos + d.transporte_frete + d.manutencao) || 0;
+        return Number(total.toFixed(2));
     }, [profile.despesas_com_credito]);
 
     const totalDespesasSemCredito = useMemo(() => {
         const d = profile.despesas_sem_credito;
-        return (d.folha_pagamento + d.pro_labore + d.despesas_financeiras +
+        const total = (d.folha_pagamento + d.pro_labore + d.despesas_financeiras +
             d.tributos + d.uso_pessoal + d.outras) || 0;
+        return Number(total.toFixed(2));
     }, [profile.despesas_sem_credito]);
 
     // ============================================================================
@@ -860,8 +872,8 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
                                             <Input
                                                 className="pl-10"
-                                                placeholder="100.000"
-                                                value={profile.faturamento_mensal?.toLocaleString('pt-BR') || ''}
+                                                placeholder="0,00"
+                                                value={formatNumberForInput(profile.faturamento_mensal)}
                                                 onChange={(e) => {
                                                     const val = parseCurrency(e.target.value);
                                                     updateProfile('faturamento_mensal', val);
@@ -875,9 +887,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                         <div className="relative">
                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
                                             <Input
-                                                className="pl-10 bg-muted/50"
+                                                className="pl-10 bg-muted/50 font-medium"
                                                 readOnly
-                                                value={(profile.faturamento_mensal * 12).toLocaleString('pt-BR') || ''}
+                                                value={formatNumberForInput(profile.faturamento_mensal * 12)}
                                             />
                                         </div>
                                     </div>
@@ -907,10 +919,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             CMV / Mercadorias
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_com_credito.cmv || ''}
-                                            onChange={(e) => updateProfile('despesas_com_credito.cmv', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_com_credito.cmv)}
+                                            onChange={(e) => updateProfile('despesas_com_credito.cmv', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -919,10 +930,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Aluguel
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_com_credito.aluguel || ''}
-                                            onChange={(e) => updateProfile('despesas_com_credito.aluguel', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_com_credito.aluguel)}
+                                            onChange={(e) => updateProfile('despesas_com_credito.aluguel', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -931,10 +941,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Energia / Telecom
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_com_credito.energia_telecom || ''}
-                                            onChange={(e) => updateProfile('despesas_com_credito.energia_telecom', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_com_credito.energia_telecom)}
+                                            onChange={(e) => updateProfile('despesas_com_credito.energia_telecom', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -943,10 +952,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Serviços de PJ
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_com_credito.servicos_pj || ''}
-                                            onChange={(e) => updateProfile('despesas_com_credito.servicos_pj', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_com_credito.servicos_pj)}
+                                            onChange={(e) => updateProfile('despesas_com_credito.servicos_pj', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -955,10 +963,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Transporte / Frete
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_com_credito.transporte_frete || ''}
-                                            onChange={(e) => updateProfile('despesas_com_credito.transporte_frete', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_com_credito.transporte_frete)}
+                                            onChange={(e) => updateProfile('despesas_com_credito.transporte_frete', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -967,10 +974,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Manutenção
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_com_credito.manutencao || ''}
-                                            onChange={(e) => updateProfile('despesas_com_credito.manutencao', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_com_credito.manutencao)}
+                                            onChange={(e) => updateProfile('despesas_com_credito.manutencao', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -979,10 +985,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Tarifas Bancárias (Geram Crédito)
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_com_credito.tarifas_bancarias || ''}
-                                            onChange={(e) => updateProfile('despesas_com_credito.tarifas_bancarias', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_com_credito.tarifas_bancarias)}
+                                            onChange={(e) => updateProfile('despesas_com_credito.tarifas_bancarias', parseCurrency(e.target.value))}
                                         />
                                     </div>
 
@@ -1035,19 +1040,17 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Folha de Pagamento
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_sem_credito.folha_pagamento || ''}
-                                            onChange={(e) => updateProfile('despesas_sem_credito.folha_pagamento', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_sem_credito.folha_pagamento)}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.folha_pagamento', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Pró-labore</Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_sem_credito.pro_labore || ''}
-                                            onChange={(e) => updateProfile('despesas_sem_credito.pro_labore', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_sem_credito.pro_labore)}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.pro_labore', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -1056,10 +1059,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Juros e Multas (Sem Crédito)
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_sem_credito.despesas_financeiras || ''}
-                                            onChange={(e) => updateProfile('despesas_sem_credito.despesas_financeiras', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_sem_credito.despesas_financeiras)}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.despesas_financeiras', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -1068,19 +1070,17 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Tributos Atuais
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_sem_credito.tributos || ''}
-                                            onChange={(e) => updateProfile('despesas_sem_credito.tributos', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_sem_credito.tributos)}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.tributos', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Outras Despesas</Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.despesas_sem_credito.outras || ''}
-                                            onChange={(e) => updateProfile('despesas_sem_credito.outras', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.despesas_sem_credito.outras)}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.outras', parseCurrency(e.target.value))}
                                         />
                                     </div>
                                 </CardContent>
@@ -1106,10 +1106,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Saldo PIS/COFINS (Acumulado até 2026)
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.saldo_credor_pis_cofins || ''}
-                                            onChange={(e) => updateProfile('saldo_credor_pis_cofins', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.saldo_credor_pis_cofins)}
+                                            onChange={(e) => updateProfile('saldo_credor_pis_cofins', parseCurrency(e.target.value))}
                                         />
                                         <p className="text-xs text-muted-foreground">Poderá compensar débito de CBS a partir de 2027.</p>
                                     </div>
@@ -1119,10 +1118,9 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             Saldo ICMS (Acumulado até 2032)
                                         </Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0"
-                                            value={profile.saldo_credor_icms || ''}
-                                            onChange={(e) => updateProfile('saldo_credor_icms', Number(e.target.value))}
+                                            placeholder="0,00"
+                                            value={formatNumberForInput(profile.saldo_credor_icms)}
+                                            onChange={(e) => updateProfile('saldo_credor_icms', parseCurrency(e.target.value))}
                                         />
                                         <p className="text-xs text-muted-foreground">Regra de uso em 240 meses a partir de 2033.</p>
                                     </div>
