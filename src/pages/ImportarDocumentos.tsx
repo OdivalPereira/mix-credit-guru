@@ -64,18 +64,32 @@ async function extractTextFromPDF(file: File): Promise<string> {
         throw new Error('PDF.js não está carregado. Recarregue a página.');
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-    let fullText = '';
+    console.log('[PDF Parser] Iniciando extração do PDF:', file.name);
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n';
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        console.log('[PDF Parser] ArrayBuffer obtido, tamanho:', arrayBuffer.byteLength);
+
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        console.log('[PDF Parser] PDF carregado, páginas:', pdf.numPages);
+
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item: any) => item.str).join(' ');
+            fullText += pageText + '\n';
+            console.log(`[PDF Parser] Página ${i} processada, caracteres:`, pageText.length);
+        }
+
+        console.log('[PDF Parser] Extração completa, total de caracteres:', fullText.length);
+        return fullText;
+    } catch (error) {
+        console.error('[PDF Parser] Erro ao extrair PDF:', error);
+        throw new Error(`Erro ao processar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
-
-    return fullText;
 }
 
 // Tipos para estado do componente
@@ -528,6 +542,8 @@ export default function ImportarDocumentos() {
 
     // Handler para processar arquivo
     const handleFileDrop = useCallback(async (file: File, type: DocumentType) => {
+        console.log(`[Upload] Iniciando processamento: ${file.name}, tipo: ${type}`);
+
         setUploadStates(prev => ({
             ...prev,
             [type]: { isLoading: true, error: null, result: null }
@@ -539,11 +555,16 @@ export default function ImportarDocumentos() {
             // Lê o arquivo
             if (type === 'cnpj' && file.name.toLowerCase().endsWith('.pdf')) {
                 // Para PDF, usar extração de texto via pdf.js
+                console.log('[Upload] Extraindo texto de PDF...');
                 content = await extractTextFromPDF(file);
             } else {
                 // Para TXT/CSV, leitura direta
+                console.log('[Upload] Lendo arquivo de texto...');
                 content = await readFileAsText(file, 'latin1');
             }
+
+            console.log(`[Upload] Conteúdo lido, tamanho: ${content.length} caracteres`);
+            console.log('[Upload] Primeiros 200 caracteres:', content.substring(0, 200));
 
             // Parse conforme o tipo
             let result: ParsedDocument;
