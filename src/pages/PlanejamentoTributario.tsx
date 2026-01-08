@@ -55,6 +55,14 @@ import {
 } from "@/lib/tax-planning-engine";
 import { parseSpedFile, isSpedFile, getSpedSummary } from "@/lib/sped-parser";
 import { parseExcelFile, getExcelSummary } from "@/lib/excel-parser";
+import {
+    parseBalancete,
+    parseCNPJCard,
+    balanceteToTaxProfile,
+    extractTextFromPDF,
+    CNPJData,
+    BalanceteData
+} from "@/lib/parsers";
 
 // ============================================================================
 // TYPES
@@ -272,6 +280,7 @@ export default function PlanejamentoTributario() {
                     // SPED Local Parsing
                     const content = await file.text();
                     if (isSpedFile(content)) {
+                        console.log('[Upload] Identificado como SPED');
                         const result = parseSpedFile(content);
                         if (result.empresa) {
                             updateProfile('razao_social', result.empresa.razao_social);
@@ -286,6 +295,26 @@ export default function PlanejamentoTributario() {
                         setUploadedFiles(prev => prev.map(f =>
                             f.id === id ? { ...f, status: 'success', summary: getSpedSummary(result) } : f
                         ));
+                    } else {
+                        // Tentar Balancete SCI Sucessor
+                        console.log('[Upload] Tentando Balancete SCI Sucessor...');
+                        const balanceteResult = parseBalancete(content);
+                        if (balanceteResult.success && balanceteResult.data) {
+                            const taxProfile = balanceteToTaxProfile(balanceteResult.data);
+
+                            setProfile(prev => ({
+                                ...prev,
+                                ...taxProfile,
+                                despesas_com_credito: { ...prev.despesas_com_credito, ...taxProfile.despesas_com_credito },
+                                despesas_sem_credito: { ...prev.despesas_sem_credito, ...taxProfile.despesas_sem_credito },
+                            }));
+
+                            setUploadedFiles(prev => prev.map(f =>
+                                f.id === id ? { ...f, status: 'success', summary: `Balancete: ${balanceteResult.data?.empresa || 'OK'}` } : f
+                            ));
+                        } else {
+                            throw new Error('Formato TXT não reconhecido (não é SPED nem Balancete SCI)');
+                        }
                     }
                 } else if (file.name.match(/\.(xlsx|xls)$/i)) {
                     // Excel Local Parsing
@@ -303,16 +332,49 @@ export default function PlanejamentoTributario() {
                         f.id === id ? { ...f, status: 'success', summary: getExcelSummary(result) } : f
                     ));
                 } else if (file.type === 'application/pdf' || file.type.startsWith('image/') || file.type.startsWith('audio/')) {
-                    // AI Extraction (PDF/Image/Audio)
+                    // Tentar extração local de PDF primeiro se for CNPJ
+                    if (file.type === 'application/pdf') {
+                        try {
+                            console.log('[Upload] Tentando extração local de PDF...');
+                            const text = await extractTextFromPDF(file);
+
+                            // Verificar se parece um cartão CNPJ
+                            if (text.includes('COMPROVANTE DE INSCRIÇÃO') || text.includes('CADASTRO NACIONAL DA PESSOA JURÍDICA')) {
+                                console.log('[Upload] Detectado como Cartão CNPJ');
+                                const cnpjResult = parseCNPJCard(text);
+                                if (cnpjResult.success && cnpjResult.data) {
+                                    const d = cnpjResult.data;
+                                    setProfile(prev => ({
+                                        ...prev,
+                                        razao_social: d.razaoSocial,
+                                        cnpj: d.cnpj,
+                                        cnae_principal: d.cnaePrincipal.codigo,
+                                        uf: d.endereco.uf,
+                                        municipio: d.endereco.municipio
+                                    }));
+
+                                    setUploadedFiles(prev => prev.map(f =>
+                                        f.id === id ? { ...f, status: 'success', summary: `Cartão CNPJ: ${d.razaoSocial}` } : f
+                                    ));
+                                    continue; // Pula para o próximo arquivo, não vai para IA
+                                }
+                            }
+                        } catch (pdfError) {
+                            console.warn('[Upload] Erro na extração local de PDF, caindo para IA:', pdfError);
+                        }
+                    }
+
+                    // AI Extraction (PDF/Image/Audio) - Fallback
+                    console.log('[Upload] Usando IA para extração...');
                     const formData = new FormData();
                     formData.append('file', file);
 
-                    let extracted: AiExtractionResult | undefined;
+                    let extracted: any | undefined;
 
                     if (isDemo) {
                         // Simular atraso de IA no Demo Mode
                         await new Promise(resolve => setTimeout(resolve, 1500));
-                        extracted = DEMO_AI_PROFILE as AiExtractionResult;
+                        extracted = DEMO_AI_PROFILE;
                     } else {
                         // Contexto unificado
                         formData.append('json_data', JSON.stringify(profile));
@@ -325,7 +387,7 @@ export default function PlanejamentoTributario() {
                         });
 
                         if (error) throw error;
-                        extracted = data?.profile as AiExtractionResult;
+                        extracted = data?.profile;
                     }
 
                     if (extracted) {
@@ -359,7 +421,7 @@ export default function PlanejamentoTributario() {
                 ));
             }
         }
-    }, [updateProfile]);
+    }, [updateProfile, isDemo, descricaoTexto, profile]);
 
     const handleAudioRecording = useCallback(async (audioBlob: Blob) => {
         const id = `${Date.now()}-audio`;

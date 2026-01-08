@@ -21,6 +21,8 @@ export {
     getContasFilhas,
 } from './plano-contas-parser';
 
+// Mappers e Utilitários
+export { extractTextFromPDF, readFileAsText } from './utils';
 // Mapper para integração com Planejamento Tributário
 export {
     balanceteToTaxProfile,
