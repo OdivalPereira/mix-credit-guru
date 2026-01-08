@@ -1,7 +1,9 @@
 /**
- * Planejamento Tributário
+ * Planejamento Tributário v2
  * 
- * Página principal do módulo de análise de regimes tributários.
+ * Consultoria Contábil Inteligente com modelo DRE
+ * Foco na não-cumulatividade plena da Reforma Tributária
+ * 
  * Wizard de 3 etapas: Entrada de Dados → Validação → Dashboard
  */
 
@@ -16,79 +18,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-    FileText,
-    Mic,
-    Upload,
-    Sparkles,
-    ArrowRight,
-    ArrowLeft,
-    CheckCircle2,
-    AlertCircle,
-    FileSpreadsheet,
-    Building2,
-    Calculator,
-    TrendingUp,
-    Users,
-    DollarSign,
-    Loader2,
-    X,
-    Eye,
-    Edit2,
-    Info,
-    BarChart3,
-    PieChart,
-    Target,
-    Lightbulb,
-    AlertTriangle
+    FileText, Mic, Upload, Sparkles, ArrowRight, ArrowLeft,
+    CheckCircle2, AlertCircle, FileSpreadsheet, Building2,
+    Calculator, TrendingUp, TrendingDown, Users, DollarSign,
+    Loader2, X, Info, BarChart3, Target, Lightbulb,
+    Home, Zap, Receipt, Truck, Wrench, Package,
+    Wallet, CreditCard, Scale, AlertTriangle, FileDown, ScrollText, Map as MapIcon,
+    Store
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
+import { exportToPDF, createPDFContainer } from "@/lib/pdf-export";
 import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    AreaChart,
-    Area,
-    Cell
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    Legend, ResponsiveContainer, AreaChart, Area, Cell,
+    ComposedChart, ReferenceLine
 } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { AudioRecorder } from "@/components/AudioRecorder";
 
+import type {
+    TaxProfile, TaxComparisonResult, TaxScenarioResult,
+    ChartDataComparison, ChartDataCreditos, ChartDataTimeline, TaxInsight
+} from "@/types/tax-planning";
 import {
-    CompanyData,
-    ComparisonResult,
-    compareRegimes,
-    getCnaeInfo,
-    formatRegimeName,
-    getRegimeColor
+    compararTodosRegimes,
+    gerarDadosGraficoComparacao,
+    gerarDadosGraficoCreditos,
+    gerarDadosTimeline
 } from "@/lib/tax-planning-engine";
-import { parseSpedFile, isSpedFile, getSpedSummary, SpedData } from "@/lib/sped-parser";
-import { parseExcelFile, getExcelSummary, ExcelParseResult } from "@/lib/excel-parser";
+import { parseSpedFile, isSpedFile, getSpedSummary } from "@/lib/sped-parser";
+import { parseExcelFile, getExcelSummary } from "@/lib/excel-parser";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 type WizardStep = 'input' | 'validation' | 'dashboard';
-type InputMode = 'text' | 'audio' | 'files';
-
-interface ExtractedData {
-    razao_social?: string;
-    cnpj?: string;
-    cnae_principal?: string;
-    uf?: string;
-    municipio?: string;
-    faturamento_anual?: number;
-    folha_pagamento_anual?: number;
-    numero_funcionarios?: number;
-    despesas_operacionais?: number;
-    despesas_por_categoria?: Record<string, number>;
-    confianca?: 'high' | 'medium' | 'low';
-    fonte?: string;
-}
 
 interface UploadedFile {
     id: string;
@@ -96,10 +64,37 @@ interface UploadedFile {
     type: string;
     size: number;
     status: 'pending' | 'processing' | 'success' | 'error';
-    data?: SpedData | ExcelParseResult | any;
     summary?: string;
     error?: string;
 }
+
+// Estado inicial do perfil
+const INITIAL_PROFILE: TaxProfile = {
+    cnae_principal: '',
+    faturamento_mensal: 0,
+    faturamento_anual: 0,
+    regime_atual: 'presumido',
+    despesas_com_credito: {
+        cmv: 0,
+        aluguel: 0,
+        energia_telecom: 0,
+        servicos_pj: 0,
+        outros_insumos: 0,
+        transporte_frete: 0,
+        manutencao: 0,
+        tarifas_bancarias: 0
+    },
+    despesas_sem_credito: {
+        folha_pagamento: 0,
+        pro_labore: 0,
+        despesas_financeiras: 0,
+        tributos: 0,
+        uso_pessoal: 0,
+        outras: 0
+    },
+    saldo_credor_pis_cofins: 0,
+    saldo_credor_icms: 0
+};
 
 // ============================================================================
 // COMPONENT
@@ -108,221 +103,26 @@ interface UploadedFile {
 export default function PlanejamentoTributario() {
     // Wizard state
     const [currentStep, setCurrentStep] = useState<WizardStep>('input');
-    const [inputMode, setInputMode] = useState<InputMode>('text');
+    const [inputTab, setInputTab] = useState<'manual' | 'texto' | 'arquivo'>('manual');
 
     // Input state
     const [descricaoTexto, setDescricaoTexto] = useState('');
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Extracted/validated data
-    const [extractedData, setExtractedData] = useState<ExtractedData>({});
-    const [validatedData, setValidatedData] = useState<CompanyData | null>(null);
-
-    // Results
-    const [results, setResults] = useState<ComparisonResult | null>(null);
+    // Profile state
+    const [profile, setProfile] = useState<TaxProfile>(INITIAL_PROFILE);
     const [aiAnalysis, setAiAnalysis] = useState<any>(null);
 
-    // ============================================================================
-    // FILE HANDLING
-    // ============================================================================
+    // Results
+    const [results, setResults] = useState<TaxComparisonResult | null>(null);
 
-    const handleFileUpload = useCallback(async (files: FileList | null) => {
-        if (!files) return;
-
-        const newFiles: UploadedFile[] = [];
-
-        for (const file of Array.from(files)) {
-            const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-            newFiles.push({
-                id,
-                name: file.name,
-                type: file.type || 'application/octet-stream',
-                size: file.size,
-                status: 'pending'
-            });
-        }
-
-        setUploadedFiles(prev => [...prev, ...newFiles]);
-
-        // Process files
-        for (let i = 0; i < newFiles.length; i++) {
-            const file = files[i];
-            const uploadedFile = newFiles[i];
-
-            setUploadedFiles(prev => prev.map(f =>
-                f.id === uploadedFile.id ? { ...f, status: 'processing' } : f
-            ));
-
-            try {
-                let result: any;
-                let summary: string;
-
-                // Check file type and process accordingly
-                if (file.name.endsWith('.txt') || file.type === 'text/plain') {
-                    const content = await file.text();
-
-                    if (isSpedFile(content)) {
-                        result = parseSpedFile(content);
-                        summary = getSpedSummary(result);
-
-                        // Extract data from SPED
-                        if (result.empresa?.cnpj) {
-                            setExtractedData(prev => ({
-                                ...prev,
-                                cnpj: result.empresa.cnpj,
-                                razao_social: result.empresa.razao_social,
-                                cnae_principal: result.empresa.cnae_principal,
-                                uf: result.empresa.uf,
-                                faturamento_anual: result.dre?.receita_bruta,
-                                folha_pagamento_anual: result.folha_pagamento,
-                                despesas_operacionais: result.dre?.despesas_operacionais,
-                                fonte: 'SPED'
-                            }));
-                        }
-                    } else {
-                        // Plain text - treat as description
-                        setDescricaoTexto(prev => prev + '\n' + content);
-                        result = { type: 'text', content: content.substring(0, 200) + '...' };
-                        summary = 'Texto adicionado à descrição';
-                    }
-                } else if (file.name.match(/\.(xlsx|xls)$/i)) {
-                    result = await parseExcelFile(file, file.name);
-                    summary = getExcelSummary(result);
-
-                    // Extract data from Excel
-                    if (result.sucesso && result.total > 0) {
-                        setExtractedData(prev => ({
-                            ...prev,
-                            despesas_operacionais: result.total,
-                            despesas_por_categoria: result.totaisPorCategoria,
-                            fonte: 'Excel'
-                        }));
-                    }
-                } else if (file.type === 'application/pdf') {
-                    // PDF will be processed by AI
-                    result = { type: 'pdf', needsAI: true };
-                    summary = 'PDF pronto para análise com IA';
-                } else {
-                    throw new Error('Formato de arquivo não suportado');
-                }
-
-                setUploadedFiles(prev => prev.map(f =>
-                    f.id === uploadedFile.id
-                        ? { ...f, status: 'success', data: result, summary }
-                        : f
-                ));
-
-            } catch (error) {
-                setUploadedFiles(prev => prev.map(f =>
-                    f.id === uploadedFile.id
-                        ? { ...f, status: 'error', error: error instanceof Error ? error.message : 'Erro desconhecido' }
-                        : f
-                ));
-            }
-        }
-    }, []);
-
-    const removeFile = useCallback((id: string) => {
-        setUploadedFiles(prev => prev.filter(f => f.id !== id));
-    }, []);
+    // Report state
+    const [reportContent, setReportContent] = useState<string | null>(null);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
     // ============================================================================
-    // ANALYSIS
-    // ============================================================================
-
-    const handleAnalyze = useCallback(async () => {
-        setIsProcessing(true);
-
-        try {
-            // For now, use extracted data or mock data
-            // In production, this would call the AI Edge Functions
-
-            const mockExtracted: ExtractedData = {
-                ...extractedData,
-                razao_social: extractedData.razao_social || 'Empresa Exemplo Ltda',
-                cnae_principal: extractedData.cnae_principal || '6201-5/00',
-                faturamento_anual: extractedData.faturamento_anual || 2000000,
-                folha_pagamento_anual: extractedData.folha_pagamento_anual || 400000,
-                numero_funcionarios: extractedData.numero_funcionarios || 12,
-                uf: extractedData.uf || 'SP',
-                confianca: 'high',
-                fonte: extractedData.fonte || 'Manual'
-            };
-
-            // If there's text description, extract more data
-            if (descricaoTexto.trim()) {
-                // Parse numbers from text
-                const faturamentoMatch = descricaoTexto.match(/faturamento?\s*(?:de\s*)?r?\$?\s*([\d.,]+)\s*(mil|milhao|milhões|m|k)?/i);
-                if (faturamentoMatch) {
-                    let valor = parseFloat(faturamentoMatch[1].replace(/\./g, '').replace(',', '.'));
-                    const multiplicador = faturamentoMatch[2];
-                    if (multiplicador?.match(/mil|k/i)) valor *= 1000;
-                    if (multiplicador?.match(/milh|m$/i)) valor *= 1000000;
-                    mockExtracted.faturamento_anual = valor;
-                }
-
-                const funcionariosMatch = descricaoTexto.match(/(\d+)\s*funcion[aá]rios?/i);
-                if (funcionariosMatch) {
-                    mockExtracted.numero_funcionarios = parseInt(funcionariosMatch[1]);
-                }
-
-                const cnaeMatch = descricaoTexto.match(/cnae\s*[:=]?\s*([\d.-/]+)/i);
-                if (cnaeMatch) {
-                    mockExtracted.cnae_principal = cnaeMatch[1];
-                }
-            }
-
-            setExtractedData(mockExtracted);
-            setCurrentStep('validation');
-
-            toast({
-                title: "Dados extraídos",
-                description: "Revise e confirme as informações antes de prosseguir."
-            });
-
-        } catch (error) {
-            toast({
-                title: "Erro na análise",
-                description: error instanceof Error ? error.message : "Erro desconhecido",
-                variant: "destructive"
-            });
-        } finally {
-            setIsProcessing(false);
-        }
-    }, [extractedData, descricaoTexto]);
-
-    const handleValidationComplete = useCallback(() => {
-        // Convert extracted data to CompanyData
-        const companyData: CompanyData = {
-            razao_social: extractedData.razao_social,
-            cnpj: extractedData.cnpj,
-            cnae_principal: extractedData.cnae_principal || '6201-5/00',
-            faturamento_anual: extractedData.faturamento_anual || 0,
-            folha_pagamento_anual: extractedData.folha_pagamento_anual || 0,
-            numero_funcionarios: extractedData.numero_funcionarios,
-            despesas_operacionais: extractedData.despesas_operacionais,
-            uf: extractedData.uf,
-            municipio: extractedData.municipio
-        };
-
-        setValidatedData(companyData);
-
-        // Calculate results
-        const comparison = compareRegimes(companyData);
-        setResults(comparison);
-
-        setCurrentStep('dashboard');
-
-        toast({
-            title: "Análise concluída",
-            description: `Regime recomendado: ${formatRegimeName(comparison.regime_mais_vantajoso)}`
-        });
-    }, [extractedData]);
-
-    // ============================================================================
-    // RENDER HELPERS
+    // HELPERS
     // ============================================================================
 
     const formatCurrency = (value: number) => {
@@ -334,64 +134,371 @@ export default function PlanejamentoTributario() {
         }).format(value);
     };
 
-    const formatPercent = (value: number) => {
-        return `${(value * 100).toFixed(1)}%`;
+    const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+
+    const parseCurrency = (value: string): number => {
+        return parseFloat(value.replace(/\D/g, '')) || 0;
     };
 
-    const getStepIndex = (step: WizardStep): number => {
-        const steps: WizardStep[] = ['input', 'validation', 'dashboard'];
-        return steps.indexOf(step);
-    };
+    const updateProfile = useCallback((field: string, value: any) => {
+        setProfile(prev => {
+            const keys = field.split('.');
+            if (keys.length === 1) {
+                return { ...prev, [field]: value };
+            } else if (keys.length === 2) {
+                return {
+                    ...prev,
+                    [keys[0]]: {
+                        ...(prev as any)[keys[0]],
+                        [keys[1]]: value
+                    }
+                };
+            }
+            return prev;
+        });
+    }, []);
 
-    const getConfidenceBadge = (confidence?: 'high' | 'medium' | 'low') => {
-        const variants = {
-            high: { color: 'bg-green-500/20 text-green-400', label: 'Alta confiança' },
-            medium: { color: 'bg-yellow-500/20 text-yellow-400', label: 'Média confiança' },
-            low: { color: 'bg-red-500/20 text-red-400', label: 'Baixa confiança' }
+    const totalDespesasComCredito = useMemo(() => {
+        const d = profile.despesas_com_credito;
+        return (d.cmv + d.aluguel + d.energia_telecom + d.servicos_pj +
+            d.outros_insumos + d.transporte_frete + d.manutencao) || 0;
+    }, [profile.despesas_com_credito]);
+
+    const totalDespesasSemCredito = useMemo(() => {
+        const d = profile.despesas_sem_credito;
+        return (d.folha_pagamento + d.pro_labore + d.despesas_financeiras +
+            d.tributos + d.uso_pessoal + d.outras) || 0;
+    }, [profile.despesas_sem_credito]);
+
+    // ============================================================================
+    // FILE HANDLING
+    // ============================================================================
+
+    const handleFileUpload = useCallback(async (files: FileList | null) => {
+        if (!files) return;
+
+        for (const file of Array.from(files)) {
+            const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            setUploadedFiles(prev => [...prev, {
+                id, name: file.name, type: file.type, size: file.size, status: 'processing'
+            }]);
+
+            try {
+                if (file.name.endsWith('.txt')) {
+                    // SPED Local Parsing
+                    const content = await file.text();
+                    if (isSpedFile(content)) {
+                        const result = parseSpedFile(content);
+                        if (result.empresa) {
+                            updateProfile('razao_social', result.empresa.razao_social);
+                            updateProfile('cnpj', result.empresa.cnpj);
+                            updateProfile('cnae_principal', result.empresa.cnae_principal || '');
+                            updateProfile('uf', result.empresa.uf);
+                        }
+                        if (result.dre) {
+                            updateProfile('faturamento_anual', result.dre.receita_bruta || 0);
+                            updateProfile('faturamento_mensal', (result.dre.receita_bruta || 0) / 12);
+                        }
+                        setUploadedFiles(prev => prev.map(f =>
+                            f.id === id ? { ...f, status: 'success', summary: getSpedSummary(result) } : f
+                        ));
+                    }
+                } else if (file.name.match(/\.(xlsx|xls)$/i)) {
+                    // Excel Local Parsing
+                    const result = await parseExcelFile(file, file.name);
+                    if (result.sucesso) {
+                        const cat = result.totaisPorCategoria;
+                        updateProfile('despesas_com_credito.aluguel', (cat.aluguel || 0) / 12);
+                        updateProfile('despesas_com_credito.energia_telecom', ((cat.energia || 0) + (cat.telecomunicacoes || 0)) / 12);
+                        updateProfile('despesas_com_credito.servicos_pj', (cat.servicos || 0) / 12);
+                        updateProfile('despesas_com_credito.transporte_frete', (cat.transporte || 0) / 12);
+                        updateProfile('despesas_sem_credito.folha_pagamento', (cat.pessoal || 0) / 12);
+                        updateProfile('despesas_sem_credito.despesas_financeiras', (cat.financeiras || 0) / 12);
+                    }
+                    setUploadedFiles(prev => prev.map(f =>
+                        f.id === id ? { ...f, status: 'success', summary: getExcelSummary(result) } : f
+                    ));
+                } else if (file.type === 'application/pdf' || file.type.startsWith('image/') || file.type.startsWith('audio/')) {
+                    // AI Extraction (PDF/Image/Audio)
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
+                        body: formData,
+                    });
+
+                    if (error) throw error;
+                    const extracted = data?.profile;
+
+                    if (extracted) {
+                        setProfile(prev => ({
+                            ...prev,
+                            razao_social: extracted.razao_social || prev.razao_social,
+                            cnpj: extracted.cnpj || prev.cnpj,
+                            cnae_principal: extracted.cnae_principal || prev.cnae_principal,
+                            uf: extracted.uf || prev.uf,
+                            municipio: extracted.municipio || prev.municipio,
+                            faturamento_mensal: extracted.faturamento_mensal || prev.faturamento_mensal,
+                            faturamento_anual: extracted.faturamento_anual || (extracted.faturamento_mensal * 12) || prev.faturamento_anual,
+                            regime_atual: extracted.regime_atual || prev.regime_atual,
+                            despesas_com_credito: { ...prev.despesas_com_credito, ...extracted.despesas_com_credito },
+                            despesas_sem_credito: { ...prev.despesas_sem_credito, ...extracted.despesas_sem_credito },
+                            lucro_liquido: extracted.lucro_liquido || prev.lucro_liquido
+                        }));
+                    }
+
+                    setUploadedFiles(prev => prev.map(f =>
+                        f.id === id ? { ...f, status: 'success', summary: 'Processado com IA' } : f
+                    ));
+                } else {
+                    setUploadedFiles(prev => prev.map(f =>
+                        f.id === id ? { ...f, status: 'error', error: 'Formato não suportado' } : f
+                    ));
+                }
+            } catch (error) {
+                setUploadedFiles(prev => prev.map(f =>
+                    f.id === id ? { ...f, status: 'error', error: String(error) } : f
+                ));
+            }
+        }
+    }, [updateProfile]);
+
+    const handleAudioRecording = useCallback(async (audioBlob: Blob) => {
+        const id = `${Date.now()}-audio`;
+        setUploadedFiles(prev => [...prev, {
+            id, name: 'Gravacao_Voz.webm', type: 'audio/webm', size: audioBlob.size, status: 'processing'
+        }]);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'gravacao.webm');
+
+            const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
+                body: formData,
+            });
+
+            if (error) throw error;
+            const extracted = data?.profile;
+
+            if (extracted) {
+                setProfile(prev => ({
+                    ...prev,
+                    razao_social: extracted.razao_social || prev.razao_social,
+                    cnpj: extracted.cnpj || prev.cnpj,
+                    cnae_principal: extracted.cnae_principal || prev.cnae_principal,
+                    uf: extracted.uf || prev.uf,
+                    municipio: extracted.municipio || prev.municipio,
+                    faturamento_mensal: extracted.faturamento_mensal || prev.faturamento_mensal,
+                    faturamento_anual: extracted.faturamento_anual || (extracted.faturamento_mensal * 12) || prev.faturamento_anual,
+                    regime_atual: extracted.regime_atual || prev.regime_atual,
+                    despesas_com_credito: { ...prev.despesas_com_credito, ...extracted.despesas_com_credito },
+                    despesas_sem_credito: { ...prev.despesas_sem_credito, ...extracted.despesas_sem_credito },
+                    lucro_liquido: extracted.lucro_liquido || prev.lucro_liquido
+                }));
+
+                // Metadata
+                if (data.metadata?.observacoes) {
+                    setAiAnalysis({
+                        premissas: data.metadata.observacoes,
+                        confianca: data.metadata.confianca
+                    });
+                }
+
+                setUploadedFiles(prev => prev.map(f =>
+                    f.id === id ? { ...f, status: 'success', summary: 'Áudio processado' } : f
+                ));
+
+                setCurrentStep('validation');
+                toast({ title: "Áudio processado com sucesso!" });
+            }
+        } catch (error) {
+            setUploadedFiles(prev => prev.map(f =>
+                f.id === id ? { ...f, status: 'error', error: String(error) } : f
+            ));
+            toast({ title: "Erro ao processar áudio", variant: "destructive" });
+        }
+    }, [setUploadedFiles, supabase.functions, setProfile, setAiAnalysis, setCurrentStep, toast]);
+
+    // ============================================================================
+    // AI ANALYSIS
+    // ============================================================================
+
+    const handleAIAnalysis = useCallback(async () => {
+        if (!descricaoTexto.trim()) {
+            toast({ title: "Informe uma descrição", variant: "destructive" });
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
+                body: {
+                    text: descricaoTexto
+                }
+            });
+
+            if (error) throw error;
+
+            const aiProfile = data?.profile;
+            if (!aiProfile) throw new Error("A IA não retornou um perfil válido.");
+
+            // Mapear resposta da IA para o perfil
+            setProfile(prev => ({
+                ...prev,
+                razao_social: aiProfile.razao_social || prev.razao_social,
+                cnpj: aiProfile.cnpj || prev.cnpj,
+                cnae_principal: aiProfile.cnae_principal || prev.cnae_principal,
+                uf: aiProfile.uf || prev.uf,
+                municipio: aiProfile.municipio || prev.municipio,
+                faturamento_mensal: aiProfile.faturamento_mensal || prev.faturamento_mensal,
+                faturamento_anual: aiProfile.faturamento_anual || (aiProfile.faturamento_mensal * 12) || prev.faturamento_anual,
+                regime_atual: aiProfile.regime_atual || prev.regime_atual,
+                despesas_com_credito: { ...prev.despesas_com_credito, ...aiProfile.despesas_com_credito },
+                despesas_sem_credito: { ...prev.despesas_sem_credito, ...aiProfile.despesas_sem_credito },
+                lucro_liquido: aiProfile.lucro_liquido || prev.lucro_liquido
+            }));
+
+            // Metadata/Observações
+            if (data.metadata?.observacoes) {
+                setAiAnalysis({
+                    premissas: data.metadata.observacoes,
+                    confianca: data.metadata.confianca
+                });
+            }
+
+            setCurrentStep('validation');
+            toast({ title: "Dados extraídos com sucesso!" });
+
+        } catch (error) {
+            toast({
+                title: "Erro na análise",
+                description: error instanceof Error ? error.message : "Erro desconhecido",
+                variant: "destructive"
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [descricaoTexto, supabase.functions, setProfile, setAiAnalysis, setCurrentStep, toast]);
+
+    // ============================================================================
+    // CALCULATION
+    // ============================================================================
+
+    const handleCalculate = useCallback(() => {
+        // Validar campos obrigatórios
+        if (!profile.faturamento_mensal || profile.faturamento_mensal <= 0) {
+            toast({ title: "Informe o faturamento mensal", variant: "destructive" });
+            return;
+        }
+
+        // Garantir faturamento anual
+        const profileFinal = {
+            ...profile,
+            faturamento_anual: profile.faturamento_anual || profile.faturamento_mensal * 12
         };
-        const v = variants[confidence || 'medium'];
-        return <Badge className={v.color}>{v.label}</Badge>;
-    };
+
+        const resultado = compararTodosRegimes(profileFinal);
+        setResults(resultado);
+        setCurrentStep('dashboard');
+
+        toast({
+            title: "Análise concluída!",
+            description: `Melhor regime atual: ${resultado.melhor_atual.toUpperCase()}`
+        });
+    }, [profile, setCurrentStep, setResults, toast]);
 
     // ============================================================================
     // CHART DATA
     // ============================================================================
 
-    const chartDataComparison = useMemo(() => {
+    const chartComparacao = useMemo(() => {
         if (!results) return [];
-
-        return [
-            {
-                name: 'Simples Nacional',
-                imposto: results.simples_nacional.elegivel ? results.simples_nacional.imposto_anual : 0,
-                elegivel: results.simples_nacional.elegivel,
-                color: getRegimeColor('simples_nacional')
-            },
-            {
-                name: 'Lucro Presumido',
-                imposto: results.lucro_presumido.elegivel ? results.lucro_presumido.imposto_anual : 0,
-                elegivel: results.lucro_presumido.elegivel,
-                color: getRegimeColor('lucro_presumido')
-            },
-            {
-                name: 'Lucro Real',
-                imposto: results.lucro_real.imposto_anual,
-                elegivel: true,
-                color: getRegimeColor('lucro_real')
-            }
-        ].filter(d => d.elegivel && d.imposto > 0);
+        return gerarDadosGraficoComparacao(results);
     }, [results]);
 
-    const chartDataReforma = useMemo(() => {
-        if (!results?.pos_reforma?.timeline) return [];
+    const chartCreditos = useMemo(() => {
+        return gerarDadosGraficoCreditos(profile);
+    }, [profile]);
 
-        return results.pos_reforma.timeline.map(year => ({
-            ano: year.ano.toString(),
-            'Tributos Atuais': year.tributos_atuais_reduzidos,
-            'IBS/CBS': year.ibs_cbs_total,
-            total: year.total
-        }));
-    }, [results]);
+    const chartTimeline = useMemo(() => {
+        return gerarDadosTimeline(profile);
+    }, [profile]);
+
+    // ============================================================================
+    // REPORT GENERATION
+    // ============================================================================
+
+    const handleGenerateReport = useCallback(async () => {
+        if (!results) {
+            toast({ title: "Execute a análise primeiro", variant: "destructive" });
+            return;
+        }
+
+        setIsGeneratingReport(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tax-planner-report', {
+                body: {
+                    profile,
+                    comparison_results: results
+                }
+            });
+
+            if (error) throw error;
+            if (!data?.success) throw new Error(data?.error || 'Erro ao gerar relatório');
+
+            setReportContent(data.report);
+            toast({ title: "Relatório gerado com sucesso!" });
+
+        } catch (error) {
+            toast({
+                title: "Erro ao gerar relatório",
+                description: error instanceof Error ? error.message : "Erro desconhecido",
+                variant: "destructive"
+            });
+        } finally {
+            setIsGeneratingReport(false);
+        }
+    }, [profile, results]);
+
+    const handleExportPDF = useCallback(async () => {
+        if (!reportContent) {
+            toast({
+                title: "Gere o relatório primeiro",
+                description: "Clique em 'Relatório IA' antes de exportar.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        try {
+            toast({ title: "Gerando PDF...", description: "Aguarde um momento." });
+
+            // Create styled container for PDF
+            const pdfContainer = createPDFContainer(
+                reportContent,
+                profile.razao_social || 'Empresa'
+            );
+            document.body.appendChild(pdfContainer);
+
+            // Export to PDF
+            await exportToPDF(pdfContainer, {
+                filename: `relatorio-tributario-${profile.razao_social?.replace(/\s+/g, '-').toLowerCase() || 'empresa'}`,
+                title: 'Relatório Consultivo Tributário'
+            });
+
+            // Clean up
+            document.body.removeChild(pdfContainer);
+
+            toast({ title: "PDF exportado com sucesso!" });
+        } catch (error) {
+            toast({
+                title: "Erro ao exportar PDF",
+                description: error instanceof Error ? error.message : 'Erro desconhecido',
+                variant: "destructive"
+            });
+        }
+    }, [reportContent, profile.razao_social]);
 
     // ============================================================================
     // RENDER
@@ -404,273 +511,509 @@ export default function PlanejamentoTributario() {
                 <div>
                     <h1 className="text-2xl font-bold">Planejamento Tributário</h1>
                     <p className="text-muted-foreground">
-                        Análise inteligente de regimes tributários com projeções da reforma
+                        Consultoria inteligente com análise de não-cumulatividade
                     </p>
                 </div>
+                <Badge variant="outline" className="text-xs">
+                    v2.1 - Multi-Modal
+                </Badge>
             </div>
 
             {/* Progress */}
             <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                     <span className={currentStep === 'input' ? 'text-primary font-medium' : 'text-muted-foreground'}>
-                        1. Entrada de Dados
+                        1. Dados da Empresa
                     </span>
                     <span className={currentStep === 'validation' ? 'text-primary font-medium' : 'text-muted-foreground'}>
                         2. Validação
                     </span>
                     <span className={currentStep === 'dashboard' ? 'text-primary font-medium' : 'text-muted-foreground'}>
-                        3. Dashboard
+                        3. Análise Comparativa
                     </span>
                 </div>
-                <Progress value={(getStepIndex(currentStep) + 1) * 33.33} className="h-2" />
+                <Progress value={currentStep === 'input' ? 33 : currentStep === 'validation' ? 66 : 100} className="h-2" />
             </div>
 
             {/* Step 1: Input */}
             {currentStep === 'input' && (
                 <div className="space-y-6">
-                    {/* Input Mode Selection */}
-                    <div className="flex gap-4">
-                        <Button
-                            variant={inputMode === 'text' ? 'default' : 'outline'}
-                            onClick={() => setInputMode('text')}
-                            className="flex-1"
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Texto
-                        </Button>
-                        <Button
-                            variant={inputMode === 'audio' ? 'default' : 'outline'}
-                            onClick={() => setInputMode('audio')}
-                            className="flex-1"
-                        >
-                            <Mic className="mr-2 h-4 w-4" />
-                            Áudio
-                        </Button>
-                        <Button
-                            variant={inputMode === 'files' ? 'default' : 'outline'}
-                            onClick={() => setInputMode('files')}
-                            className="flex-1"
-                        >
-                            <Upload className="mr-2 h-4 w-4" />
-                            Arquivos
-                        </Button>
-                    </div>
+                    <Tabs value={inputTab} onValueChange={(v) => setInputTab(v as any)}>
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="manual">
+                                <Calculator className="h-4 w-4 mr-2" />
+                                Formulário
+                            </TabsTrigger>
+                            <TabsTrigger value="texto">
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                Texto + IA
+                            </TabsTrigger>
+                            <TabsTrigger value="audio">
+                                <Mic className="h-4 w-4 mr-2" />
+                                Áudio
+                            </TabsTrigger>
+                            <TabsTrigger value="arquivo">
+                                <Upload className="h-4 w-4 mr-2" />
+                                Importar
+                            </TabsTrigger>
+                        </TabsList>
 
-                    {/* Text Input */}
-                    {inputMode === 'text' && (
-                        <Card className="glass-card">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Building2 className="h-5 w-5" />
-                                    Descreva sua empresa
-                                </CardTitle>
-                                <CardDescription>
-                                    Descreva livremente as informações da empresa. A IA irá extrair os dados relevantes.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <Textarea
-                                    placeholder="Ex: Somos uma software house de Dourados-MS, CNAE 6201-5/00. Faturamos R$ 2 milhões ano passado, temos 12 funcionários com folha de R$ 400 mil anual..."
-                                    value={descricaoTexto}
-                                    onChange={(e) => setDescricaoTexto(e.target.value)}
-                                    className="min-h-[200px] resize-none"
-                                />
-
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Info className="h-4 w-4" />
-                                    <span>Você também pode arrastar arquivos aqui (PDF, Excel, SPED)</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Audio Input */}
-                    {inputMode === 'audio' && (
-                        <Card className="glass-card">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Mic className="h-5 w-5" />
-                                    Gravação de Áudio
-                                </CardTitle>
-                                <CardDescription>
-                                    Grave uma descrição falada da sua empresa (máx. 2 minutos)
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
-                                <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
-                                    <Mic className="h-10 w-10 text-primary" />
-                                </div>
-                                <Button size="lg">
-                                    <Mic className="mr-2 h-4 w-4" />
-                                    Iniciar Gravação
-                                </Button>
-                                <p className="text-sm text-muted-foreground">
-                                    Funcionalidade em desenvolvimento
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* File Upload */}
-                    {inputMode === 'files' && (
-                        <Card className="glass-card">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <FileSpreadsheet className="h-5 w-5" />
-                                    Upload de Arquivos
-                                </CardTitle>
-                                <CardDescription>
-                                    Arraste arquivos ou clique para selecionar (PDF, Excel, SPED ECD/ECF)
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div
-                                    className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer"
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        handleFileUpload(e.dataTransfer.files);
-                                    }}
-                                    onClick={() => {
-                                        const input = document.createElement('input');
-                                        input.type = 'file';
-                                        input.multiple = true;
-                                        input.accept = '.pdf,.xlsx,.xls,.txt';
-                                        input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files);
-                                        input.click();
-                                    }}
-                                >
-                                    <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                    <p className="text-lg font-medium">Arraste arquivos aqui</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        PDF, Excel (.xlsx, .xls), SPED (.txt)
-                                    </p>
-                                </div>
-
-                                {/* Uploaded Files List */}
-                                {uploadedFiles.length > 0 && (
+                        {/* Manual Form */}
+                        <TabsContent value="manual" className="space-y-6">
+                            {/* Identificação */}
+                            <Card className="glass-card">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Building2 className="h-5 w-5" />
+                                        Identificação
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Arquivos carregados ({uploadedFiles.length})</Label>
-                                        {uploadedFiles.map((file) => (
-                                            <div
-                                                key={file.id}
-                                                className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <FileText className="h-5 w-5 text-muted-foreground" />
-                                                    <div>
-                                                        <p className="font-medium text-sm">{file.name}</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {file.summary || `${(file.size / 1024).toFixed(1)} KB`}
-                                                        </p>
+                                        <Label>CNAE Principal *</Label>
+                                        <Input
+                                            placeholder="0000-0/00"
+                                            value={profile.cnae_principal}
+                                            onChange={(e) => updateProfile('cnae_principal', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Regime Atual</Label>
+                                        <Select
+                                            value={profile.regime_atual}
+                                            onValueChange={(v) => updateProfile('regime_atual', v)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="mei">MEI</SelectItem>
+                                                <SelectItem value="simples">Simples Nacional</SelectItem>
+                                                <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                                                <SelectItem value="real">Lucro Real</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>UF</Label>
+                                        <Input
+                                            placeholder="SP"
+                                            maxLength={2}
+                                            value={profile.uf || ''}
+                                            onChange={(e) => updateProfile('uf', e.target.value.toUpperCase())}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Receita */}
+                            <Card className="glass-card">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <DollarSign className="h-5 w-5 text-green-500" />
+                                        Receita Bruta
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Faturamento Mensal (Média) *</Label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                                            <Input
+                                                className="pl-10"
+                                                placeholder="100.000"
+                                                value={profile.faturamento_mensal?.toLocaleString('pt-BR') || ''}
+                                                onChange={(e) => {
+                                                    const val = parseCurrency(e.target.value);
+                                                    updateProfile('faturamento_mensal', val);
+                                                    updateProfile('faturamento_anual', val * 12);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Faturamento Anual (Projetado)</Label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                                            <Input
+                                                className="pl-10 bg-muted/50"
+                                                readOnly
+                                                value={(profile.faturamento_mensal * 12).toLocaleString('pt-BR') || ''}
+                                            />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Despesas COM Crédito */}
+                            <Card className="glass-card border-green-500/30">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Receipt className="h-5 w-5 text-green-500" />
+                                            Despesas que GERAM Crédito (IBS/CBS)
+                                        </CardTitle>
+                                        <Badge className="bg-green-500/20 text-green-600">
+                                            Total: {formatCurrency(totalDespesasComCredito)}/mês
+                                        </Badge>
+                                    </div>
+                                    <CardDescription>
+                                        Na Reforma Tributária, essas despesas geram crédito de 25.5%
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Package className="h-4 w-4" />
+                                            CMV / Mercadorias
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_com_credito.cmv || ''}
+                                            onChange={(e) => updateProfile('despesas_com_credito.cmv', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Home className="h-4 w-4" />
+                                            Aluguel
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_com_credito.aluguel || ''}
+                                            onChange={(e) => updateProfile('despesas_com_credito.aluguel', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Zap className="h-4 w-4" />
+                                            Energia / Telecom
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_com_credito.energia_telecom || ''}
+                                            onChange={(e) => updateProfile('despesas_com_credito.energia_telecom', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <FileText className="h-4 w-4" />
+                                            Serviços de PJ
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_com_credito.servicos_pj || ''}
+                                            onChange={(e) => updateProfile('despesas_com_credito.servicos_pj', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Truck className="h-4 w-4" />
+                                            Transporte / Frete
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_com_credito.transporte_frete || ''}
+                                            onChange={(e) => updateProfile('despesas_com_credito.transporte_frete', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Wrench className="h-4 w-4" />
+                                            Manutenção
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_com_credito.manutencao || ''}
+                                            onChange={(e) => updateProfile('despesas_com_credito.manutencao', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Wallet className="h-4 w-4" />
+                                            Tarifas Bancárias (Geram Crédito)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_com_credito.tarifas_bancarias || ''}
+                                            onChange={(e) => updateProfile('despesas_com_credito.tarifas_bancarias', Number(e.target.value))}
+                                        />
+                                    </div>
+
+                                    {/* Mix de Fornecedores */}
+                                    <div className="md:col-span-2 lg:col-span-3 pt-4 border-t mt-2">
+                                        <Label className="mb-4 block flex items-center gap-2">
+                                            <Store className="h-4 w-4" />
+                                            Perfil de Fornecedores: % compras vindas do Simples Nacional
+                                        </Label>
+                                        <div className="flex items-center gap-4 px-2">
+                                            <Slider
+                                                defaultValue={[0]}
+                                                max={100}
+                                                step={5}
+                                                value={[profile.percentual_fornecedores_simples || 0]}
+                                                onValueChange={(vals) => updateProfile('percentual_fornecedores_simples', vals[0])}
+                                                className="flex-1"
+                                            />
+                                            <span className="w-16 text-right font-bold border rounded p-1 bg-muted">
+                                                {profile.percentual_fornecedores_simples || 0}%
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            ⚠️ Fornecedores do Simples geram crédito reduzido (~7%). O restante (Regime Normal) gera crédito cheio (26.5%).
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Despesas SEM Crédito */}
+                            <Card className="glass-card border-red-500/30">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Users className="h-5 w-5 text-red-500" />
+                                            Despesas SEM Crédito de IBS/CBS
+                                        </CardTitle>
+                                        <Badge className="bg-red-500/20 text-red-600">
+                                            Total: {formatCurrency(totalDespesasSemCredito)}/mês
+                                        </Badge>
+                                    </div>
+                                    <CardDescription>
+                                        Essas despesas NÃO geram crédito na Reforma (ex: folha de pagamento)
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Users className="h-4 w-4" />
+                                            Folha de Pagamento
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_sem_credito.folha_pagamento || ''}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.folha_pagamento', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Pró-labore</Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_sem_credito.pro_labore || ''}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.pro_labore', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <CreditCard className="h-4 w-4" />
+                                            Juros e Multas (Sem Crédito)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_sem_credito.despesas_financeiras || ''}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.despesas_financeiras', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Scale className="h-4 w-4" />
+                                            Tributos Atuais
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_sem_credito.tributos || ''}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.tributos', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Outras Despesas</Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.despesas_sem_credito.outras || ''}
+                                            onChange={(e) => updateProfile('despesas_sem_credito.outras', Number(e.target.value))}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Saldos Credores Legados */}
+                            <Card className="glass-card border-blue-500/30">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Building2 className="h-5 w-5 text-blue-500" />
+                                            Saldos Credores Legados
+                                        </CardTitle>
+                                    </div>
+                                    <CardDescription>
+                                        Créditos acumulados que poderão ser utilizados na transição
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Receipt className="h-4 w-4" />
+                                            Saldo PIS/COFINS (Acumulado até 2026)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.saldo_credor_pis_cofins || ''}
+                                            onChange={(e) => updateProfile('saldo_credor_pis_cofins', Number(e.target.value))}
+                                        />
+                                        <p className="text-xs text-muted-foreground">Poderá compensar débito de CBS a partir de 2027.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <MapIcon className="h-4 w-4" />
+                                            Saldo ICMS (Acumulado até 2032)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={profile.saldo_credor_icms || ''}
+                                            onChange={(e) => updateProfile('saldo_credor_icms', Number(e.target.value))}
+                                        />
+                                        <p className="text-xs text-muted-foreground">Regra de uso em 240 meses a partir de 2033.</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* Text + AI */}
+                        <TabsContent value="texto" className="space-y-4">
+                            <Card className="glass-card">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Sparkles className="h-5 w-5" />
+                                        Descreva sua empresa
+                                    </CardTitle>
+                                    <CardDescription>
+                                        A IA vai extrair as informações e estimar dados faltantes com base no setor
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <Textarea
+                                        placeholder="Ex: Somos uma consultoria de TI em São Paulo, CNAE 6201-5/00. Faturamos R$ 150 mil/mês, temos 8 funcionários com folha de R$ 50 mil. Pagamos R$ 12 mil de aluguel, R$ 3 mil de energia e internet. Contratamos serviços de design por R$ 8 mil/mês..."
+                                        value={descricaoTexto}
+                                        onChange={(e) => setDescricaoTexto(e.target.value)}
+                                        className="min-h-[200px] resize-none"
+                                    />
+                                    <Button onClick={handleAIAnalysis} disabled={isProcessing} className="w-full">
+                                        {isProcessing ? (
+                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Analisando...</>
+                                        ) : (
+                                            <><Sparkles className="mr-2 h-4 w-4" />Extrair com IA</>
+                                        )}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* Audio */}
+                        <TabsContent value="audio" className="space-y-4">
+                            <Card className="glass-card">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Mic className="h-5 w-5" />
+                                        Gravação de Voz
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Descreva os dados da empresa verbalmente. A IA ouvirá e processará o áudio.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex flex-col items-center gap-6 py-8">
+                                    <div className="p-6 rounded-full bg-muted/50">
+                                        <Mic className="h-12 w-12 text-primary opacity-50" />
+                                    </div>
+                                    <div className="w-full max-w-sm">
+                                        <AudioRecorder
+                                            onRecordingComplete={handleAudioRecording}
+                                            isProcessing={isProcessing}
+                                        />
+                                    </div>
+                                    <p className="text-sm text-muted-foreground text-center max-w-md">
+                                        Dicas: Fale sobre faturamento aproximado, número de funcionários, valor da folha, aluguel, e principal atividade (CNAE ou descrição).
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* File Import */}
+                        <TabsContent value="arquivo" className="space-y-4">
+                            <Card className="glass-card">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileSpreadsheet className="h-5 w-5" />
+                                        Importar Arquivos
+                                    </CardTitle>
+                                    <CardDescription>
+                                        SPED ECD/ECF, planilhas de despesas, relatórios contábeis
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div
+                                        className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer"
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => { e.preventDefault(); handleFileUpload(e.dataTransfer.files); }}
+                                        onClick={() => {
+                                            const input = document.createElement('input');
+                                            input.type = 'file';
+                                            input.multiple = true;
+                                            input.accept = '.xlsx,.xls,.txt,.pdf';
+                                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files);
+                                            input.click();
+                                        }}
+                                    >
+                                        <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                                        <p className="text-lg font-medium">Arraste arquivos aqui</p>
+                                        <p className="text-sm text-muted-foreground">Excel, SPED (.txt), PDF</p>
+                                    </div>
+
+                                    {uploadedFiles.length > 0 && (
+                                        <div className="space-y-2">
+                                            {uploadedFiles.map((file) => (
+                                                <div key={file.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                                                    <div className="flex items-center gap-3">
+                                                        <FileText className="h-5 w-5" />
+                                                        <div>
+                                                            <p className="font-medium text-sm">{file.name}</p>
+                                                            <p className="text-xs text-muted-foreground">{file.summary || `${(file.size / 1024).toFixed(1)} KB`}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {file.status === 'processing' && <Loader2 className="h-4 w-4 animate-spin" />}
+                                                        {file.status === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                                                        {file.status === 'error' && <AlertCircle className="h-4 w-4 text-red-500" />}
+                                                        <Button variant="ghost" size="icon" onClick={() => setUploadedFiles(prev => prev.filter(f => f.id !== file.id))}>
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    {file.status === 'processing' && (
-                                                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                                    )}
-                                                    {file.status === 'success' && (
-                                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                    )}
-                                                    {file.status === 'error' && (
-                                                        <AlertCircle className="h-4 w-4 text-red-500" />
-                                                    )}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeFile(file.id)}
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Manual Quick Input */}
-                    <Card className="glass-card">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Calculator className="h-5 w-5" />
-                                Dados Rápidos (opcional)
-                            </CardTitle>
-                            <CardDescription>
-                                Preencha diretamente se já tiver os valores principais
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="faturamento">Faturamento Anual</Label>
-                                    <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="faturamento"
-                                            type="text"
-                                            placeholder="2.000.000"
-                                            className="pl-9"
-                                            value={extractedData.faturamento_anual?.toLocaleString('pt-BR') || ''}
-                                            onChange={(e) => {
-                                                const value = parseFloat(e.target.value.replace(/\D/g, ''));
-                                                setExtractedData(prev => ({ ...prev, faturamento_anual: value || undefined }));
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="folha">Folha de Pagamento Anual</Label>
-                                    <div className="relative">
-                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="folha"
-                                            type="text"
-                                            placeholder="400.000"
-                                            className="pl-9"
-                                            value={extractedData.folha_pagamento_anual?.toLocaleString('pt-BR') || ''}
-                                            onChange={(e) => {
-                                                const value = parseFloat(e.target.value.replace(/\D/g, ''));
-                                                setExtractedData(prev => ({ ...prev, folha_pagamento_anual: value || undefined }));
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cnae">CNAE Principal</Label>
-                                    <Input
-                                        id="cnae"
-                                        type="text"
-                                        placeholder="6201-5/00"
-                                        value={extractedData.cnae_principal || ''}
-                                        onChange={(e) => setExtractedData(prev => ({ ...prev, cnae_principal: e.target.value }))}
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
 
                     {/* Action Button */}
                     <div className="flex justify-end">
-                        <Button
-                            size="lg"
-                            onClick={handleAnalyze}
-                            disabled={isProcessing || (!descricaoTexto.trim() && uploadedFiles.length === 0 && !extractedData.faturamento_anual)}
-                        >
-                            {isProcessing ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Analisando...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="mr-2 h-4 w-4" />
-                                    Analisar com IA
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </>
-                            )}
+                        <Button size="lg" onClick={() => setCurrentStep('validation')}>
+                            Validar Dados
+                            <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </div>
                 </div>
@@ -679,161 +1022,90 @@ export default function PlanejamentoTributario() {
             {/* Step 2: Validation */}
             {currentStep === 'validation' && (
                 <div className="space-y-6">
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>Revise os dados extraídos</AlertTitle>
-                        <AlertDescription>
-                            Confirme ou corrija as informações antes de prosseguir com o cálculo.
-                        </AlertDescription>
-                    </Alert>
+                    {aiAnalysis && (
+                        <Alert>
+                            <Lightbulb className="h-4 w-4" />
+                            <AlertTitle>Análise da IA ({aiAnalysis.confianca})</AlertTitle>
+                            <AlertDescription>
+                                <ul className="mt-2 space-y-1">
+                                    {aiAnalysis.premissas?.map((p: string, i: number) => (
+                                        <li key={i} className="text-sm">• {p}</li>
+                                    ))}
+                                </ul>
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
+                    {/* Preview dos valores */}
                     <Card className="glass-card">
                         <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>Dados da Empresa</CardTitle>
-                                    <CardDescription>
-                                        Fonte: {extractedData.fonte || 'Manual'}
-                                    </CardDescription>
-                                </div>
-                                {getConfidenceBadge(extractedData.confianca)}
-                            </div>
+                            <CardTitle>Resumo do Perfil</CardTitle>
+                            <CardDescription>Confira se os valores estão corretos antes de calcular</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
-                            {/* Company Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Razão Social</Label>
-                                    <Input
-                                        value={extractedData.razao_social || ''}
-                                        onChange={(e) => setExtractedData(prev => ({ ...prev, razao_social: e.target.value }))}
-                                    />
+                        <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="p-4 rounded-lg bg-green-500/10 text-center">
+                                    <p className="text-sm text-muted-foreground">Faturamento Anual</p>
+                                    <p className="text-xl font-bold text-green-500">
+                                        {formatCurrency(profile.faturamento_mensal * 12)}
+                                    </p>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>CNPJ</Label>
-                                    <Input
-                                        value={extractedData.cnpj || ''}
-                                        onChange={(e) => setExtractedData(prev => ({ ...prev, cnpj: e.target.value }))}
-                                    />
+                                <div className="p-4 rounded-lg bg-blue-500/10 text-center">
+                                    <p className="text-sm text-muted-foreground">Despesas c/ Crédito</p>
+                                    <p className="text-xl font-bold text-blue-500">
+                                        {formatCurrency(totalDespesasComCredito * 12)}/ano
+                                    </p>
                                 </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Financial Data */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label>CNAE Principal *</Label>
-                                    <Input
-                                        value={extractedData.cnae_principal || ''}
-                                        onChange={(e) => setExtractedData(prev => ({ ...prev, cnae_principal: e.target.value }))}
-                                        required
-                                    />
-                                    {extractedData.cnae_principal && getCnaeInfo(extractedData.cnae_principal) && (
-                                        <p className="text-xs text-muted-foreground">
-                                            {getCnaeInfo(extractedData.cnae_principal)?.descricao}
-                                        </p>
-                                    )}
+                                <div className="p-4 rounded-lg bg-red-500/10 text-center">
+                                    <p className="text-sm text-muted-foreground">Despesas s/ Crédito</p>
+                                    <p className="text-xl font-bold text-red-500">
+                                        {formatCurrency(totalDespesasSemCredito * 12)}/ano
+                                    </p>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>UF</Label>
-                                    <Input
-                                        value={extractedData.uf || ''}
-                                        onChange={(e) => setExtractedData(prev => ({ ...prev, uf: e.target.value.toUpperCase() }))}
-                                        maxLength={2}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Município</Label>
-                                    <Input
-                                        value={extractedData.municipio || ''}
-                                        onChange={(e) => setExtractedData(prev => ({ ...prev, municipio: e.target.value }))}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Faturamento Anual *</Label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                                        <Input
-                                            type="text"
-                                            className="pl-10"
-                                            value={extractedData.faturamento_anual?.toLocaleString('pt-BR') || ''}
-                                            onChange={(e) => {
-                                                const value = parseFloat(e.target.value.replace(/\D/g, ''));
-                                                setExtractedData(prev => ({ ...prev, faturamento_anual: value || undefined }));
-                                            }}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Folha de Pagamento Anual *</Label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                                        <Input
-                                            type="text"
-                                            className="pl-10"
-                                            value={extractedData.folha_pagamento_anual?.toLocaleString('pt-BR') || ''}
-                                            onChange={(e) => {
-                                                const value = parseFloat(e.target.value.replace(/\D/g, ''));
-                                                setExtractedData(prev => ({ ...prev, folha_pagamento_anual: value || undefined }));
-                                            }}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Nº Funcionários</Label>
-                                    <Input
-                                        type="number"
-                                        value={extractedData.numero_funcionarios || ''}
-                                        onChange={(e) => setExtractedData(prev => ({
-                                            ...prev,
-                                            numero_funcionarios: parseInt(e.target.value) || undefined
-                                        }))}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Despesas Operacionais Anuais</Label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                                        <Input
-                                            type="text"
-                                            className="pl-10"
-                                            value={extractedData.despesas_operacionais?.toLocaleString('pt-BR') || ''}
-                                            onChange={(e) => {
-                                                const value = parseFloat(e.target.value.replace(/\D/g, ''));
-                                                setExtractedData(prev => ({ ...prev, despesas_operacionais: value || undefined }));
-                                            }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Usado para cálculo do Lucro Real
+                                <div className="p-4 rounded-lg bg-primary/10 text-center">
+                                    <p className="text-sm text-muted-foreground">Crédito Potencial Reforma</p>
+                                    <p className="text-xl font-bold text-primary">
+                                        {formatCurrency(totalDespesasComCredito * 12 * 0.255)}/ano
                                     </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
+                    {/* Preview gráfico de créditos */}
+                    <Card className="glass-card">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <BarChart3 className="h-5 w-5" />
+                                Potencial de Crédito por Categoria
+                            </CardTitle>
+                            <CardDescription>
+                                Quanto cada despesa gerará de crédito na Reforma Tributária
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={chartCreditos} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                                    <XAxis type="number" tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
+                                    <YAxis type="category" dataKey="categoria" width={120} />
+                                    <Tooltip
+                                        formatter={(v: number) => formatCurrency(v)}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                                    />
+                                    <Bar dataKey="credito_gerado" name="Crédito IBS/CBS" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
                     {/* Navigation */}
                     <div className="flex justify-between">
-                        <Button
-                            variant="outline"
-                            onClick={() => setCurrentStep('input')}
-                        >
+                        <Button variant="outline" onClick={() => setCurrentStep('input')}>
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Voltar
                         </Button>
-                        <Button
-                            onClick={handleValidationComplete}
-                            disabled={!extractedData.faturamento_anual || !extractedData.folha_pagamento_anual}
-                        >
+                        <Button onClick={handleCalculate}>
                             Calcular Regimes
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -844,7 +1116,7 @@ export default function PlanejamentoTributario() {
             {/* Step 3: Dashboard */}
             {currentStep === 'dashboard' && results && (
                 <div className="space-y-6">
-                    {/* Recommendation Card */}
+                    {/* Recomendação */}
                     <Card className="glass-card border-primary/50">
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -854,350 +1126,210 @@ export default function PlanejamentoTributario() {
                                     </div>
                                     <div>
                                         <CardTitle>Regime Recomendado</CardTitle>
-                                        <CardDescription>Baseado nos dados fornecidos</CardDescription>
+                                        <CardDescription>Baseado nos dados informados</CardDescription>
                                     </div>
                                 </div>
                                 <Badge className="text-lg px-4 py-1 bg-primary text-primary-foreground">
-                                    {formatRegimeName(results.regime_mais_vantajoso)}
+                                    {results.melhor_atual.toUpperCase()}
                                 </Badge>
                             </div>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="text-center p-4 rounded-lg bg-green-500/10">
-                                    <p className="text-sm text-muted-foreground">Economia Anual</p>
+                                    <p className="text-sm text-muted-foreground">Economia vs 2º melhor</p>
                                     <p className="text-2xl font-bold text-green-500">
-                                        {formatCurrency(results.economia_anual)}
+                                        {formatCurrency(results.economia_atual)}
                                     </p>
                                 </div>
-                                <div className="text-center p-4 rounded-lg bg-primary/10">
-                                    <p className="text-sm text-muted-foreground">Economia %</p>
-                                    <p className="text-2xl font-bold text-primary">
-                                        {results.economia_percentual.toFixed(1)}%
+                                <div className="text-center p-4 rounded-lg bg-blue-500/10">
+                                    <p className="text-sm text-muted-foreground">Melhor Pós-Reforma</p>
+                                    <p className="text-2xl font-bold text-blue-500">
+                                        {results.melhor_pos_reforma.toUpperCase()}
                                     </p>
                                 </div>
-                                <div className="text-center p-4 rounded-lg bg-muted/30">
-                                    <p className="text-sm text-muted-foreground">Imposto Anual</p>
-                                    <p className="text-2xl font-bold">
-                                        {formatCurrency(
-                                            results.regime_mais_vantajoso === 'simples_nacional'
-                                                ? results.simples_nacional.imposto_anual
-                                                : results.regime_mais_vantajoso === 'lucro_presumido'
-                                                    ? results.lucro_presumido.imposto_anual
-                                                    : results.lucro_real.imposto_anual
-                                        )}
+                                <div className={`text-center p-4 rounded-lg ${results.economia_com_reforma > 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                                    <p className="text-sm text-muted-foreground">Economia c/ Reforma</p>
+                                    <p className={`text-2xl font-bold ${results.economia_com_reforma > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {results.economia_com_reforma > 0 ? '+' : ''}{formatCurrency(results.economia_com_reforma)}
                                     </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Comparison Chart */}
+                    {/* Gráfico Débito vs Crédito (O PULO DO GATO) */}
                     <Card className="glass-card">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <BarChart3 className="h-5 w-5" />
-                                Comparação de Regimes
+                                Imposto Bruto vs Créditos Recuperados
                             </CardTitle>
                             <CardDescription>
-                                Imposto anual em cada regime tributário
+                                A barra verde mostra os créditos que você recupera - esse é o diferencial da não-cumulatividade!
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={chartDataComparison}>
+                            <ResponsiveContainer width="100%" height={350}>
+                                <ComposedChart data={chartComparacao}>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                                    <XAxis dataKey="name" />
+                                    <XAxis dataKey="regime" />
                                     <YAxis tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
                                     <Tooltip
-                                        formatter={(value: number) => formatCurrency(value)}
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--card))',
-                                            border: '1px solid hsl(var(--border))',
-                                            borderRadius: '8px'
-                                        }}
+                                        formatter={(v: number) => formatCurrency(v)}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                                     />
-                                    <Bar dataKey="imposto" name="Imposto Anual" radius={[4, 4, 0, 0]}>
-                                        {chartDataComparison.map((entry, index) => (
-                                            <Cell
-                                                key={`cell-${index}`}
-                                                fill={entry.name === formatRegimeName(results.regime_mais_vantajoso)
-                                                    ? 'hsl(var(--primary))'
-                                                    : 'hsl(var(--muted-foreground))'
-                                                }
-                                            />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
+                                    <Legend />
+                                    <Bar dataKey="imposto_bruto" name="Imposto Bruto" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="creditos" name="Créditos Recuperados" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                                    <ReferenceLine y={0} stroke="#666" />
+                                </ComposedChart>
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
 
-                    {/* Regime Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Simples Nacional */}
-                        <Card className={`glass-card ${!results.simples_nacional.elegivel ? 'opacity-60' : ''}`}>
-                            <CardHeader>
-                                <CardTitle className="text-base flex items-center justify-between">
-                                    Simples Nacional
-                                    {results.regime_mais_vantajoso === 'simples_nacional' && (
-                                        <Badge className="bg-primary">Recomendado</Badge>
-                                    )}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                                {results.simples_nacional.elegivel ? (
-                                    <>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Anexo</span>
-                                            <span className="font-medium">{results.simples_nacional.anexo}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Alíquota Efetiva</span>
-                                            <span className="font-medium">{formatPercent(results.simples_nacional.aliquota_efetiva)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Fator R</span>
-                                            <span className="font-medium">{formatPercent(results.simples_nacional.fator_r)}</span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between font-bold">
-                                            <span>Imposto Anual</span>
-                                            <span>{formatCurrency(results.simples_nacional.imposto_anual)}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center py-4">
-                                        <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                        <p className="text-sm text-muted-foreground">
-                                            {results.simples_nacional.motivo_inelegibilidade}
-                                        </p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Lucro Presumido */}
-                        <Card className={`glass-card ${!results.lucro_presumido.elegivel ? 'opacity-60' : ''}`}>
-                            <CardHeader>
-                                <CardTitle className="text-base flex items-center justify-between">
-                                    Lucro Presumido
-                                    {results.regime_mais_vantajoso === 'lucro_presumido' && (
-                                        <Badge className="bg-primary">Recomendado</Badge>
-                                    )}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                                {results.lucro_presumido.elegivel ? (
-                                    <>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Presunção</span>
-                                            <span className="font-medium">{formatPercent(results.lucro_presumido.base_presuncao_irpj)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">IRPJ + Adicional</span>
-                                            <span className="font-medium">
-                                                {formatCurrency(results.lucro_presumido.irpj + results.lucro_presumido.irpj_adicional)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">CSLL</span>
-                                            <span className="font-medium">{formatCurrency(results.lucro_presumido.csll)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">PIS/COFINS</span>
-                                            <span className="font-medium">
-                                                {formatCurrency(results.lucro_presumido.pis + results.lucro_presumido.cofins)}
-                                            </span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between font-bold">
-                                            <span>Imposto Anual</span>
-                                            <span>{formatCurrency(results.lucro_presumido.imposto_anual)}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center py-4">
-                                        <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                        <p className="text-sm text-muted-foreground">
-                                            {results.lucro_presumido.motivo_inelegibilidade}
-                                        </p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Lucro Real */}
+                    {/* Insights */}
+                    {results.insights.length > 0 && (
                         <Card className="glass-card">
                             <CardHeader>
-                                <CardTitle className="text-base flex items-center justify-between">
-                                    Lucro Real
-                                    {results.regime_mais_vantajoso === 'lucro_real' && (
-                                        <Badge className="bg-primary">Recomendado</Badge>
-                                    )}
+                                <CardTitle className="flex items-center gap-2">
+                                    <Lightbulb className="h-5 w-5" />
+                                    Insights da Análise
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-2">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Lucro Tributável</span>
-                                    <span className="font-medium">{formatCurrency(results.lucro_real.lucro_tributavel)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">IRPJ + Adicional</span>
-                                    <span className="font-medium">
-                                        {formatCurrency(results.lucro_real.irpj + results.lucro_real.irpj_adicional)}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Créditos PIS/COFINS</span>
-                                    <span className="font-medium text-green-500">
-                                        -{formatCurrency(results.lucro_real.creditos_pis_cofins)}
-                                    </span>
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between font-bold">
-                                    <span>Imposto Anual</span>
-                                    <span>{formatCurrency(results.lucro_real.imposto_anual)}</span>
-                                </div>
+                            <CardContent className="space-y-3">
+                                {results.insights.map((insight: TaxInsight, i: number) => (
+                                    <Alert key={i} className={
+                                        insight.tipo === 'positivo' ? 'border-green-500/50' :
+                                            insight.tipo === 'negativo' ? 'border-red-500/50' :
+                                                insight.tipo === 'alerta' ? 'border-yellow-500/50' : ''
+                                    }>
+                                        {insight.tipo === 'positivo' && <TrendingUp className="h-4 w-4 text-green-500" />}
+                                        {insight.tipo === 'negativo' && <TrendingDown className="h-4 w-4 text-red-500" />}
+                                        {insight.tipo === 'alerta' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+                                        {insight.tipo === 'neutro' && <Info className="h-4 w-4" />}
+                                        <AlertTitle>{insight.titulo}</AlertTitle>
+                                        <AlertDescription>
+                                            <p>{insight.descricao}</p>
+                                            {insight.impacto_financeiro && (
+                                                <p className={`mt-1 font-medium ${insight.impacto_financeiro > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                    Impacto: {insight.impacto_financeiro > 0 ? '+' : ''}{formatCurrency(insight.impacto_financeiro)}/ano
+                                                </p>
+                                            )}
+                                            {insight.acao_sugerida && (
+                                                <p className="mt-1 text-sm italic">💡 {insight.acao_sugerida}</p>
+                                            )}
+                                        </AlertDescription>
+                                    </Alert>
+                                ))}
                             </CardContent>
                         </Card>
-                    </div>
+                    )}
 
-                    {/* Tax Reform Timeline */}
+                    {/* Timeline da Reforma */}
                     <Card className="glass-card">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5" />
-                                Impacto da Reforma Tributária
+                                Transição da Reforma Tributária
                             </CardTitle>
                             <CardDescription>
-                                Projeção da transição para IBS/CBS (2026-2033)
+                                Evolução dos tributos durante a transição (2026-2033)
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={chartDataReforma}>
+                                <AreaChart data={chartTimeline}>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                                     <XAxis dataKey="ano" />
                                     <YAxis tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
                                     <Tooltip
-                                        formatter={(value: number) => formatCurrency(value)}
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--card))',
-                                            border: '1px solid hsl(var(--border))',
-                                            borderRadius: '8px'
-                                        }}
+                                        formatter={(v: number) => formatCurrency(v)}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                                     />
                                     <Legend />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="Tributos Atuais"
-                                        stackId="1"
-                                        stroke="hsl(var(--muted-foreground))"
-                                        fill="hsl(var(--muted))"
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="IBS/CBS"
-                                        stackId="1"
-                                        stroke="hsl(var(--primary))"
-                                        fill="hsl(var(--primary) / 0.5)"
-                                    />
+                                    <Area type="monotone" dataKey="tributos_antigos" name="Tributos Atuais" stackId="1" stroke="#94a3b8" fill="#94a3b8" />
+                                    <Area type="monotone" dataKey="ibs_cbs" name="IBS/CBS" stackId="1" stroke="#3b82f6" fill="#3b82f6" />
                                 </AreaChart>
                             </ResponsiveContainer>
-
-                            {/* Summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                <div className="p-4 rounded-lg bg-muted/30 text-center">
-                                    <p className="text-sm text-muted-foreground">Imposto Atual</p>
-                                    <p className="text-xl font-bold">
-                                        {formatCurrency(results.pos_reforma.timeline[0]?.tributos_atuais || 0)}
-                                    </p>
-                                </div>
-                                <div className="p-4 rounded-lg bg-muted/30 text-center">
-                                    <p className="text-sm text-muted-foreground">Imposto 2033</p>
-                                    <p className="text-xl font-bold">
-                                        {formatCurrency(results.pos_reforma.imposto_2033)}
-                                    </p>
-                                </div>
-                                <div className={`p-4 rounded-lg text-center ${results.pos_reforma.variacao_vs_atual > 0
-                                    ? 'bg-red-500/10'
-                                    : 'bg-green-500/10'
-                                    }`}>
-                                    <p className="text-sm text-muted-foreground">Variação</p>
-                                    <p className={`text-xl font-bold ${results.pos_reforma.variacao_vs_atual > 0
-                                        ? 'text-red-500'
-                                        : 'text-green-500'
-                                        }`}>
-                                        {results.pos_reforma.variacao_vs_atual > 0 ? '+' : ''}
-                                        {results.pos_reforma.variacao_percentual.toFixed(1)}%
-                                    </p>
-                                </div>
-                            </div>
-
-                            {results.pos_reforma.reducao_setorial && results.pos_reforma.reducao_setorial > 0 && (
-                                <Alert className="mt-4">
-                                    <Lightbulb className="h-4 w-4" />
-                                    <AlertTitle>Redução Setorial</AlertTitle>
-                                    <AlertDescription>
-                                        O setor {results.pos_reforma.setor} tem redução de {(results.pos_reforma.reducao_setorial * 100).toFixed(0)}%
-                                        na alíquota do IBS/CBS pela reforma tributária.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
                         </CardContent>
                     </Card>
 
-                    {/* Observations */}
-                    {(results.simples_nacional.observacoes.length > 0 ||
-                        results.lucro_presumido.observacoes.length > 0 ||
-                        results.lucro_real.observacoes.length > 0) && (
-                            <Card className="glass-card">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Info className="h-5 w-5" />
-                                        Observações
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-2">
-                                        {[
-                                            ...results.simples_nacional.observacoes.map(o => ({ regime: 'Simples', obs: o })),
-                                            ...results.lucro_presumido.observacoes.map(o => ({ regime: 'LP', obs: o })),
-                                            ...results.lucro_real.observacoes.map(o => ({ regime: 'LR', obs: o })),
-                                            ...results.pos_reforma.observacoes.map(o => ({ regime: 'Reforma', obs: o }))
-                                        ].map((item, i) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm">
-                                                <Badge variant="outline" className="shrink-0">{item.regime}</Badge>
-                                                <span className="text-muted-foreground">{item.obs}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        )}
+                    {/* Relatório Consultivo IA */}
+                    {reportContent && (
+                        <Card className="glass-card border-primary/30">
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-full bg-primary/20">
+                                            <ScrollText className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <CardTitle>Relatório Consultivo</CardTitle>
+                                            <CardDescription>Análise estratégica gerada por IA</CardDescription>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setReportContent(null)}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div
+                                    className="prose prose-sm dark:prose-invert max-w-none overflow-auto max-h-[600px]"
+                                    dangerouslySetInnerHTML={{
+                                        __html: reportContent
+                                            .replace(/\n/g, '<br/>')
+                                            .replace(/#{3}\s(.+)/g, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
+                                            .replace(/#{2}\s(.+)/g, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
+                                            .replace(/#{1}\s(.+)/g, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
+                                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                            .replace(/✅/g, '<span class="text-green-500">✅</span>')
+                                            .replace(/⚠️/g, '<span class="text-yellow-500">⚠️</span>')
+                                            .replace(/💡/g, '<span class="text-blue-500">💡</span>')
+                                            .replace(/📊/g, '<span class="text-purple-500">📊</span>')
+                                    }}
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Navigation */}
                     <div className="flex justify-between">
-                        <Button
-                            variant="outline"
-                            onClick={() => setCurrentStep('validation')}
-                        >
+                        <Button variant="outline" onClick={() => setCurrentStep('validation')}>
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Voltar
+                            Ajustar Dados
                         </Button>
                         <div className="flex gap-2">
-                            <Button variant="outline">
-                                <FileText className="mr-2 h-4 w-4" />
+                            <Button
+                                variant="outline"
+                                onClick={handleGenerateReport}
+                                disabled={isGeneratingReport}
+                            >
+                                {isGeneratingReport ? (
+                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</>
+                                ) : (
+                                    <><ScrollText className="mr-2 h-4 w-4" />Relatório IA</>
+                                )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={handleExportPDF}
+                                disabled={!reportContent}
+                            >
+                                <FileDown className="mr-2 h-4 w-4" />
                                 Exportar PDF
                             </Button>
                             <Button onClick={() => {
                                 setCurrentStep('input');
-                                setExtractedData({});
-                                setValidatedData(null);
+                                setProfile(INITIAL_PROFILE);
                                 setResults(null);
-                                setUploadedFiles([]);
-                                setDescricaoTexto('');
+                                setAiAnalysis(null);
+                                setReportContent(null);
                             }}>
                                 Nova Análise
                             </Button>

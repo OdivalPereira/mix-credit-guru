@@ -1,652 +1,801 @@
 /**
- * Tax Planning Engine
- * Motor de cálculo para análise de regimes tributários
+ * Tax Planning Engine v2
  * 
- * Este módulo realiza cálculos 100% locais (sem API) para:
- * - Simples Nacional (Anexos I-V com Fator R)
- * - Lucro Presumido
- * - Lucro Real
- * - Cenários pós-Reforma Tributária
+ * Motor de cálculo para análise de regimes tributários
+ * com suporte a NÃO-CUMULATIVIDADE PLENA da Reforma Tributária.
+ * 
+ * Conceito-chave:
+ * - Modelo Atual (Presumido/Simples): Imposto sobre faturamento bruto
+ * - Modelo Reforma (IBS/CBS): Imposto sobre VALOR ADICIONADO
+ *   Débito - Crédito = Imposto a Pagar
  */
 
+import type {
+  TaxProfile,
+  TaxScenarioResult,
+  TaxComparisonResult,
+  TaxInsight,
+  DetalheImpostos,
+  ChartDataComparison,
+  ChartDataCreditos,
+  ChartDataTimeline
+} from '@/types/tax-planning';
 import taxRules from '@/data/tax-planning-rules.json';
 import cnaeDatabase from '@/data/cnae-database.json';
 
 // ============================================================================
-// TYPES
+// CONSTANTES DA REFORMA TRIBUTÁRIA
 // ============================================================================
 
-export interface CompanyData {
-  razao_social?: string;
-  cnpj?: string;
-  cnae_principal: string;
-  cnaes_secundarios?: string[];
-  faturamento_anual: number;
-  folha_pagamento_anual: number;
-  numero_funcionarios?: number;
-  despesas_operacionais?: number;
-  despesas_dedutiveis?: number;
-  lucro_liquido?: number;
-  uf?: string;
-  municipio?: string;
-  tipo_atividade?: 'comercio' | 'industria' | 'servicos' | 'misto';
-  ano_referencia?: number;
-}
+/** Alíquota padrão IBS/CBS (CBS 8.5% + IBS 17% = 25.5%) */
+const ALIQUOTA_IBS_CBS_PADRAO = 0.255;
 
-export interface SimplesResult {
-  elegivel: boolean;
-  motivo_inelegibilidade?: string;
-  anexo: string;
-  anexo_nome: string;
-  fator_r: number;
-  fator_r_aplicado: boolean;
-  aliquota_nominal: number;
-  aliquota_efetiva: number;
-  imposto_anual: number;
-  detalhamento: {
-    irpj: number;
-    csll: number;
-    cofins: number;
-    pis: number;
-    cpp: number;
-    icms_iss: number;
-    ipi?: number;
-  };
-  cpp_separado?: number;
-  observacoes: string[];
-}
+/** Alíquota CBS federal */
+const ALIQUOTA_CBS = 0.085;
 
-export interface PresumidoResult {
-  elegivel: boolean;
-  motivo_inelegibilidade?: string;
-  base_presuncao_irpj: number;
-  base_presuncao_csll: number;
-  base_calculo_irpj: number;
-  base_calculo_csll: number;
-  irpj: number;
-  irpj_adicional: number;
-  csll: number;
-  pis: number;
-  cofins: number;
-  imposto_anual: number;
-  aliquota_efetiva: number;
-  observacoes: string[];
-}
+/** Alíquota IBS estadual/municipal */
+const ALIQUOTA_IBS = 0.17;
 
-export interface RealResult {
-  elegivel: boolean;
-  lucro_tributavel: number;
-  irpj: number;
-  irpj_adicional: number;
-  csll: number;
-  pis_cofins_bruto: number;
-  creditos_pis_cofins: number;
-  pis_cofins_liquido: number;
-  imposto_anual: number;
-  aliquota_efetiva: number;
-  observacoes: string[];
-}
+/** Timeline de transição da reforma */
+const TRANSICAO_REFORMA = {
+  2026: { cbs: 0.009, ibs: 0.00, reducao: 0.00 },
+  2027: { cbs: 0.009, ibs: 0.01, reducao: 0.10 },
+  2028: { cbs: 0.018, ibs: 0.02, reducao: 0.20 },
+  2029: { cbs: 0.027, ibs: 0.04, reducao: 0.30 },
+  2030: { cbs: 0.036, ibs: 0.06, reducao: 0.40 },
+  2031: { cbs: 0.054, ibs: 0.10, reducao: 0.60 },
+  2032: { cbs: 0.072, ibs: 0.14, reducao: 0.80 },
+  2033: { cbs: 0.085, ibs: 0.17, reducao: 1.00 }
+};
 
-export interface ReformaTimelineYear {
-  ano: number;
-  cbs: number;
-  ibs: number;
-  ibs_cbs_total: number;
-  tributos_atuais: number;
-  tributos_atuais_reduzidos: number;
-  total: number;
-  fase: string;
-}
-
-export interface ReformaResult {
-  timeline: ReformaTimelineYear[];
-  aliquota_plena: number;
-  reducao_setorial?: number;
-  setor?: string;
-  imposto_2033: number;
-  variacao_vs_atual: number;
-  variacao_percentual: number;
-  observacoes: string[];
-}
-
-export interface ComparisonResult {
-  simples_nacional: SimplesResult;
-  lucro_presumido: PresumidoResult;
-  lucro_real: RealResult;
-  pos_reforma: ReformaResult;
-  regime_mais_vantajoso: string;
-  economia_anual: number;
-  economia_percentual: number;
-}
-
-export interface CnaeInfo {
-  descricao: string;
-  anexo_simples: string | null;
-  anexo_fator_r: string | null;
-  fator_r_minimo: number | null;
-  presuncao_irpj: number;
-  presuncao_csll: number;
-  tipo_atividade: string;
-  setor: string;
-  permite_simples: boolean;
-  permite_mei: boolean;
-  reducao_reforma?: number;
-  observacoes: string[];
-}
+/** Redução por setor (reforma) */
+const REDUCAO_SETORIAL: Record<string, number> = {
+  saude: 0.60,
+  educacao: 0.60,
+  transporte_publico: 0.60,
+  agropecuaria: 0.60,
+  cultura: 0.60
+};
 
 // ============================================================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================================================
 
 /**
- * Busca informações de um CNAE na base de dados local
+ * Calcula o total de despesas que geram crédito (anualizado)
  */
-export function getCnaeInfo(cnae: string): CnaeInfo | null {
-  const cnaeData = (cnaeDatabase as any).cnaes[cnae];
-  
-  if (!cnaeData) {
-    return null;
-  }
-
-  return {
-    descricao: cnaeData.descricao,
-    anexo_simples: cnaeData.simples?.anexo_padrao || null,
-    anexo_fator_r: cnaeData.simples?.anexo_fator_r || null,
-    fator_r_minimo: cnaeData.simples?.fator_r_minimo || null,
-    presuncao_irpj: cnaeData.lucro_presumido?.presuncao_irpj || 0.32,
-    presuncao_csll: cnaeData.lucro_presumido?.presuncao_csll || 0.32,
-    tipo_atividade: cnaeData.tipo_atividade || 'servicos',
-    setor: cnaeData.setor || 'outros',
-    permite_simples: cnaeData.simples?.permitido !== false,
-    permite_mei: cnaeData.mei?.permitido === true,
-    reducao_reforma: cnaeData.reforma_tributaria?.reducao_aliquota,
-    observacoes: cnaeData.observacoes || []
-  };
+function calcularTotalDespesasComCredito(perfil: TaxProfile): number {
+  const d = perfil.despesas_com_credito;
+  return (
+    (d.cmv || 0) +
+    (d.aluguel || 0) +
+    (d.energia_telecom || 0) +
+    (d.servicos_pj || 0) +
+    (d.outros_insumos || 0) +
+    (d.transporte_frete || 0) +
+    (d.manutencao || 0) +
+    (d.tarifas_bancarias || 0)
+  ) * 12; // Anualizar se valores mensais
 }
 
 /**
- * Calcula o Fator R (folha / receita bruta últimos 12 meses)
+ * Calcula o total de despesas sem crédito (anualizado)
  */
-export function calcularFatorR(folha: number, receita: number): number {
-  if (receita <= 0) return 0;
-  return folha / receita;
+function calcularTotalDespesasSemCredito(perfil: TaxProfile): number {
+  const d = perfil.despesas_sem_credito;
+  return (
+    (d.folha_pagamento || 0) +
+    (d.pro_labore || 0) +
+    (d.despesas_financeiras || 0) +
+    (d.tributos || 0) +
+    (d.uso_pessoal || 0) +
+    (d.outras || 0)
+  ) * 12;
 }
 
 /**
- * Determina o anexo do Simples Nacional considerando Fator R
+ * Busca informações do CNAE
  */
-export function determinarAnexo(
-  anexoPadrao: string,
-  anexoFatorR: string | null,
-  fatorR: number,
-  fatorRMinimo: number | null
-): { anexo: string; fatorRAplicado: boolean } {
-  // Se não tem regra de Fator R ou anexo destino, usa o padrão
-  if (!anexoFatorR || fatorRMinimo === null) {
-    return { anexo: anexoPadrao, fatorRAplicado: false };
-  }
-
-  // Se Fator R >= limite, migra para anexo mais vantajoso
-  if (fatorR >= fatorRMinimo) {
-    return { anexo: anexoFatorR, fatorRAplicado: true };
-  }
-
-  return { anexo: anexoPadrao, fatorRAplicado: false };
+function getCnaeInfo(cnae: string): any {
+  const cnaes = (cnaeDatabase as any).cnaes;
+  return cnaes[cnae] || null;
 }
 
 /**
- * Calcula alíquota efetiva do Simples Nacional
- * Fórmula: [(RBT12 × Aliq) - PD] / RBT12
+ * Determina se é atividade de serviços (presunção 32%) ou comércio/indústria (presunção 8%)
  */
-export function calcularAliquotaEfetivaSN(
-  receitaBruta12Meses: number,
-  anexo: string
-): { aliquotaNominal: number; aliquotaEfetiva: number; faixa: number } {
-  const anexoData = (taxRules as any).simples_nacional.anexos[anexo];
-  
-  if (!anexoData) {
-    throw new Error(`Anexo ${anexo} não encontrado`);
+function isServicoAltoPresuncao(cnae: string): boolean {
+  const info = getCnaeInfo(cnae);
+  if (info) {
+    return info.lucro_presumido?.presuncao_irpj === 0.32;
+  }
+  // Default: se CNAE começa com 6 ou 7, provavelmente é serviço
+  return cnae.startsWith('6') || cnae.startsWith('7') || cnae.startsWith('8');
+}
+
+/**
+ * Obtém redução setorial para a reforma
+ */
+function getReducaoSetorial(cnae: string): number {
+  const info = getCnaeInfo(cnae);
+  if (info?.reforma_tributaria?.reducao_aliquota) {
+    return info.reforma_tributaria.reducao_aliquota;
   }
 
-  const faixas = anexoData.faixas;
-  let faixaEncontrada = faixas[faixas.length - 1]; // Default: última faixa
-  let faixaIndex = faixas.length;
-
-  for (let i = 0; i < faixas.length; i++) {
-    if (receitaBruta12Meses <= faixas[i].limite) {
-      faixaEncontrada = faixas[i];
-      faixaIndex = i + 1;
-      break;
-    }
-  }
-
-  const aliquotaNominal = faixaEncontrada.aliquota;
-  const deducao = faixaEncontrada.deducao;
-  
-  // Alíquota Efetiva = [(RBT12 × Aliq) - PD] / RBT12
-  const aliquotaEfetiva = ((receitaBruta12Meses * aliquotaNominal) - deducao) / receitaBruta12Meses;
-
-  return {
-    aliquotaNominal,
-    aliquotaEfetiva: Math.max(0, aliquotaEfetiva),
-    faixa: faixaIndex
-  };
+  // Verificar por setor
+  const setor = info?.setor || '';
+  return REDUCAO_SETORIAL[setor] || 0;
 }
 
 // ============================================================================
-// MAIN CALCULATION FUNCTIONS
+// CÁLCULO: SIMPLES NACIONAL
 // ============================================================================
 
-/**
- * Calcula Simples Nacional
- */
-export function calculateSimplesNacional(data: CompanyData): SimplesResult {
-  const cnaeInfo = getCnaeInfo(data.cnae_principal);
-  const observacoes: string[] = [];
+export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
+  const limiteSN = 4800000;
+  const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
 
   // Verificar elegibilidade
-  const limiteSN = (taxRules as any).simples_nacional.limite_faturamento_anual;
-  
-  if (data.faturamento_anual > limiteSN) {
+  if (faturamentoAnual > limiteSN) {
     return {
+      nome: 'Simples Nacional',
+      codigo: 'simples',
       elegivel: false,
-      motivo_inelegibilidade: `Faturamento (${formatCurrency(data.faturamento_anual)}) excede limite do Simples Nacional (${formatCurrency(limiteSN)})`,
-      anexo: '',
-      anexo_nome: '',
-      fator_r: 0,
-      fator_r_aplicado: false,
-      aliquota_nominal: 0,
-      aliquota_efetiva: 0,
-      imposto_anual: 0,
-      detalhamento: { irpj: 0, csll: 0, cofins: 0, pis: 0, cpp: 0, icms_iss: 0 },
+      motivo_inelegibilidade: `Faturamento (R$ ${faturamentoAnual.toLocaleString('pt-BR')}) excede limite de R$ 4.8 milhões`,
+      imposto_bruto_anual: 0,
+      creditos_aproveitados: 0,
+      imposto_liquido_anual: 0,
+      carga_efetiva_percentual: 0,
+      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
+      pros: [],
+      contras: [],
       observacoes: []
     };
   }
 
-  if (cnaeInfo && !cnaeInfo.permite_simples) {
+  const cnaeInfo = getCnaeInfo(perfil.cnae_principal);
+  if (cnaeInfo?.simples?.permitido === false) {
     return {
+      nome: 'Simples Nacional',
+      codigo: 'simples',
       elegivel: false,
-      motivo_inelegibilidade: `CNAE ${data.cnae_principal} não é permitido no Simples Nacional`,
-      anexo: '',
-      anexo_nome: '',
-      fator_r: 0,
-      fator_r_aplicado: false,
-      aliquota_nominal: 0,
-      aliquota_efetiva: 0,
-      imposto_anual: 0,
-      detalhamento: { irpj: 0, csll: 0, cofins: 0, pis: 0, cpp: 0, icms_iss: 0 },
+      motivo_inelegibilidade: cnaeInfo.simples.motivo || 'CNAE não permitido no Simples Nacional',
+      imposto_bruto_anual: 0,
+      creditos_aproveitados: 0,
+      imposto_liquido_anual: 0,
+      carga_efetiva_percentual: 0,
+      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
+      pros: [],
+      contras: [],
       observacoes: []
     };
   }
 
-  // Determinar anexo
-  const anexoPadrao = cnaeInfo?.anexo_simples || 'III';
-  const anexoFatorR = cnaeInfo?.anexo_fator_r || null;
-  const fatorRMinimo = cnaeInfo?.fator_r_minimo || null;
-  
-  const fatorR = calcularFatorR(data.folha_pagamento_anual, data.faturamento_anual);
-  const { anexo, fatorRAplicado } = determinarAnexo(anexoPadrao, anexoFatorR, fatorR, fatorRMinimo);
+  // Determinar anexo e calcular Fator R
+  const folhaAnual = (perfil.despesas_sem_credito.folha_pagamento + perfil.despesas_sem_credito.pro_labore) * 12;
+  const fatorR = faturamentoAnual > 0 ? folhaAnual / faturamentoAnual : 0;
 
-  if (fatorRAplicado) {
-    observacoes.push(`Fator R (${(fatorR * 100).toFixed(1)}%) >= ${((fatorRMinimo || 0) * 100).toFixed(0)}%: tributação pelo Anexo ${anexo}`);
+  let anexo = cnaeInfo?.simples?.anexo_padrao || 'III';
+  let anexoAplicado = anexo;
+
+  // Fator R: se >= 28% e anexo V, migra para III
+  if (anexo === 'V' && fatorR >= 0.28 && cnaeInfo?.simples?.anexo_fator_r) {
+    anexoAplicado = cnaeInfo.simples.anexo_fator_r;
   }
 
   // Calcular alíquota efetiva
-  const { aliquotaNominal, aliquotaEfetiva } = calcularAliquotaEfetivaSN(
-    data.faturamento_anual,
-    anexo
-  );
-
-  // Calcular imposto
-  const impostoAnual = data.faturamento_anual * aliquotaEfetiva;
-
-  // Distribuição dos tributos
-  const anexoData = (taxRules as any).simples_nacional.anexos[anexo];
-  const distrib = anexoData.distribuicao_tributos;
-
-  const baseDistrib = impostoAnual;
-  const detalhamento = {
-    irpj: baseDistrib * (distrib.irpj || 0),
-    csll: baseDistrib * (distrib.csll || 0),
-    cofins: baseDistrib * (distrib.cofins || 0),
-    pis: baseDistrib * (distrib.pis || 0),
-    cpp: baseDistrib * (distrib.cpp || 0),
-    icms_iss: baseDistrib * ((distrib.icms || 0) + (distrib.iss || 0)),
-    ipi: baseDistrib * (distrib.ipi || 0)
-  };
-
-  // Verificar CPP separado (Anexo IV)
-  let cppSeparado: number | undefined;
-  if (anexoData.cpp_separado) {
-    cppSeparado = data.folha_pagamento_anual * anexoData.cpp_aliquota;
-    observacoes.push(`Anexo IV: CPP (${(anexoData.cpp_aliquota * 100).toFixed(0)}%) sobre folha = ${formatCurrency(cppSeparado)} deve ser recolhido via GPS`);
-  }
-
-  return {
-    elegivel: true,
-    anexo,
-    anexo_nome: anexoData.nome,
-    fator_r: fatorR,
-    fator_r_aplicado: fatorRAplicado,
-    aliquota_nominal: aliquotaNominal,
-    aliquota_efetiva: aliquotaEfetiva,
-    imposto_anual: impostoAnual + (cppSeparado || 0),
-    detalhamento,
-    cpp_separado: cppSeparado,
-    observacoes
-  };
-}
-
-/**
- * Calcula Lucro Presumido
- */
-export function calculateLucroPresumido(data: CompanyData): PresumidoResult {
-  const cnaeInfo = getCnaeInfo(data.cnae_principal);
-  const observacoes: string[] = [];
-  
-  // Verificar elegibilidade
-  const limiteLP = (taxRules as any).lucro_presumido.limite_faturamento_anual;
-  
-  if (data.faturamento_anual > limiteLP) {
+  const anexoData = (taxRules as any).simples_nacional.anexos[anexoAplicado];
+  if (!anexoData) {
     return {
+      nome: 'Simples Nacional',
+      codigo: 'simples',
       elegivel: false,
-      motivo_inelegibilidade: `Faturamento excede limite do Lucro Presumido (${formatCurrency(limiteLP)})`,
-      base_presuncao_irpj: 0,
-      base_presuncao_csll: 0,
-      base_calculo_irpj: 0,
-      base_calculo_csll: 0,
-      irpj: 0,
-      irpj_adicional: 0,
-      csll: 0,
-      pis: 0,
-      cofins: 0,
-      imposto_anual: 0,
-      aliquota_efetiva: 0,
+      motivo_inelegibilidade: `Anexo ${anexoAplicado} não encontrado`,
+      imposto_bruto_anual: 0,
+      creditos_aproveitados: 0,
+      imposto_liquido_anual: 0,
+      carga_efetiva_percentual: 0,
+      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
+      pros: [],
+      contras: [],
       observacoes: []
     };
   }
 
-  // Determinar presunção baseado no tipo de atividade
-  const tipoAtividade = cnaeInfo?.tipo_atividade || data.tipo_atividade || 'servicos';
-  const presuncaoConfig = (taxRules as any).lucro_presumido.presuncao;
-  
-  let presuncaoIRPJ: number;
-  let presuncaoCSLL: number;
-
-  if (cnaeInfo) {
-    presuncaoIRPJ = cnaeInfo.presuncao_irpj;
-    presuncaoCSLL = cnaeInfo.presuncao_csll;
-  } else {
-    const config = presuncaoConfig[tipoAtividade] || presuncaoConfig.servicos;
-    presuncaoIRPJ = config.irpj;
-    presuncaoCSLL = config.csll;
+  // Encontrar faixa
+  let aliquotaNominal = 0;
+  let deducao = 0;
+  for (const faixa of anexoData.faixas) {
+    if (faturamentoAnual <= faixa.limite) {
+      aliquotaNominal = faixa.aliquota;
+      deducao = faixa.deducao;
+      break;
+    }
+    aliquotaNominal = faixa.aliquota;
+    deducao = faixa.deducao;
   }
 
-  // Calcular bases
-  const baseCalculoIRPJ = data.faturamento_anual * presuncaoIRPJ;
-  const baseCalculoCSLL = data.faturamento_anual * presuncaoCSLL;
+  // Alíquota Efetiva = [(RBT12 × Aliq) - PD] / RBT12
+  const aliquotaEfetiva = ((faturamentoAnual * aliquotaNominal) - deducao) / faturamentoAnual;
+  const impostoAnual = faturamentoAnual * aliquotaEfetiva;
 
-  // Calcular IRPJ
-  const aliqIRPJ = (taxRules as any).lucro_presumido.aliquotas.irpj;
-  const irpjNormal = baseCalculoIRPJ * aliqIRPJ.normal;
-  
-  // IRPJ Adicional (10% sobre lucro que exceder R$ 20k/mês = R$ 240k/ano)
-  const baseAdicional = aliqIRPJ.base_adicional_anual;
-  const irpjAdicional = baseCalculoIRPJ > baseAdicional 
-    ? (baseCalculoIRPJ - baseAdicional) * aliqIRPJ.adicional 
-    : 0;
+  // CPP separado para Anexo IV
+  let cppSeparado = 0;
+  if (anexoData.cpp_separado) {
+    cppSeparado = folhaAnual * (anexoData.cpp_aliquota || 0.20);
+  }
 
+  const impostoTotal = impostoAnual + cppSeparado;
+
+  return {
+    nome: 'Simples Nacional',
+    codigo: 'simples',
+    elegivel: true,
+    imposto_bruto_anual: impostoTotal,
+    creditos_aproveitados: 0, // Simples não tem crédito
+    imposto_liquido_anual: impostoTotal,
+    carga_efetiva_percentual: (impostoTotal / faturamentoAnual) * 100,
+    detalhes: {
+      consumo: impostoAnual * 0.6, // Aproximado (PIS/COFINS/ICMS/ISS)
+      irpj: impostoAnual * 0.12,
+      csll: impostoAnual * 0.08,
+      iss_icms: impostoAnual * 0.20,
+      cpp: cppSeparado > 0 ? cppSeparado : undefined
+    },
+    pros: [
+      'Menor burocracia e guia única (DAS)',
+      'Alíquota efetiva geralmente menor para faturamentos baixos',
+      anexoAplicado !== anexo ? `Fator R de ${(fatorR * 100).toFixed(1)}% permitiu tributar pelo Anexo ${anexoAplicado}` : ''
+    ].filter(Boolean),
+    contras: [
+      'Sem aproveitamento de créditos de PIS/COFINS',
+      'Limite de faturamento de R$ 4.8 milhões/ano',
+      fatorR < 0.28 && anexo === 'V' ? 'Fator R baixo mantém no Anexo V (alíquotas maiores)' : ''
+    ].filter(Boolean),
+    observacoes: [
+      `Anexo ${anexoAplicado} - ${anexoData.nome}`,
+      `Fator R: ${(fatorR * 100).toFixed(1)}%`
+    ]
+  };
+}
+
+// ============================================================================
+// CÁLCULO: LUCRO PRESUMIDO
+// ============================================================================
+
+export function calcularLucroPresumido(perfil: TaxProfile): TaxScenarioResult {
+  const limiteLP = 78000000;
+  const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
+
+  if (faturamentoAnual > limiteLP) {
+    return {
+      nome: 'Lucro Presumido',
+      codigo: 'presumido',
+      elegivel: false,
+      motivo_inelegibilidade: `Faturamento excede limite de R$ 78 milhões`,
+      imposto_bruto_anual: 0,
+      creditos_aproveitados: 0,
+      imposto_liquido_anual: 0,
+      carga_efetiva_percentual: 0,
+      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
+      pros: [],
+      contras: [],
+      observacoes: []
+    };
+  }
+
+  // Determinar percentuais de presunção
+  const isServico = isServicoAltoPresuncao(perfil.cnae_principal);
+  const presuncaoIRPJ = isServico ? 0.32 : 0.08;
+  const presuncaoCSLL = isServico ? 0.32 : 0.12;
+
+  // Base de cálculo
+  const baseIRPJ = faturamentoAnual * presuncaoIRPJ;
+  const baseCSLL = faturamentoAnual * presuncaoCSLL;
+
+  // IRPJ: 15% + 10% adicional sobre excedente de R$ 240k/ano
+  const irpjNormal = baseIRPJ * 0.15;
+  const irpjAdicional = baseIRPJ > 240000 ? (baseIRPJ - 240000) * 0.10 : 0;
   const irpjTotal = irpjNormal + irpjAdicional;
 
-  // Calcular CSLL
-  const csll = baseCalculoCSLL * (taxRules as any).lucro_presumido.aliquotas.csll;
+  // CSLL: 9%
+  const csll = baseCSLL * 0.09;
 
-  // Calcular PIS/COFINS (cumulativo no LP)
-  const pis = data.faturamento_anual * (taxRules as any).lucro_presumido.aliquotas.pis.aliquota;
-  const cofins = data.faturamento_anual * (taxRules as any).lucro_presumido.aliquotas.cofins.aliquota;
+  // PIS/COFINS Cumulativo: 0.65% + 3% = 3.65%
+  const pisCofins = faturamentoAnual * 0.0365;
 
-  const impostoAnual = irpjTotal + csll + pis + cofins;
-  const aliquotaEfetiva = impostoAnual / data.faturamento_anual;
+  // ISS (serviços): média 5%
+  const iss = isServico ? faturamentoAnual * 0.05 : 0;
 
-  if (presuncaoIRPJ < 0.32) {
-    observacoes.push(`Presunção reduzida (${(presuncaoIRPJ * 100).toFixed(0)}%) aplicada para ${tipoAtividade}`);
-  }
+  // ICMS simplificado não aplicável aqui (seria sobre vendas)
+  const icms = !isServico ? faturamentoAnual * 0.03 : 0; // Média simplificada
 
-  if (irpjAdicional > 0) {
-    observacoes.push(`IRPJ adicional de 10% sobre ${formatCurrency(baseCalculoIRPJ - baseAdicional)}`);
-  }
+  // Total
+  const impostoTotal = irpjTotal + csll + pisCofins + iss + icms;
 
   return {
+    nome: 'Lucro Presumido',
+    codigo: 'presumido',
     elegivel: true,
-    base_presuncao_irpj: presuncaoIRPJ,
-    base_presuncao_csll: presuncaoCSLL,
-    base_calculo_irpj: baseCalculoIRPJ,
-    base_calculo_csll: baseCalculoCSLL,
-    irpj: irpjNormal,
-    irpj_adicional: irpjAdicional,
-    csll,
-    pis,
-    cofins,
-    imposto_anual: impostoAnual,
-    aliquota_efetiva: aliquotaEfetiva,
-    observacoes
+    imposto_bruto_anual: impostoTotal,
+    creditos_aproveitados: 0, // LP cumulativo não tem crédito de PIS/COFINS
+    imposto_liquido_anual: impostoTotal,
+    carga_efetiva_percentual: (impostoTotal / faturamentoAnual) * 100,
+    detalhes: {
+      consumo: pisCofins,
+      irpj: irpjTotal,
+      csll: csll,
+      iss_icms: iss + icms
+    },
+    pros: [
+      'Simplicidade de apuração (não precisa de contabilidade completa)',
+      'Previsibilidade da carga tributária',
+      !isServico ? 'Presunção de 8% favorável para comércio/indústria' : ''
+    ].filter(Boolean),
+    contras: [
+      'SEM CRÉDITO de PIS/COFINS sobre despesas (regime cumulativo)',
+      'Paga imposto mesmo com prejuízo real',
+      isServico ? 'Presunção de 32% desfavorável para serviços' : '',
+      'Aluguel, energia, insumos NÃO geram crédito'
+    ].filter(Boolean),
+    observacoes: [
+      `Presunção IRPJ: ${(presuncaoIRPJ * 100).toFixed(0)}%`,
+      `PIS/COFINS Cumulativo: 3.65% sobre faturamento bruto`
+    ]
   };
 }
 
-/**
- * Calcula Lucro Real
- */
-export function calculateLucroReal(data: CompanyData): RealResult {
-  const observacoes: string[] = [];
-  
-  // Estimar lucro tributável se não fornecido
-  const despesasDedutiveis = data.despesas_dedutiveis || 
-    (data.despesas_operacionais || data.faturamento_anual * 0.6);
-  
-  const lucroTributavel = data.lucro_liquido || 
-    (data.faturamento_anual - despesasDedutiveis);
+// ============================================================================
+// CÁLCULO: LUCRO REAL
+// ============================================================================
 
-  // IRPJ
-  const aliqIRPJ = (taxRules as any).lucro_real.aliquotas.irpj;
-  const irpjNormal = Math.max(0, lucroTributavel) * aliqIRPJ.normal;
-  
-  const baseAdicional = aliqIRPJ.base_adicional_anual;
-  const irpjAdicional = lucroTributavel > baseAdicional 
-    ? (lucroTributavel - baseAdicional) * aliqIRPJ.adicional 
+export function calcularLucroReal(perfil: TaxProfile): TaxScenarioResult {
+  const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
+
+  // Calcular despesas
+  const despesasComCredito = calcularTotalDespesasComCredito(perfil);
+  const despesasSemCredito = calcularTotalDespesasSemCredito(perfil);
+  const despesasTotal = despesasComCredito + despesasSemCredito;
+
+  // Lucro tributável
+  const lucroContabil = perfil.lucro_liquido || (faturamentoAnual - despesasTotal);
+  const adicoes = perfil.adicoes_lalur || 0;
+  const exclusoes = perfil.exclusoes_lalur || 0;
+  const lucroTributavel = Math.max(0, lucroContabil + adicoes - exclusoes);
+
+  // IRPJ e CSLL sobre lucro real
+  const irpjNormal = lucroTributavel * 0.15;
+  const irpjAdicional = lucroTributavel > 240000 ? (lucroTributavel - 240000) * 0.10 : 0;
+  const irpjTotal = irpjNormal + irpjAdicional;
+  const csll = lucroTributavel * 0.09;
+
+  // PIS/COFINS Não-Cumulativo
+  // Débito: 1.65% + 7.6% = 9.25%
+  const pisCofinsDebito = faturamentoAnual * 0.0925;
+
+  // Crédito sobre despesas elegíveis (CMV, aluguel, energia, serviços, insumos)
+  const pisCofinsCredito = despesasComCredito * 0.0925;
+
+  const pisCofinsLiquido = Math.max(0, pisCofinsDebito - pisCofinsCredito);
+
+  // Total
+  const impostoBruto = irpjTotal + csll + pisCofinsDebito;
+  const impostoLiquido = irpjTotal + csll + pisCofinsLiquido;
+
+  return {
+    nome: 'Lucro Real',
+    codigo: 'real',
+    elegivel: true,
+    imposto_bruto_anual: impostoBruto,
+    creditos_aproveitados: pisCofinsCredito,
+    imposto_liquido_anual: impostoLiquido,
+    carga_efetiva_percentual: (impostoLiquido / faturamentoAnual) * 100,
+    detalhes: {
+      consumo: pisCofinsLiquido,
+      irpj: irpjTotal,
+      csll: csll,
+      iss_icms: 0 // Simplificado
+    },
+    pros: [
+      `Crédito de PIS/COFINS de R$ ${pisCofinsCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
+      'Imposto sobre lucro real (paga menos se tiver prejuízo)',
+      'Pode compensar prejuízos fiscais acumulados (até 30%)',
+      'Aluguel, energia e CMV geram crédito'
+    ],
+    contras: [
+      'Maior complexidade contábil (ECD, ECF, LALUR)',
+      'Necessita contabilidade completa e auditável',
+      'Risco de glosas fiscais se documentação inadequada'
+    ],
+    observacoes: [
+      `Lucro tributável: R$ ${lucroTributavel.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
+      `Base de crédito PIS/COFINS: R$ ${despesasComCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
+    ]
+  };
+}
+
+// ============================================================================
+// CÁLCULO: REFORMA TRIBUTÁRIA (IBS/CBS)
+// ============================================================================
+
+export function calcularReforma(
+  perfil: TaxProfile,
+  ano: 2027 | 2033 = 2033
+): TaxScenarioResult {
+  const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
+
+  // Despesas que geram crédito
+  const despesasComCredito = calcularTotalDespesasComCredito(perfil);
+  const despesasSemCredito = calcularTotalDespesasSemCredito(perfil);
+
+  // Alíquota aplicável (considerando redução setorial)
+  const reducaoSetorial = getReducaoSetorial(perfil.cnae_principal);
+  const aliquotaEfetiva = ano === 2033
+    ? ALIQUOTA_IBS_CBS_PADRAO * (1 - reducaoSetorial)
+    : (TRANSICAO_REFORMA[ano].cbs + TRANSICAO_REFORMA[ano].ibs) * (1 - reducaoSetorial);
+
+  // 1. DÉBITO (imposto sobre vendas)
+  const debitoIbsCbs = faturamentoAnual * aliquotaEfetiva;
+
+  // 2. CRÉDITO (recuperação sobre compras/despesas)
+  // Na reforma, compra de Simples geram crédito reduzido (~7% vs 26.5%)
+  const percSimples = (perfil.percentual_fornecedores_simples || 0) / 100;
+  const percRegular = 1 - percSimples;
+  const ratioSimples = 0.07 / ALIQUOTA_IBS_CBS_PADRAO; // ~27% do crédito cheio
+
+  // Crédito ponderado: (Despesas * %Regular * AliqCheia) + (Despesas * %Simples * AliqCheia * Ratio)
+  const fatorPonderacao = (percRegular * 1.0) + (percSimples * ratioSimples);
+
+  const creditoIbsCbs = despesasComCredito * aliquotaEfetiva * fatorPonderacao;
+
+  // 3. Imposto a pagar líquido
+  const ibsCbsLiquido = Math.max(0, debitoIbsCbs - creditoIbsCbs);
+
+  // IRPJ e CSLL continuam existindo (sobre lucro)
+  const lucroEstimado = faturamentoAnual - despesasComCredito - despesasSemCredito;
+  const isServico = isServicoAltoPresuncao(perfil.cnae_principal);
+  const baseIR = isServico ? 0.32 : 0.08;
+  const lucroTributavel = Math.max(0, lucroEstimado);
+
+  const irpjNormal = lucroTributavel * 0.15;
+  const irpjAdicional = lucroTributavel > 240000 ? (lucroTributavel - 240000) * 0.10 : 0;
+  const csll = lucroTributavel * 0.09;
+
+  const impostoBruto = debitoIbsCbs + irpjNormal + irpjAdicional + csll;
+  const impostoLiquido = ibsCbsLiquido + irpjNormal + irpjAdicional + csll;
+
+  const fase = ano === 2033 ? 'Regime Pleno' : 'Transição';
+
+  return {
+    nome: ano === 2033 ? 'Pós-Reforma (2033)' : `Transição Reforma (${ano})`,
+    codigo: ano === 2033 ? 'reforma_2033' : 'reforma_2027',
+    elegivel: true,
+    imposto_bruto_anual: impostoBruto,
+    creditos_aproveitados: creditoIbsCbs,
+    imposto_liquido_anual: impostoLiquido,
+    carga_efetiva_percentual: (impostoLiquido / faturamentoAnual) * 100,
+    detalhes: {
+      consumo: ibsCbsLiquido,
+      irpj: irpjNormal + irpjAdicional,
+      csll: csll,
+      iss_icms: 0 // Extintos
+    },
+    pros: [
+      `CRÉDITO INTEGRAL sobre aluguel: R$ ${((perfil.despesas_com_credito.aluguel || 0) * 12 * aliquotaEfetiva).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
+      `CRÉDITO INTEGRAL sobre energia: R$ ${((perfil.despesas_com_credito.energia_telecom || 0) * 12 * aliquotaEfetiva).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
+      `CRÉDITO sobre CMV: R$ ${((perfil.despesas_com_credito.cmv || 0) * 12 * aliquotaEfetiva).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
+      'Não-cumulatividade plena sobre TODAS as despesas com nota',
+      'Fim da guerra fiscal (ICMS/ISS unificados)',
+      reducaoSetorial > 0 ? `Setor beneficiado com redução de ${(reducaoSetorial * 100).toFixed(0)}%` : ''
+    ].filter(Boolean),
+    contras: [
+      `Alíquota nominal alta: ${(aliquotaEfetiva * 100).toFixed(1)}%`,
+      `Folha de pagamento (R$ ${despesasSemCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}) NÃO gera crédito`,
+      'Split payment: imposto retido automaticamente no pagamento',
+      'Necessidade de gestão de créditos (prazo de 60 dias para ressarcimento)'
+    ],
+    observacoes: [
+      `Fase: ${fase}`,
+      `Alíquota efetiva: ${(aliquotaEfetiva * 100).toFixed(1)}%`,
+      `Total de créditos: R$ ${creditoIbsCbs.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
+    ]
+  };
+}
+
+// ============================================================================
+// COMPARAÇÃO COMPLETA
+// ============================================================================
+
+export function compararTodosRegimes(perfil: TaxProfile): TaxComparisonResult {
+  const simples = calcularSimplesNacional(perfil);
+  const presumido = calcularLucroPresumido(perfil);
+  const real = calcularLucroReal(perfil);
+  const reformaTransicao = calcularReforma(perfil, 2027);
+  const reformaPlena = calcularReforma(perfil, 2033);
+
+  // Encontrar melhor atual
+  const regimesAtuais = [
+    simples.elegivel ? { codigo: 'simples' as const, valor: simples.imposto_liquido_anual } : null,
+    presumido.elegivel ? { codigo: 'presumido' as const, valor: presumido.imposto_liquido_anual } : null,
+    { codigo: 'real' as const, valor: real.imposto_liquido_anual }
+  ].filter(Boolean) as { codigo: 'simples' | 'presumido' | 'real'; valor: number }[];
+
+  regimesAtuais.sort((a, b) => a.valor - b.valor);
+  const melhorAtual = regimesAtuais[0].codigo;
+  const menorImpostoAtual = regimesAtuais[0].valor;
+  const economiaAtual = regimesAtuais.length > 1
+    ? regimesAtuais[1].valor - menorImpostoAtual
     : 0;
 
-  // CSLL
-  const csll = Math.max(0, lucroTributavel) * (taxRules as any).lucro_real.aliquotas.csll;
+  // Comparar com reforma
+  const regimesPosReforma = [
+    ...regimesAtuais,
+    { codigo: 'reforma' as const, valor: reformaPlena.imposto_liquido_anual }
+  ].sort((a, b) => a.valor - b.valor);
 
-  // PIS/COFINS (não-cumulativo com créditos)
-  const aliqPisCofins = (taxRules as any).lucro_real.aliquotas;
-  const pisBruto = data.faturamento_anual * aliqPisCofins.pis.aliquota;
-  const cofinsBruto = data.faturamento_anual * aliqPisCofins.cofins.aliquota;
-  const pisCofinsbruto = pisBruto + cofinsBruto;
+  const melhorPosReforma = regimesPosReforma[0].codigo as any;
+  const economiaComReforma = reformaPlena.imposto_liquido_anual < menorImpostoAtual
+    ? menorImpostoAtual - reformaPlena.imposto_liquido_anual
+    : 0;
 
-  // Estimar créditos (baseado em despesas típicas)
-  // Créditos típicos: 30-50% das despesas operacionais são creditáveis
-  const despesasCreditaveis = despesasDedutiveis * 0.35;
-  const creditosPisCofins = despesasCreditaveis * (aliqPisCofins.pis.aliquota + aliqPisCofins.cofins.aliquota);
-  
-  const pisCofinsLiquido = Math.max(0, pisCofinsbruto - creditosPisCofins);
-
-  const impostoAnual = irpjNormal + irpjAdicional + csll + pisCofinsLiquido;
-  const aliquotaEfetiva = impostoAnual / data.faturamento_anual;
-
-  observacoes.push(`Lucro tributável estimado: ${formatCurrency(lucroTributavel)}`);
-  observacoes.push(`Créditos PIS/COFINS estimados: ${formatCurrency(creditosPisCofins)}`);
-
-  if (lucroTributavel < 0) {
-    observacoes.push('Prejuízo fiscal pode ser compensado em até 30% do lucro dos períodos seguintes');
-  }
+  // Gerar insights
+  const insights = gerarInsights(perfil, simples, presumido, real, reformaPlena);
 
   return {
-    elegivel: true,
-    lucro_tributavel: lucroTributavel,
-    irpj: irpjNormal,
-    irpj_adicional: irpjAdicional,
-    csll,
-    pis_cofins_bruto: pisCofinsbruto,
-    creditos_pis_cofins: creditosPisCofins,
-    pis_cofins_liquido: pisCofinsLiquido,
-    imposto_anual: impostoAnual,
-    aliquota_efetiva: aliquotaEfetiva,
-    observacoes
+    perfil,
+    cenarios: {
+      simples: simples.elegivel ? simples : undefined,
+      presumido,
+      real,
+      reforma_transicao: reformaTransicao,
+      reforma_plena: reformaPlena
+    },
+    melhor_atual: melhorAtual,
+    melhor_pos_reforma: melhorPosReforma,
+    economia_atual: economiaAtual,
+    economia_com_reforma: economiaComReforma,
+    insights
   };
 }
 
-/**
- * Calcula projeção pós-Reforma Tributária
- */
-export function calculatePosReforma(
-  data: CompanyData, 
-  impostoAtualAnual: number
-): ReformaResult {
-  const cnaeInfo = getCnaeInfo(data.cnae_principal);
-  const observacoes: string[] = [];
-  
-  // Verificar se setor tem redução
-  const reducaoSetorial = cnaeInfo?.reducao_reforma || 0;
-  const setor = cnaeInfo?.setor;
+// ============================================================================
+// GERAÇÃO DE INSIGHTS
+// ============================================================================
 
-  if (reducaoSetorial > 0) {
-    observacoes.push(`Setor ${setor} tem redução de ${(reducaoSetorial * 100).toFixed(0)}% na alíquota IBS/CBS`);
-  }
+function gerarInsights(
+  perfil: TaxProfile,
+  simples: TaxScenarioResult,
+  presumido: TaxScenarioResult,
+  real: TaxScenarioResult,
+  reforma: TaxScenarioResult
+): TaxInsight[] {
+  const insights: TaxInsight[] = [];
+  const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
+  const despesasComCredito = calcularTotalDespesasComCredito(perfil);
+  const folhaAnual = (perfil.despesas_sem_credito.folha_pagamento + perfil.despesas_sem_credito.pro_labore) * 12;
 
-  const transicao = (taxRules as any).reforma_tributaria.transicao;
-  const aliquotaPlena = (taxRules as any).reforma_tributaria.aliquotas_plenas_2033;
-  
-  const aliquotaTotalPlena = (aliquotaPlena.cbs_federal + aliquotaPlena.ibs_estadual_municipal) * (1 - reducaoSetorial);
-
-  const timeline: ReformaTimelineYear[] = [];
-  
-  for (const [ano, config] of Object.entries(transicao)) {
-    const anoNum = parseInt(ano);
-    const cfg = config as any;
-    
-    // IBS/CBS proporcional ao faturamento
-    const ibsCbs = data.faturamento_anual * (cfg.cbs + cfg.ibs) * (1 - reducaoSetorial);
-    
-    // Tributos atuais reduzidos progressivamente
-    const tributosAtuais = impostoAtualAnual;
-    const tributosAtuaisReduzidos = tributosAtuais * (1 - cfg.reducao_tributos_atuais);
-    
-    timeline.push({
-      ano: anoNum,
-      cbs: cfg.cbs,
-      ibs: cfg.ibs,
-      ibs_cbs_total: ibsCbs,
-      tributos_atuais: tributosAtuais,
-      tributos_atuais_reduzidos: tributosAtuaisReduzidos,
-      total: ibsCbs + tributosAtuaisReduzidos,
-      fase: cfg.fase
+  // Insight: Alto custo intermediário favorece não-cumulatividade
+  const percentualDespesasCredito = (despesasComCredito / faturamentoAnual) * 100;
+  if (percentualDespesasCredito > 40) {
+    insights.push({
+      tipo: 'positivo',
+      titulo: 'Alto custo intermediário (Opex/CMV)',
+      descricao: `Suas despesas creditáveis representam ${percentualDespesasCredito.toFixed(1)}% do faturamento. O Lucro Real e a Reforma são muito benéficos.`,
+      impacto_financeiro: reforma.creditos_aproveitados,
+      acao_sugerida: 'Considere migrar para Lucro Real para já aproveitar créditos de PIS/COFINS'
     });
   }
 
-  // Imposto em 2033 (regime pleno)
-  const imposto2033 = data.faturamento_anual * aliquotaTotalPlena;
-  
-  const variacaoVsAtual = imposto2033 - impostoAtualAnual;
-  const variacaoPercentual = impostoAtualAnual > 0 
-    ? (variacaoVsAtual / impostoAtualAnual) * 100 
-    : 0;
+  // Insight: Empresa intensiva em mão de obra
+  const percentualFolha = (folhaAnual / faturamentoAnual) * 100;
+  if (percentualFolha > 30) {
+    insights.push({
+      tipo: 'alerta',
+      titulo: 'Empresa intensiva em mão de obra',
+      descricao: `Folha de pagamento representa ${percentualFolha.toFixed(1)}% do faturamento. Na Reforma, folha NÃO gera crédito de IBS/CBS.`,
+      impacto_financeiro: -(folhaAnual * ALIQUOTA_IBS_CBS_PADRAO * 0), // Poderia gerar crédito mas não gera
+      acao_sugerida: 'Avalie terceirização de atividades-meio (serviços de PJ geram crédito)'
+    });
+  }
 
-  if (variacaoVsAtual > 0) {
-    observacoes.push(`Aumento de ${formatCurrency(variacaoVsAtual)} (+${variacaoPercentual.toFixed(1)}%) até 2033`);
+  // Insight: Aluguel significativo
+  const aluguelAnual = (perfil.despesas_com_credito.aluguel || 0) * 12;
+  if (aluguelAnual > faturamentoAnual * 0.05) {
+    const creditoAluguel = aluguelAnual * ALIQUOTA_IBS_CBS_PADRAO;
+    insights.push({
+      tipo: 'positivo',
+      titulo: 'Crédito integral sobre aluguel na Reforma',
+      descricao: `Hoje você paga aluguel de R$ ${aluguelAnual.toLocaleString('pt-BR')}/ano SEM crédito no Presumido. Na Reforma, terá crédito de R$ ${creditoAluguel.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}.`,
+      impacto_financeiro: creditoAluguel,
+      acao_sugerida: 'Esse é um benefício relevante que você ganha automaticamente com a Reforma'
+    });
+  }
+
+  // Insight: Comparação Reforma vs Atual
+  const diferencaReforma = reforma.imposto_liquido_anual - presumido.imposto_liquido_anual;
+  if (diferencaReforma > 0) {
+    insights.push({
+      tipo: 'negativo',
+      titulo: 'Reforma pode aumentar sua carga tributária',
+      descricao: `No cenário pleno (2033), você pagará R$ ${Math.abs(diferencaReforma).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} a mais do que no Lucro Presumido atual.`,
+      impacto_financeiro: -diferencaReforma,
+      acao_sugerida: 'Avalie aumentar despesas com fornecedores PJ para maximizar créditos'
+    });
   } else {
-    observacoes.push(`Redução de ${formatCurrency(Math.abs(variacaoVsAtual))} (${variacaoPercentual.toFixed(1)}%) até 2033`);
+    insights.push({
+      tipo: 'positivo',
+      titulo: 'Reforma pode reduzir sua carga tributária',
+      descricao: `No cenário pleno (2033), você economizará R$ ${Math.abs(diferencaReforma).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} em relação ao Lucro Presumido atual.`,
+      impacto_financeiro: -diferencaReforma,
+      acao_sugerida: 'Prepare sua contabilidade para gestão de créditos desde já'
+    });
   }
 
-  return {
-    timeline,
-    aliquota_plena: aliquotaTotalPlena,
-    reducao_setorial: reducaoSetorial,
-    setor,
-    imposto_2033: imposto2033,
-    variacao_vs_atual: variacaoVsAtual,
-    variacao_percentual: variacaoPercentual,
-    observacoes
-  };
-}
-
-/**
- * Compara todos os regimes e retorna análise completa
- */
-export function compareRegimes(data: CompanyData): ComparisonResult {
-  const simples = calculateSimplesNacional(data);
-  const presumido = calculateLucroPresumido(data);
-  const real = calculateLucroReal(data);
-
-  // Determinar menor imposto entre os regimes atuais elegíveis
-  const regimesElegiveis: { nome: string; imposto: number }[] = [];
-  
+  // Insight: Fator R para Simples
   if (simples.elegivel) {
-    regimesElegiveis.push({ nome: 'simples_nacional', imposto: simples.imposto_anual });
+    const fatorR = folhaAnual / faturamentoAnual;
+    if (fatorR >= 0.28) {
+      insights.push({
+        tipo: 'positivo',
+        titulo: 'Fator R beneficia seu Simples Nacional',
+        descricao: `Com Fator R de ${(fatorR * 100).toFixed(1)}%, suas atividades do Anexo V tributam pelo Anexo III (alíquotas menores).`,
+        acao_sugerida: 'Mantenha a folha de pagamento acima de 28% do faturamento'
+      });
+    } else if (fatorR > 0.20 && fatorR < 0.28) {
+      insights.push({
+        tipo: 'neutro',
+        titulo: 'Fator R próximo do limite',
+        descricao: `Seu Fator R é ${(fatorR * 100).toFixed(1)}%. Se aumentar para 28%, migrará do Anexo V para III.`,
+        acao_sugerida: 'Considere aumentar pró-labore ou contratar para atingir o limite'
+      });
+    }
   }
-  if (presumido.elegivel) {
-    regimesElegiveis.push({ nome: 'lucro_presumido', imposto: presumido.imposto_anual });
+
+  // Insight: Saldos Credores Legados
+  if (perfil.saldo_credor_pis_cofins && perfil.saldo_credor_pis_cofins > 0) {
+    insights.push({
+      tipo: 'positivo',
+      titulo: 'Compensação de PIS/COFINS acumulado',
+      descricao: `Você possui R$ ${perfil.saldo_credor_pis_cofins.toLocaleString('pt-BR')} de PIS/COFINS. Este valor poderá ser usado para abater a CBS a partir de 2027.`,
+      impacto_financeiro: perfil.saldo_credor_pis_cofins,
+      acao_sugerida: 'Audite e homologue esses créditos antes da entrada da CBS'
+    });
   }
-  regimesElegiveis.push({ nome: 'lucro_real', imposto: real.imposto_anual });
 
-  // Ordenar por menor imposto
-  regimesElegiveis.sort((a, b) => a.imposto - b.imposto);
-  
-  const regimeMaisVantajoso = regimesElegiveis[0].nome;
-  const menorImposto = regimesElegiveis[0].imposto;
-  
-  // Calcular economia vs segundo melhor
-  const segundoMelhor = regimesElegiveis.length > 1 ? regimesElegiveis[1].imposto : menorImposto;
-  const economiaAnual = segundoMelhor - menorImposto;
-  const economiaPercentual = segundoMelhor > 0 ? (economiaAnual / segundoMelhor) * 100 : 0;
+  if (perfil.saldo_credor_icms && perfil.saldo_credor_icms > 0) {
+    const parcelaMensal = perfil.saldo_credor_icms / 240;
+    insights.push({
+      tipo: 'alerta',
+      titulo: 'Saldo Credor de ICMS (Regra 240 meses)',
+      descricao: `Seu saldo de R$ ${perfil.saldo_credor_icms.toLocaleString('pt-BR')} de ICMS só poderá ser usado em 240 parcelas mensais de R$ ${parcelaMensal.toLocaleString('pt-BR')} a partir de 2033.`,
+      impacto_financeiro: perfil.saldo_credor_icms,
+      acao_sugerida: 'Tente monetizar ou usar esse saldo antes de 2033 para evitar a trava de 20 anos'
+    });
+  }
 
-  // Calcular reforma com base no regime atual
-  const impostoAtual = presumido.elegivel ? presumido.imposto_anual : real.imposto_anual;
-  const reforma = calculatePosReforma(data, impostoAtual);
+  // Insight: Mix de Fornecedores
+  if (perfil.percentual_fornecedores_simples && perfil.percentual_fornecedores_simples > 30) {
+    insights.push({
+      tipo: 'alerta',
+      titulo: 'Alto volume de compras do Simples Nacional',
+      descricao: `${perfil.percentual_fornecedores_simples}% das suas compras vêm do Simples, o que gera crédito MUITO REDUZIDO (~7% vs 26.5%). Isso encarece seu custo final na Reforma.`,
+      impacto_financeiro: (calcularTotalDespesasComCredito(perfil) * perSimplesMix(perfil)) * (ALIQUOTA_IBS_CBS_PADRAO - 0.07),
+      acao_sugerida: 'Negocie descontos de ~18% com fornecedores do Simples ou migre para fornecedores do Regime Normal'
+    });
+  }
 
-  return {
-    simples_nacional: simples,
-    lucro_presumido: presumido,
-    lucro_real: real,
-    pos_reforma: reforma,
-    regime_mais_vantajoso: regimeMaisVantajoso,
-    economia_anual: economiaAnual,
-    economia_percentual: economiaPercentual
-  };
+  return insights;
 }
+
+function perSimplesMix(p: TaxProfile) { return (p.percentual_fornecedores_simples || 0) / 100; }
 
 // ============================================================================
-// UTILITY FUNCTIONS
+// DADOS PARA GRÁFICOS
 // ============================================================================
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
+export function gerarDadosGraficoComparacao(resultado: TaxComparisonResult): ChartDataComparison[] {
+  const dados: ChartDataComparison[] = [];
+
+  if (resultado.cenarios.simples) {
+    dados.push({
+      regime: 'Simples Nacional',
+      imposto_bruto: resultado.cenarios.simples.imposto_bruto_anual,
+      creditos: 0,
+      imposto_liquido: resultado.cenarios.simples.imposto_liquido_anual,
+      cor_debito: '#ef4444',
+      cor_credito: '#22c55e'
+    });
+  }
+
+  dados.push({
+    regime: 'Lucro Presumido',
+    imposto_bruto: resultado.cenarios.presumido.imposto_bruto_anual,
+    creditos: 0,
+    imposto_liquido: resultado.cenarios.presumido.imposto_liquido_anual,
+    cor_debito: '#ef4444',
+    cor_credito: '#22c55e'
+  });
+
+  dados.push({
+    regime: 'Lucro Real',
+    imposto_bruto: resultado.cenarios.real.imposto_bruto_anual,
+    creditos: resultado.cenarios.real.creditos_aproveitados,
+    imposto_liquido: resultado.cenarios.real.imposto_liquido_anual,
+    cor_debito: '#ef4444',
+    cor_credito: '#22c55e'
+  });
+
+  dados.push({
+    regime: 'Reforma 2033',
+    imposto_bruto: resultado.cenarios.reforma_plena.imposto_bruto_anual,
+    creditos: resultado.cenarios.reforma_plena.creditos_aproveitados,
+    imposto_liquido: resultado.cenarios.reforma_plena.imposto_liquido_anual,
+    cor_debito: '#ef4444',
+    cor_credito: '#22c55e'
+  });
+
+  return dados;
 }
 
-/**
- * Formata nome do regime para exibição
- */
-export function formatRegimeName(regime: string): string {
-  const names: Record<string, string> = {
-    'simples_nacional': 'Simples Nacional',
-    'lucro_presumido': 'Lucro Presumido',
-    'lucro_real': 'Lucro Real'
+export function gerarDadosGraficoCreditos(perfil: TaxProfile): ChartDataCreditos[] {
+  const aliquota = ALIQUOTA_IBS_CBS_PADRAO;
+  const dados: ChartDataCreditos[] = [];
+  const d = perfil.despesas_com_credito;
+
+  const addCategoria = (nome: string, valor: number) => {
+    if (valor > 0) {
+      const anual = valor * 12;
+      dados.push({
+        categoria: nome,
+        valor_despesa: anual,
+        credito_gerado: anual * aliquota,
+        percentual: aliquota * 100
+      });
+    }
   };
-  return names[regime] || regime;
+
+  addCategoria('CMV / Insumos', d.cmv || 0);
+  addCategoria('Aluguel', d.aluguel || 0);
+  addCategoria('Energia / Telecom', d.energia_telecom || 0);
+  addCategoria('Serviços PJ', d.servicos_pj || 0);
+  addCategoria('Transporte / Frete', d.transporte_frete || 0);
+  addCategoria('Manutenção', d.manutencao || 0);
+  addCategoria('Tarifas Bancárias', d.tarifas_bancarias || 0);
+  addCategoria('Outros Insumos', d.outros_insumos || 0);
+
+  return dados.sort((a, b) => b.credito_gerado - a.credito_gerado);
 }
 
-/**
- * Retorna cor para o regime (para gráficos)
- */
-export function getRegimeColor(regime: string): string {
-  const colors: Record<string, string> = {
-    'simples_nacional': '#22c55e', // green
-    'lucro_presumido': '#3b82f6', // blue
-    'lucro_real': '#a855f7', // purple
-    'pos_reforma': '#f97316' // orange
-  };
-  return colors[regime] || '#6b7280';
+export function gerarDadosTimeline(perfil: TaxProfile): ChartDataTimeline[] {
+  const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
+  const despesasComCredito = calcularTotalDespesasComCredito(perfil);
+
+  // Imposto atual (presumido como base)
+  const presumido = calcularLucroPresumido(perfil);
+  const impostoAtual = presumido.imposto_liquido_anual;
+
+  const timeline: ChartDataTimeline[] = [];
+  const reducaoSetorial = getReducaoSetorial(perfil.cnae_principal);
+
+  for (const [ano, config] of Object.entries(TRANSICAO_REFORMA)) {
+    const anoNum = parseInt(ano);
+    const aliquotaIbsCbs = (config.cbs + config.ibs) * (1 - reducaoSetorial);
+
+    const debitoNovo = faturamentoAnual * aliquotaIbsCbs;
+    const creditoNovo = despesasComCredito * aliquotaIbsCbs;
+    const impostoNovo = Math.max(0, debitoNovo - creditoNovo);
+
+    const tributoAntigoReduzido = impostoAtual * (1 - config.reducao);
+
+    timeline.push({
+      ano: anoNum,
+      tributos_antigos: tributoAntigoReduzido,
+      ibs_cbs: impostoNovo,
+      creditos: creditoNovo,
+      total_liquido: tributoAntigoReduzido + impostoNovo,
+      fase: config.reducao === 1 ? 'Pleno' : 'Transição'
+    });
+  }
+
+  return timeline;
 }
