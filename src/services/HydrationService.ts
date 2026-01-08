@@ -21,9 +21,18 @@ export const STORAGE_KEY = "mix_credit_guru_tax_rules";
 export const HydrationService = {
     /**
      * Fetches rules from the backend and saves to LocalStorage.
+     * Only attempts to sync if user has an active session.
      */
     async syncRules(): Promise<HydrationRule[]> {
         try {
+            // Check for active session before invoking edge function
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                console.log("[Hydration] No active session, using local rules.");
+                return this.loadFromLocal();
+            }
+
             const { data, error } = await supabase.functions.invoke('get-tax-rules');
 
             if (error) throw error;

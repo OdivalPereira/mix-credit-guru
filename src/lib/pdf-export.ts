@@ -58,7 +58,7 @@ export async function exportToPDF(
         const contentHeight = (canvas.height * contentWidth) / canvas.width;
 
         // Add pages if content is taller than one page
-        let position = margin;
+        const position = margin;
         const pageHeight = pdfHeight - (margin * 2);
 
         if (contentHeight <= pageHeight) {

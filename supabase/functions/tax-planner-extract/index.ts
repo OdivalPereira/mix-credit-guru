@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
         // 1. Processar Request (Multipart ou JSON)
         const contentType = req.headers.get('content-type') || '';
 
-        let parts: any[] = [{ text: SYSTEM_PROMPT }];
+        const parts: any[] = [{ text: SYSTEM_PROMPT }];
 
         if (contentType.includes('multipart/form-data')) {
             // Upload de arquivo (PDF, Audio, Imagem)

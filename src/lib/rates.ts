@@ -38,8 +38,8 @@ export interface ComputeRatesContext {
 
 import type { HydrationRule } from "@/services/HydrationService";
 
-let baseSource = normalizeSource(baseAliquotas);
-let overridesByUF = mapRecord(overridesUF as Record<string, unknown>, normalizeSource);
+const baseSource = normalizeSource(baseAliquotas);
+const overridesByUF = mapRecord(overridesUF as Record<string, unknown>, normalizeSource);
 
 /**
  * Updates the internal rules engine with data fetched from the backend.

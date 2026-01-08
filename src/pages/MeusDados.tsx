@@ -48,7 +48,7 @@ function MeusDadosContent() {
   // Cálculo de progresso
   const completionScore = useMemo(() => {
     let score = 0;
-    let maxScore = 4;
+    const maxScore = 4;
 
     if (produtos.length > 0) score += 1;
     if (fornecedores.length >= 2) score += 1;

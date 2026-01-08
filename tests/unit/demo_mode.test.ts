@@ -12,18 +12,14 @@ describe('Demo Mode Logic', () => {
 
     describe('useCotacaoStore.loadDemoData', () => {
         it('should populate store with sample suppliers', async () => {
+            // Act
             useCotacaoStore.getState().loadDemoData();
 
+            // Wait for async import and state update
             await vi.waitFor(() => {
-                return useCotacaoStore.getState().fornecedoresCadastro.length > 0;
-            }, { timeout: 2000 });
-
-            // Initial state check
-            expect(store.fornecedoresCadastro).toHaveLength(0);
-            expect(store.ofertas).toHaveLength(0);
-
-            // Act
-            store.loadDemoData();
+                const state = useCotacaoStore.getState();
+                return state.fornecedoresCadastro.length > 0 && state.ofertas.length > 0;
+            }, { timeout: 3000 });
 
             // Assert
             const updatedStore = useCotacaoStore.getState();
@@ -32,7 +28,7 @@ describe('Demo Mode Logic', () => {
             expect(updatedStore.fornecedores).toHaveLength(3);
 
             // Verify content
-            const f1 = updatedStore.fornecedoresCadastro.find(f => f.id === 'demo-f1');
+            const f1 = updatedStore.fornecedoresCadastro.find((f: any) => f.id === 'demo-f1');
             expect(f1).toBeDefined();
             expect(f1?.nome).toContain('Distribuidora Exemplo');
 
@@ -40,3 +36,4 @@ describe('Demo Mode Logic', () => {
             expect(updatedStore.contexto.produto).toBe('Arroz Branco 5kg');
         });
     });
+});

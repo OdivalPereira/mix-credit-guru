@@ -228,3 +228,20 @@ export interface ChartDataTimeline {
   total_liquido: number;
   fase: string;
 }
+
+/**
+ * Resultado da extração de dados via IA
+ */
+export interface AiExtractionResult {
+  razao_social?: string;
+  cnpj?: string;
+  cnae_principal?: string;
+  uf?: string;
+  municipio?: string;
+  faturamento_mensal?: number;
+  faturamento_anual?: number;
+  lucro_liquido?: number;
+  despesas_com_credito?: Partial<DespesasComCredito>;
+  despesas_sem_credito?: Partial<DespesasSemCredito>;
+  regime_atual?: 'simples' | 'presumido' | 'real' | 'mei';
+}

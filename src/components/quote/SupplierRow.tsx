@@ -86,7 +86,7 @@ const SupplierRowComponent = ({
       <TableCell className="min-w-[260px]">
         <div className="space-y-1">
           <div className="text-sm font-medium text-foreground">
-            {supplier.nome.trim().length > 0 ? supplier.nome : "Fornecedor sem nome"}
+            {supplier.nome?.trim().length > 0 ? supplier.nome : "Fornecedor sem nome"}
           </div>
           <div className="text-xs text-muted-foreground">
             {supplier.cnpj ? `CNPJ: ${supplier.cnpj}` : "CNPJ nao informado"}
@@ -97,10 +97,10 @@ const SupplierRowComponent = ({
           ) : null}
           <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
             <Badge variant="outline" className="border-dashed">
-              {SUPPLIER_TIPO_LABELS[supplier.tipo]}
+              {supplier.tipo ? SUPPLIER_TIPO_LABELS[supplier.tipo] : "Tipo não informado"}
             </Badge>
             <Badge variant="outline" className="border-dashed">
-              {REGIME_LABELS[supplier.regime]}
+              {supplier.regime ? REGIME_LABELS[supplier.regime] : "Regime não informado"}
             </Badge>
           </div>
         </div>

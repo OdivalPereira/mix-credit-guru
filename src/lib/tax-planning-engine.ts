@@ -20,15 +20,20 @@ import type {
   ChartDataCreditos,
   ChartDataTimeline
 } from '@/types/tax-planning';
-import taxRules from '@/data/tax-planning-rules.json';
-import cnaeDatabase from '@/data/cnae-database.json';
+import taxRulesRaw from '@/data/tax-planning-rules.json';
+import cnaeDatabaseRaw from '@/data/cnae-database.json';
+import type { CnaeDatabase, CnaeInfo } from '@/types/cnae';
+import type { TaxRules } from '@/types/tax-rules';
+
+const cnaeDatabase = cnaeDatabaseRaw as unknown as CnaeDatabase;
+const taxRules = taxRulesRaw as unknown as TaxRules;
 
 // ============================================================================
 // CONSTANTES DA REFORMA TRIBUTÁRIA
 // ============================================================================
 
 /** Alíquota padrão IBS/CBS (CBS 8.5% + IBS 17% = 25.5%) */
-const ALIQUOTA_IBS_CBS_PADRAO = 0.255;
+export const ALIQUOTA_IBS_CBS_PADRAO = 0.255;
 
 /** Alíquota CBS federal */
 const ALIQUOTA_CBS = 0.085;
@@ -96,8 +101,8 @@ function calcularTotalDespesasSemCredito(perfil: TaxProfile): number {
 /**
  * Busca informações do CNAE
  */
-function getCnaeInfo(cnae: string): any {
-  const cnaes = (cnaeDatabase as any).cnaes;
+function getCnaeInfo(cnae: string): CnaeInfo | null {
+  const cnaes = cnaeDatabase.cnaes;
   return cnaes[cnae] || null;
 }
 
@@ -116,7 +121,7 @@ function isServicoAltoPresuncao(cnae: string): boolean {
 /**
  * Obtém redução setorial para a reforma
  */
-function getReducaoSetorial(cnae: string): number {
+export function getReducaoSetorial(cnae: string): number {
   const info = getCnaeInfo(cnae);
   if (info?.reforma_tributaria?.reducao_aliquota) {
     return info.reforma_tributaria.reducao_aliquota;
@@ -175,7 +180,7 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   const folhaAnual = (perfil.despesas_sem_credito.folha_pagamento + perfil.despesas_sem_credito.pro_labore) * 12;
   const fatorR = faturamentoAnual > 0 ? folhaAnual / faturamentoAnual : 0;
 
-  let anexo = cnaeInfo?.simples?.anexo_padrao || 'III';
+  const anexo = cnaeInfo?.simples?.anexo_padrao || 'III';
   let anexoAplicado = anexo;
 
   // Fator R: se >= 28% e anexo V, migra para III
@@ -184,7 +189,7 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   }
 
   // Calcular alíquota efetiva
-  const anexoData = (taxRules as any).simples_nacional.anexos[anexoAplicado];
+  const anexoData = taxRules.simples_nacional.anexos[anexoAplicado];
   if (!anexoData) {
     return {
       nome: 'Simples Nacional',
@@ -216,7 +221,7 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   }
 
   // Alíquota Efetiva = [(RBT12 × Aliq) - PD] / RBT12
-  const aliquotaEfetiva = ((faturamentoAnual * aliquotaNominal) - deducao) / faturamentoAnual;
+  const aliquotaEfetiva = faturamentoAnual > 0 ? ((faturamentoAnual * aliquotaNominal) - deducao) / faturamentoAnual : 0;
   const impostoAnual = faturamentoAnual * aliquotaEfetiva;
 
   // CPP separado para Anexo IV
@@ -389,7 +394,7 @@ export function calcularLucroReal(perfil: TaxProfile): TaxScenarioResult {
     imposto_bruto_anual: impostoBruto,
     creditos_aproveitados: pisCofinsCredito,
     imposto_liquido_anual: impostoLiquido,
-    carga_efetiva_percentual: (impostoLiquido / faturamentoAnual) * 100,
+    carga_efetiva_percentual: faturamentoAnual > 0 ? (impostoLiquido / faturamentoAnual) * 100 : 0,
     detalhes: {
       consumo: pisCofinsLiquido,
       irpj: irpjTotal,
@@ -473,7 +478,7 @@ export function calcularReforma(
     imposto_bruto_anual: impostoBruto,
     creditos_aproveitados: creditoIbsCbs,
     imposto_liquido_anual: impostoLiquido,
-    carga_efetiva_percentual: (impostoLiquido / faturamentoAnual) * 100,
+    carga_efetiva_percentual: faturamentoAnual > 0 ? (impostoLiquido / faturamentoAnual) * 100 : 0,
     detalhes: {
       consumo: ibsCbsLiquido,
       irpj: irpjNormal + irpjAdicional,
@@ -533,7 +538,7 @@ export function compararTodosRegimes(perfil: TaxProfile): TaxComparisonResult {
     { codigo: 'reforma' as const, valor: reformaPlena.imposto_liquido_anual }
   ].sort((a, b) => a.valor - b.valor);
 
-  const melhorPosReforma = regimesPosReforma[0].codigo as any;
+  const melhorPosReforma = regimesPosReforma[0].codigo;
   const economiaComReforma = reformaPlena.imposto_liquido_anual < menorImpostoAtual
     ? menorImpostoAtual - reformaPlena.imposto_liquido_anual
     : 0;

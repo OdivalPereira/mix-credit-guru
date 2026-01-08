@@ -23,6 +23,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Supplier } from "@/types/domain";
 
+import { useDebounce } from "@/hooks/use-debounce";
+
 interface WizardStepSuppliersProps {
   fornecedores: Supplier[];
   onAddSupplier: () => void;
@@ -43,15 +45,17 @@ export function WizardStepSuppliers({
   isCalculating,
 }: WizardStepSuppliersProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const filteredFornecedores = useMemo(() => {
-    if (!searchTerm) return fornecedores;
-    const term = searchTerm.toLowerCase();
-    return fornecedores.filter((f) => f.nome.toLowerCase().includes(term));
-  }, [fornecedores, searchTerm]);
+    if (!fornecedores) return [];
+    if (!debouncedSearchTerm) return fornecedores;
+    const term = debouncedSearchTerm.toLowerCase();
+    return fornecedores.filter((f) => f && f.nome && f.nome.toLowerCase().includes(term));
+  }, [fornecedores, debouncedSearchTerm]);
 
-  const hasFornecedores = fornecedores.length > 0;
+  const hasFornecedores = (fornecedores?.length || 0) > 0;
 
   const handleQuickEdit = (supplier: Supplier, field: keyof Supplier) => {
     setEditingId(supplier.id);

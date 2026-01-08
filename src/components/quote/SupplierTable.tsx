@@ -1,4 +1,4 @@
-import { RefObject, memo, useMemo, useState } from "react";
+import { RefObject, memo, useMemo, useState, useCallback } from "react";
 import {
   BarChart3,
   Database,
@@ -8,9 +8,12 @@ import {
   FileUp,
   Loader2,
   Plus,
+  Search,
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { useDebounce } from "@/hooks/use-debounce";
+import { Input } from "@/components/ui/input";
 import { fornecedorCsvHeaders } from "@/lib/csv";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -113,7 +116,19 @@ const SupplierTableComponent = ({
   optStatusMessage,
   containerRef,
 }: SupplierTableProps) => {
-  const shouldVirtualize = resultados.length >= 200;
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const filteredResultados = useMemo(() => {
+    if (!debouncedSearchTerm) return resultados;
+    const term = debouncedSearchTerm.toLowerCase();
+    return resultados.filter((item) =>
+      item.nome.toLowerCase().includes(term) ||
+      item.cnpj?.toLowerCase().includes(term)
+    );
+  }, [resultados, debouncedSearchTerm]);
+
+  const shouldVirtualize = filteredResultados.length >= 200;
   const [detailsOfertaId, setDetailsOfertaId] = useState<string | null>(null);
 
   const { isDemo } = useAuth();
@@ -158,7 +173,7 @@ const SupplierTableComponent = ({
     return { fornecedor, oferta };
   }, [detailsOfertaId, ofertaIndex, fornecedorIndex]);
 
-  const renderSupplierRow = (supplier: MixResultadoItem) => {
+  const renderSupplierRow = useCallback((supplier: MixResultadoItem) => {
     const sourceOferta = ofertaIndex.get(supplier.id);
     const hasConditions = !!(
       sourceOferta?.priceBreaks?.length ||
@@ -178,7 +193,7 @@ const SupplierTableComponent = ({
         onOpenDetails={() => setDetailsOfertaId(supplier.id)}
       />
     );
-  };
+  }, [ofertaIndex, formatCurrency, getCreditBadge, onDuplicate, onRemove]);
 
   const handleDownloadTemplate = () => {
     // Generate CSV Header row
@@ -206,6 +221,15 @@ const SupplierTableComponent = ({
           </CardDescription>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Filtrar fornecedores..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -331,7 +355,7 @@ const SupplierTableComponent = ({
               </TableRow>
             </TableHeader>
             <VirtualizedTableBody
-              data={resultados}
+              data={filteredResultados}
               colSpan={11}
               scrollElement={() => containerRef.current}
               estimateSize={() => 88}

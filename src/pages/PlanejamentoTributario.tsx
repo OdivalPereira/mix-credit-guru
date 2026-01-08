@@ -38,16 +38,20 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { AudioRecorder } from "@/components/AudioRecorder";
+import { useAuth } from "@/contexts/AuthContext";
 
 import type {
     TaxProfile, TaxComparisonResult, TaxScenarioResult,
-    ChartDataComparison, ChartDataCreditos, ChartDataTimeline, TaxInsight
+    ChartDataComparison, ChartDataCreditos, ChartDataTimeline, TaxInsight,
+    AiExtractionResult
 } from "@/types/tax-planning";
 import {
     compararTodosRegimes,
     gerarDadosGraficoComparacao,
     gerarDadosGraficoCreditos,
-    gerarDadosTimeline
+    gerarDadosTimeline,
+    ALIQUOTA_IBS_CBS_PADRAO,
+    getReducaoSetorial
 } from "@/lib/tax-planning-engine";
 import { parseSpedFile, isSpedFile, getSpedSummary } from "@/lib/sped-parser";
 import { parseExcelFile, getExcelSummary } from "@/lib/excel-parser";
@@ -66,6 +70,11 @@ interface UploadedFile {
     status: 'pending' | 'processing' | 'success' | 'error';
     summary?: string;
     error?: string;
+}
+
+interface AiAnalysisMetadata {
+    premissas: string | string[];
+    confianca: number;
 }
 
 // Estado inicial do perfil
@@ -96,11 +105,42 @@ const INITIAL_PROFILE: TaxProfile = {
     saldo_credor_icms: 0
 };
 
+// Mock para Demo Mode
+const DEMO_AI_PROFILE: Partial<TaxProfile> = {
+    razao_social: "Supermercado do Futuro Ltda",
+    cnpj: "12.345.678/0001-99",
+    cnae_principal: "4711-3/01",
+    uf: "SP",
+    municipio: "São Paulo",
+    regime_atual: "presumido",
+    faturamento_mensal: 250000,
+    faturamento_anual: 3000000,
+    despesas_com_credito: {
+        cmv: 150000,
+        aluguel: 12000,
+        energia_telecom: 4500,
+        servicos_pj: 8000,
+        outros_insumos: 3000,
+        transporte_frete: 5000,
+        manutencao: 2000,
+        tarifas_bancarias: 1500
+    },
+    despesas_sem_credito: {
+        folha_pagamento: 45000,
+        pro_labore: 10000,
+        despesas_financeiras: 2000,
+        tributos: 15000,
+        uso_pessoal: 500,
+        outras: 1000
+    }
+};
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
 export default function PlanejamentoTributario() {
+    const { isDemo } = useAuth();
     // Wizard state
     const [currentStep, setCurrentStep] = useState<WizardStep>('input');
     const [inputTab, setInputTab] = useState<'manual' | 'texto' | 'arquivo'>('manual');
@@ -112,7 +152,7 @@ export default function PlanejamentoTributario() {
 
     // Profile state
     const [profile, setProfile] = useState<TaxProfile>(INITIAL_PROFILE);
-    const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+    const [aiAnalysis, setAiAnalysis] = useState<AiAnalysisMetadata | null>(null);
 
     // Results
     const [results, setResults] = useState<TaxComparisonResult | null>(null);
@@ -137,7 +177,8 @@ export default function PlanejamentoTributario() {
     const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
     const parseCurrency = (value: string): number => {
-        return parseFloat(value.replace(/\D/g, '')) || 0;
+        const clean = value.split(',')[0].replace(/\D/g, '');
+        return parseInt(clean) || 0;
     };
 
     const updateProfile = useCallback((field: string, value: any) => {
@@ -224,12 +265,20 @@ export default function PlanejamentoTributario() {
                     const formData = new FormData();
                     formData.append('file', file);
 
-                    const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
-                        body: formData,
-                    });
+                    let extracted: AiExtractionResult | undefined;
 
-                    if (error) throw error;
-                    const extracted = data?.profile;
+                    if (isDemo) {
+                        // Simular atraso de IA no Demo Mode
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        extracted = DEMO_AI_PROFILE as AiExtractionResult;
+                    } else {
+                        const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
+                            body: formData,
+                        });
+
+                        if (error) throw error;
+                        extracted = data?.profile as AiExtractionResult;
+                    }
 
                     if (extracted) {
                         setProfile(prev => ({
@@ -274,12 +323,22 @@ export default function PlanejamentoTributario() {
             const formData = new FormData();
             formData.append('file', audioBlob, 'gravacao.webm');
 
-            const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
-                body: formData,
-            });
+            let extracted;
+            let metadata;
 
-            if (error) throw error;
-            const extracted = data?.profile;
+            if (isDemo) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                extracted = DEMO_AI_PROFILE;
+                metadata = { observacoes: "Transcrição simulada: 'Minha empresa fatura 250 mil por mês...'", confianca: 0.95 };
+            } else {
+                const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
+                    body: formData,
+                });
+
+                if (error) throw error;
+                extracted = data?.profile;
+                metadata = data?.metadata;
+            }
 
             if (extracted) {
                 setProfile(prev => ({
@@ -298,10 +357,10 @@ export default function PlanejamentoTributario() {
                 }));
 
                 // Metadata
-                if (data.metadata?.observacoes) {
+                if (metadata?.observacoes) {
                     setAiAnalysis({
-                        premissas: data.metadata.observacoes,
-                        confianca: data.metadata.confianca
+                        premissas: metadata.observacoes,
+                        confianca: metadata.confianca
                     });
                 }
 
@@ -325,22 +384,32 @@ export default function PlanejamentoTributario() {
     // ============================================================================
 
     const handleAIAnalysis = useCallback(async () => {
-        if (!descricaoTexto.trim()) {
-            toast({ title: "Informe uma descrição", variant: "destructive" });
+        if (!descricaoTexto.trim() || isProcessing) {
+            if (!descricaoTexto.trim()) toast({ title: "Informe uma descrição", variant: "destructive" });
             return;
         }
 
         setIsProcessing(true);
         try {
-            const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
-                body: {
-                    text: descricaoTexto
-                }
-            });
+            let aiProfile: AiExtractionResult | undefined;
+            let responseData: any;
 
-            if (error) throw error;
+            if (isDemo) {
+                await new Promise(resolve => setTimeout(resolve, 1800));
+                aiProfile = DEMO_AI_PROFILE as AiExtractionResult;
+                responseData = { profile: DEMO_AI_PROFILE, metadata: { confianca: 0.95, observacoes: ["Dados simulados para o modo demonstração."] } };
+            } else {
+                const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
+                    body: {
+                        text: descricaoTexto
+                    }
+                });
 
-            const aiProfile = data?.profile;
+                if (error) throw error;
+                aiProfile = data?.profile as AiExtractionResult;
+                responseData = data;
+            }
+
             if (!aiProfile) throw new Error("A IA não retornou um perfil válido.");
 
             // Mapear resposta da IA para o perfil
@@ -360,10 +429,10 @@ export default function PlanejamentoTributario() {
             }));
 
             // Metadata/Observações
-            if (data.metadata?.observacoes) {
+            if (responseData?.metadata?.observacoes) {
                 setAiAnalysis({
-                    premissas: data.metadata.observacoes,
-                    confianca: data.metadata.confianca
+                    premissas: responseData.metadata.observacoes,
+                    confianca: responseData.metadata.confianca
                 });
             }
 
@@ -437,17 +506,39 @@ export default function PlanejamentoTributario() {
 
         setIsGeneratingReport(true);
         try {
-            const { data, error } = await supabase.functions.invoke('tax-planner-report', {
-                body: {
-                    profile,
-                    comparison_results: results
-                }
-            });
+            let report;
 
-            if (error) throw error;
-            if (!data?.success) throw new Error(data?.error || 'Erro ao gerar relatório');
+            if (isDemo) {
+                await new Promise(resolve => setTimeout(resolve, 2500));
+                report = `
+# Relatório Consultivo Tributário (DEMO)
 
-            setReportContent(data.report);
+Baseado nos dados da empresa **${profile.razao_social}**, realizamos uma análise profunda da carga tributária atual e o impacto da Reforma Tributária (PEC 45/19).
+
+## 1. Melhor Regime Atual
+Considerando o faturamento anual de ${formatCurrency(profile.faturamento_anual)}, o regime **${results.melhor_atual.toUpperCase()}** apresenta a menor carga efetiva.
+
+## 2. Impacto da Reforma Tributária
+A transição para o IBS e CBS trará uma simplificação significativa. O aproveitamento de créditos será de aproximadamente ${formatCurrency(results.cenarios.reforma_plena.creditos_aproveitados)} por ano.
+
+## 3. Recomendações
+- Iniciar mapeamento de fornecedores que geram crédito integral.
+- Preparar sistemas para convivência entre modelos em 2027.
+                `.trim();
+            } else {
+                const { data, error } = await supabase.functions.invoke('tax-planner-report', {
+                    body: {
+                        profile,
+                        comparison_results: results
+                    }
+                });
+
+                if (error) throw error;
+                if (!data?.success) throw new Error(data?.error || 'Erro ao gerar relatório');
+                report = data.report;
+            }
+
+            setReportContent(report);
             toast({ title: "Relatório gerado com sucesso!" });
 
         } catch (error) {
@@ -459,7 +550,7 @@ export default function PlanejamentoTributario() {
         } finally {
             setIsGeneratingReport(false);
         }
-    }, [profile, results]);
+    }, [profile, results, isDemo]);
 
     const handleExportPDF = useCallback(async () => {
         if (!reportContent) {
@@ -574,7 +665,11 @@ export default function PlanejamentoTributario() {
                                         <Input
                                             placeholder="0000-0/00"
                                             value={profile.cnae_principal}
-                                            onChange={(e) => updateProfile('cnae_principal', e.target.value)}
+                                            maxLength={9}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/[^0-9/-]/g, '');
+                                                updateProfile('cnae_principal', val);
+                                            }}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -1028,7 +1123,10 @@ export default function PlanejamentoTributario() {
                             <AlertTitle>Análise da IA ({aiAnalysis.confianca})</AlertTitle>
                             <AlertDescription>
                                 <ul className="mt-2 space-y-1">
-                                    {aiAnalysis.premissas?.map((p: string, i: number) => (
+                                    {(Array.isArray(aiAnalysis.premissas)
+                                        ? aiAnalysis.premissas
+                                        : [aiAnalysis.premissas]
+                                    ).map((p: string, i: number) => (
                                         <li key={i} className="text-sm">• {p}</li>
                                     ))}
                                 </ul>
@@ -1065,7 +1163,7 @@ export default function PlanejamentoTributario() {
                                 <div className="p-4 rounded-lg bg-primary/10 text-center">
                                     <p className="text-sm text-muted-foreground">Crédito Potencial Reforma</p>
                                     <p className="text-xl font-bold text-primary">
-                                        {formatCurrency(totalDespesasComCredito * 12 * 0.255)}/ano
+                                        {formatCurrency(totalDespesasComCredito * 12 * ALIQUOTA_IBS_CBS_PADRAO * (1 - getReducaoSetorial(profile.cnae_principal)))}/ano
                                     </p>
                                 </div>
                             </div>

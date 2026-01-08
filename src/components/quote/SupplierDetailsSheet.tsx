@@ -63,11 +63,17 @@ export const SupplierDetailsSheet = ({
   onUpdateFornecedor,
   onUpdateOferta,
 }: SupplierDetailsSheetProps) => {
+  const [localCnpj, setLocalCnpj] = useState(fornecedor.cnpj ?? "");
+  const [localNome, setLocalNome] = useState(fornecedor.contato?.nome ?? "");
+  const [localEmail, setLocalEmail] = useState(fornecedor.contato?.email ?? "");
+  const [localTelefone, setLocalTelefone] = useState(fornecedor.contato?.telefone ?? "");
   const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
+
   const municipios = useMemo(
     () => getMunicipiosByUF(fornecedor.uf?.toUpperCase() ?? ""),
     [fornecedor.uf],
   );
+
   const selectedMunicipio = useMemo(
     () => municipios.find((item) => item.codigo === (fornecedor.municipio ?? "")),
     [municipios, fornecedor.municipio],
@@ -82,7 +88,7 @@ export const SupplierDetailsSheet = ({
   };
 
   const handleProductChange = (produtoId: string | undefined) => {
-    if (!produtoId) {
+    if (!produtoId || produtoId === EMPTY_SELECT_VALUE) {
       handleUpdateOferta({
         produtoId: undefined as unknown as string,
         produtoDescricao: undefined,
@@ -131,8 +137,9 @@ export const SupplierDetailsSheet = ({
                 <Input
                   id="fornecedor-cnpj"
                   placeholder="00.000.000/0000-00"
-                  value={fornecedor.cnpj ?? ""}
-                  onChange={(event) => handleUpdateFornecedor({ cnpj: event.target.value })}
+                  value={localCnpj}
+                  onChange={(event) => setLocalCnpj(event.target.value)}
+                  onBlur={() => handleUpdateFornecedor({ cnpj: localCnpj })}
                 />
               </div>
               <div className="space-y-1">
@@ -358,8 +365,9 @@ export const SupplierDetailsSheet = ({
                 <Label htmlFor="fornecedor-contato-nome">Responsavel</Label>
                 <Input
                   id="fornecedor-contato-nome"
-                  value={fornecedor.contato?.nome ?? ""}
-                  onChange={(event) => handleContatoChange("nome", event.target.value)}
+                  value={localNome}
+                  onChange={(event) => setLocalNome(event.target.value)}
+                  onBlur={() => handleContatoChange("nome", localNome)}
                 />
               </div>
               <div className="space-y-1">
@@ -367,16 +375,18 @@ export const SupplierDetailsSheet = ({
                 <Input
                   id="fornecedor-contato-email"
                   type="email"
-                  value={fornecedor.contato?.email ?? ""}
-                  onChange={(event) => handleContatoChange("email", event.target.value)}
+                  value={localEmail}
+                  onChange={(event) => setLocalEmail(event.target.value)}
+                  onBlur={() => handleContatoChange("email", localEmail)}
                 />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="fornecedor-contato-telefone">Telefone</Label>
                 <Input
                   id="fornecedor-contato-telefone"
-                  value={fornecedor.contato?.telefone ?? ""}
-                  onChange={(event) => handleContatoChange("telefone", event.target.value)}
+                  value={localTelefone}
+                  onChange={(event) => setLocalTelefone(event.target.value)}
+                  onBlur={() => handleContatoChange("telefone", localTelefone)}
                 />
               </div>
             </div>
