@@ -95,6 +95,7 @@ const App = () => (
                       <Route path="regras" element={<Regras />} />
                       <Route path="impacto-reforma" element={<ImpactoReforma />} />
                       <Route path="planejamento" element={<PlanejamentoTributario />} />
+                      <Route path="planejamento-tributario" element={<Navigate to="/planejamento" replace />} />
                       <Route path="relatorios" element={<Relatorios />} />
                       <Route path="unidades-conversoes" element={<UnidadesConversoes />} />
                       <Route path="historico" element={<Historico />} />

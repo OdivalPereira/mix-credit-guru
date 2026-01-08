@@ -156,6 +156,8 @@ export default function PlanejamentoTributario() {
 
     // Results
     const [results, setResults] = useState<TaxComparisonResult | null>(null);
+    const [strategicInsights, setStrategicInsights] = useState<TaxInsight[]>([]);
+    const [isAnalyzingStrategically, setIsAnalyzingStrategically] = useState(false);
 
     // Report state
     const [reportContent, setReportContent] = useState<string | null>(null);
@@ -272,6 +274,12 @@ export default function PlanejamentoTributario() {
                         await new Promise(resolve => setTimeout(resolve, 1500));
                         extracted = DEMO_AI_PROFILE as AiExtractionResult;
                     } else {
+                        // Contexto unificado
+                        formData.append('json_data', JSON.stringify(profile));
+                        if (descricaoTexto) {
+                            formData.append('text', descricaoTexto);
+                        }
+
                         const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
                             body: formData,
                         });
@@ -331,6 +339,12 @@ export default function PlanejamentoTributario() {
                 extracted = DEMO_AI_PROFILE;
                 metadata = { observacoes: "Transcrição simulada: 'Minha empresa fatura 250 mil por mês...'", confianca: 0.95 };
             } else {
+                // Contexto unificado
+                formData.append('json_data', JSON.stringify(profile));
+                if (descricaoTexto) {
+                    formData.append('text', descricaoTexto);
+                }
+
                 const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
                     body: formData,
                 });
@@ -401,7 +415,8 @@ export default function PlanejamentoTributario() {
             } else {
                 const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
                     body: {
-                        text: descricaoTexto
+                        text: descricaoTexto,
+                        json_data: profile // Contexto unificado
                     }
                 });
 
@@ -454,28 +469,55 @@ export default function PlanejamentoTributario() {
     // CALCULATION
     // ============================================================================
 
-    const handleCalculate = useCallback(() => {
+    const handleCalculate = useCallback(async () => {
         // Validar campos obrigatórios
         if (!profile.faturamento_mensal || profile.faturamento_mensal <= 0) {
             toast({ title: "Informe o faturamento mensal", variant: "destructive" });
             return;
         }
 
-        // Garantir faturamento anual
-        const profileFinal = {
-            ...profile,
-            faturamento_anual: profile.faturamento_anual || profile.faturamento_mensal * 12
-        };
+        setIsProcessing(true);
 
-        const resultado = compararTodosRegimes(profileFinal);
-        setResults(resultado);
-        setCurrentStep('dashboard');
+        try {
+            // Garantir faturamento anual
+            const profileFinal = {
+                ...profile,
+                faturamento_anual: profile.faturamento_anual || profile.faturamento_mensal * 12
+            };
 
-        toast({
-            title: "Análise concluída!",
-            description: `Melhor regime atual: ${resultado.melhor_atual.toUpperCase()}`
-        });
-    }, [profile, setCurrentStep, setResults, toast]);
+            // Cálculo determinístico local
+            const resultado = compararTodosRegimes(profileFinal);
+            setResults(resultado);
+            setStrategicInsights(resultado.insights); // Insights locais primeiro
+            setCurrentStep('dashboard');
+
+            toast({
+                title: "Análise concluída!",
+                description: `Melhor regime atual: ${resultado.melhor_atual.toUpperCase()}`
+            });
+
+            // Chamada de IA Avançada para Insights Estratégicos (Background)
+            setIsAnalyzingStrategically(true);
+            const { data, error } = await supabase.functions.invoke('tax-planner-strategic-analysis', {
+                body: { profile: profileFinal, results: resultado }
+            });
+
+            if (!error && data && Array.isArray(data)) {
+                // Mesclar insights locais com os da IA (IA primeiro para destaque)
+                setStrategicInsights([...data, ...resultado.insights]);
+            }
+        } catch (error) {
+            console.error('Erro ao calcular:', error);
+            toast({
+                title: "Erro ao processar",
+                description: "Cálculos locais concluídos, mas análise avançada falhou.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsProcessing(false);
+            setIsAnalyzingStrategically(false);
+        }
+    }, [profile, supabase.functions, toast]);
 
     // ============================================================================
     // CHART DATA
@@ -1137,7 +1179,15 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                     {/* Preview dos valores */}
                     <Card className="glass-card">
                         <CardHeader>
-                            <CardTitle>Resumo do Perfil</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                Resumo do Perfil
+                                {profile.faturamento_mensal * 12 > 3600000 && profile.regime_atual === 'simples' && (
+                                    <Badge variant="outline" className="text-amber-500 border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 transition-colors">
+                                        <AlertTriangle className="h-3 w-3 mr-1" />
+                                        Simples Híbrido (Sublimite)
+                                    </Badge>
+                                )}
+                            </CardTitle>
                             <CardDescription>Confira se os valores estão corretos antes de calcular</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -1293,33 +1343,43 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                 <CardTitle className="flex items-center gap-2">
                                     <Lightbulb className="h-5 w-5" />
                                     Insights da Análise
+                                    {isAnalyzingStrategically && (
+                                        <Badge variant="outline" className="ml-2 animate-pulse bg-primary/10 text-primary border-primary/20">
+                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                            IA Avançada Analisando...
+                                        </Badge>
+                                    )}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                                {results.insights.map((insight: TaxInsight, i: number) => (
-                                    <Alert key={i} className={
-                                        insight.tipo === 'positivo' ? 'border-green-500/50' :
-                                            insight.tipo === 'negativo' ? 'border-red-500/50' :
-                                                insight.tipo === 'alerta' ? 'border-yellow-500/50' : ''
-                                    }>
-                                        {insight.tipo === 'positivo' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                                        {insight.tipo === 'negativo' && <TrendingDown className="h-4 w-4 text-red-500" />}
-                                        {insight.tipo === 'alerta' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
-                                        {insight.tipo === 'neutro' && <Info className="h-4 w-4" />}
-                                        <AlertTitle>{insight.titulo}</AlertTitle>
-                                        <AlertDescription>
-                                            <p>{insight.descricao}</p>
-                                            {insight.impacto_financeiro && (
-                                                <p className={`mt-1 font-medium ${insight.impacto_financeiro > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                                    Impacto: {insight.impacto_financeiro > 0 ? '+' : ''}{formatCurrency(insight.impacto_financeiro)}/ano
-                                                </p>
-                                            )}
-                                            {insight.acao_sugerida && (
-                                                <p className="mt-1 text-sm italic">💡 {insight.acao_sugerida}</p>
-                                            )}
-                                        </AlertDescription>
-                                    </Alert>
-                                ))}
+                                {strategicInsights.length > 0 ? (
+                                    strategicInsights.map((insight: TaxInsight, i: number) => (
+                                        <Alert key={i} className={
+                                            insight.tipo === 'positivo' ? 'border-green-500/50 bg-green-500/5' :
+                                                insight.tipo === 'negativo' ? 'border-red-500/50 bg-red-500/5' :
+                                                    insight.tipo === 'alerta' ? 'border-yellow-500/50 bg-yellow-500/5' : ''
+                                        }>
+                                            {insight.tipo === 'positivo' && <TrendingUp className="h-4 w-4 text-green-500" />}
+                                            {insight.tipo === 'negativo' && <TrendingDown className="h-4 w-4 text-red-500" />}
+                                            {insight.tipo === 'alerta' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+                                            {insight.tipo === 'neutro' && <Info className="h-4 w-4" />}
+                                            <AlertTitle className="font-bold">{insight.titulo}</AlertTitle>
+                                            <AlertDescription>
+                                                <p>{insight.descricao}</p>
+                                                {insight.impacto_financeiro && insight.impacto_financeiro !== 0 && (
+                                                    <p className={`mt-1 font-medium ${insight.impacto_financeiro > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                        Impacto: {insight.impacto_financeiro > 0 ? '+' : ''}{formatCurrency(insight.impacto_financeiro)}/ano
+                                                    </p>
+                                                )}
+                                                {insight.acao_sugerida && (
+                                                    <p className="mt-1 text-sm font-semibold text-primary/80">💡 {insight.acao_sugerida}</p>
+                                                )}
+                                            </AlertDescription>
+                                        </Alert>
+                                    ))
+                                ) : (
+                                    !isAnalyzingStrategically && <p className="text-sm text-muted-foreground text-center py-4">Nenhum insight identificado.</p>
+                                )}
                             </CardContent>
                         </Card>
                     )}

@@ -138,6 +138,7 @@ export function getReducaoSetorial(cnae: string): number {
 
 export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   const limiteSN = 4800000;
+  const sublimiteSN = 3600000; // Sublimite para ICMS/ISS na maioria dos estados
   const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
 
   // Verificar elegibilidade
@@ -159,22 +160,7 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   }
 
   const cnaeInfo = getCnaeInfo(perfil.cnae_principal);
-  if (cnaeInfo?.simples?.permitido === false) {
-    return {
-      nome: 'Simples Nacional',
-      codigo: 'simples',
-      elegivel: false,
-      motivo_inelegibilidade: cnaeInfo.simples.motivo || 'CNAE não permitido no Simples Nacional',
-      imposto_bruto_anual: 0,
-      creditos_aproveitados: 0,
-      imposto_liquido_anual: 0,
-      carga_efetiva_percentual: 0,
-      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
-      pros: [],
-      contras: [],
-      observacoes: []
-    };
-  }
+  const isServico = isServicoAltoPresuncao(perfil.cnae_principal);
 
   // Determinar anexo e calcular Fator R
   const folhaAnual = (perfil.despesas_sem_credito.folha_pagamento + perfil.despesas_sem_credito.pro_labore) * 12;
@@ -183,34 +169,15 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   const anexo = cnaeInfo?.simples?.anexo_padrao || 'III';
   let anexoAplicado = anexo;
 
-  // Fator R: se >= 28% e anexo V, migra para III
   if (anexo === 'V' && fatorR >= 0.28 && cnaeInfo?.simples?.anexo_fator_r) {
     anexoAplicado = cnaeInfo.simples.anexo_fator_r;
   }
 
-  // Calcular alíquota efetiva
+  // Calcular alíquota efetiva (Federal)
   const anexoData = taxRules.simples_nacional.anexos[anexoAplicado];
-  if (!anexoData) {
-    return {
-      nome: 'Simples Nacional',
-      codigo: 'simples',
-      elegivel: false,
-      motivo_inelegibilidade: `Anexo ${anexoAplicado} não encontrado`,
-      imposto_bruto_anual: 0,
-      creditos_aproveitados: 0,
-      imposto_liquido_anual: 0,
-      carga_efetiva_percentual: 0,
-      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
-      pros: [],
-      contras: [],
-      observacoes: []
-    };
-  }
-
-  // Encontrar faixa
   let aliquotaNominal = 0;
   let deducao = 0;
-  for (const faixa of anexoData.faixas) {
+  for (const faixa of anexoData?.faixas || []) {
     if (faturamentoAnual <= faixa.limite) {
       aliquotaNominal = faixa.aliquota;
       deducao = faixa.deducao;
@@ -220,46 +187,58 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
     deducao = faixa.deducao;
   }
 
-  // Alíquota Efetiva = [(RBT12 × Aliq) - PD] / RBT12
   const aliquotaEfetiva = faturamentoAnual > 0 ? ((faturamentoAnual * aliquotaNominal) - deducao) / faturamentoAnual : 0;
-  const impostoAnual = faturamentoAnual * aliquotaEfetiva;
 
-  // CPP separado para Anexo IV
-  let cppSeparado = 0;
-  if (anexoData.cpp_separado) {
-    cppSeparado = folhaAnual * (anexoData.cpp_aliquota || 0.20);
+  // Lógica de Sublimite (Híbrido)
+  const isHibrido = faturamentoAnual > sublimiteSN;
+  let impostoSimples = faturamentoAnual * aliquotaEfetiva;
+  let impostoExtra = 0;
+  let creditosExtra = 0;
+
+  if (isHibrido) {
+    // Se ultrapassa sublimite, remove ICMS/ISS da alíquota do Simples e calcula por fora
+    // Aproximadamente 33% da alíquota do Simples é ICMS/ISS
+    const percIcmsIssNoSimples = 0.33;
+    impostoSimples = impostoSimples * (1 - percIcmsIssNoSimples);
+
+    // Cálculo por fora (Não-Cumulativo para ICMS, por exemplo)
+    if (!isServico) {
+      const icmsDebito = faturamentoAnual * 0.18;
+      const icmsCredito = (perfil.despesas_com_credito.cmv * 12) * 0.12;
+      impostoExtra = Math.max(0, icmsDebito - icmsCredito);
+      creditosExtra = icmsCredito;
+    } else {
+      impostoExtra = faturamentoAnual * 0.05; // ISS cheio
+    }
   }
 
-  const impostoTotal = impostoAnual + cppSeparado;
+  const impostoTotal = impostoSimples + impostoExtra;
 
   return {
-    nome: 'Simples Nacional',
+    nome: isHibrido ? 'Simples Nacional (Híbrido)' : 'Simples Nacional',
     codigo: 'simples',
     elegivel: true,
-    imposto_bruto_anual: impostoTotal,
-    creditos_aproveitados: 0, // Simples não tem crédito
+    imposto_bruto_anual: impostoSimples + (isHibrido && !isServico ? faturamentoAnual * 0.18 : impostoExtra),
+    creditos_aproveitados: creditosExtra,
     imposto_liquido_anual: impostoTotal,
     carga_efetiva_percentual: (impostoTotal / faturamentoAnual) * 100,
     detalhes: {
-      consumo: impostoAnual * 0.6, // Aproximado (PIS/COFINS/ICMS/ISS)
-      irpj: impostoAnual * 0.12,
-      csll: impostoAnual * 0.08,
-      iss_icms: impostoAnual * 0.20,
-      cpp: cppSeparado > 0 ? cppSeparado : undefined
+      consumo: impostoSimples * 0.4 + impostoExtra,
+      irpj: impostoSimples * 0.15,
+      csll: impostoSimples * 0.10,
+      iss_icms: isHibrido ? impostoExtra : impostoSimples * 0.33
     },
     pros: [
-      'Menor burocracia e guia única (DAS)',
-      'Alíquota efetiva geralmente menor para faturamentos baixos',
-      anexoAplicado !== anexo ? `Fator R de ${(fatorR * 100).toFixed(1)}% permitiu tributar pelo Anexo ${anexoAplicado}` : ''
+      isHibrido ? 'Permite manter tributação federal reduzida' : 'Guia única (DAS) e menor burocracia',
+      isHibrido ? `Aproveitamento de R$ ${creditosExtra.toLocaleString('pt-BR')} em créditos (Regime Híbrido)` : '',
     ].filter(Boolean),
     contras: [
-      'Sem aproveitamento de créditos de PIS/COFINS',
-      'Limite de faturamento de R$ 4.8 milhões/ano',
-      fatorR < 0.28 && anexo === 'V' ? 'Fator R baixo mantém no Anexo V (alíquotas maiores)' : ''
+      isHibrido ? 'Complexidade: ICMS/ISS calculados e pagos em guias separadas' : 'Sem aproveitamento de créditos de PIS/COFINS',
+      fatorR < 0.28 && anexo === 'V' ? 'Fator R baixo mantém no Anexo V' : ''
     ].filter(Boolean),
     observacoes: [
-      `Anexo ${anexoAplicado} - ${anexoData.nome}`,
-      `Fator R: ${(fatorR * 100).toFixed(1)}%`
+      isHibrido ? `Ultrapassou sublimite de R$ 3.6M (ICMS/ISS por fora)` : `Faturamento dentro do sublimite`,
+      `Alíquota Efetiva SN: ${(aliquotaEfetiva * 100).toFixed(2)}%`
     ]
   };
 }
@@ -312,40 +291,46 @@ export function calcularLucroPresumido(perfil: TaxProfile): TaxScenarioResult {
   // ISS (serviços): média 5%
   const iss = isServico ? faturamentoAnual * 0.05 : 0;
 
-  // ICMS simplificado não aplicável aqui (seria sobre vendas)
-  const icms = !isServico ? faturamentoAnual * 0.03 : 0; // Média simplificada
+  // ICMS: Diferente de PIS/COFINS, no Lucro Presumido o ICMS é geralmente NÃO-CUMULATIVO
+  // Débito estimado (média 18%) e crédito sobre entradas (CMV)
+  const icmsDebito = !isServico ? faturamentoAnual * 0.18 : 0;
+  const icmsCredito = !isServico ? (perfil.despesas_com_credito.cmv * 12) * 0.12 : 0; // Crédito médio sobre compras
+  const icmsLiquido = Math.max(0, icmsDebito - icmsCredito);
 
   // Total
-  const impostoTotal = irpjTotal + csll + pisCofins + iss + icms;
+  const impostoBruto = irpjTotal + csll + pisCofins + iss + icmsDebito;
+  const impostoLiquido = irpjTotal + csll + pisCofins + iss + icmsLiquido;
 
   return {
     nome: 'Lucro Presumido',
     codigo: 'presumido',
     elegivel: true,
-    imposto_bruto_anual: impostoTotal,
-    creditos_aproveitados: 0, // LP cumulativo não tem crédito de PIS/COFINS
-    imposto_liquido_anual: impostoTotal,
-    carga_efetiva_percentual: (impostoTotal / faturamentoAnual) * 100,
+    imposto_bruto_anual: impostoBruto,
+    creditos_aproveitados: icmsCredito, // Agora mostra créditos de ICMS
+    imposto_liquido_anual: impostoLiquido,
+    carga_efetiva_percentual: (impostoLiquido / faturamentoAnual) * 100,
     detalhes: {
-      consumo: pisCofins,
+      consumo: pisCofins + icmsLiquido,
       irpj: irpjTotal,
       csll: csll,
-      iss_icms: iss + icms
+      iss_icms: iss + icmsLiquido
     },
     pros: [
-      'Simplicidade de apuração (não precisa de contabilidade completa)',
+      'Simplicidade de apuração federal',
       'Previsibilidade da carga tributária',
+      !isServico ? `Aproveitamento de R$ ${icmsCredito.toLocaleString('pt-BR')} em créditos de ICMS` : '',
       !isServico ? 'Presunção de 8% favorável para comércio/indústria' : ''
     ].filter(Boolean),
     contras: [
-      'SEM CRÉDITO de PIS/COFINS sobre despesas (regime cumulativo)',
+      'SEM CRÉDITO de PIS/COFINS (regime cumulativo)',
       'Paga imposto mesmo com prejuízo real',
       isServico ? 'Presunção de 32% desfavorável para serviços' : '',
-      'Aluguel, energia, insumos NÃO geram crédito'
+      'Aluguel e energia NÃO geram crédito de PIS/COFINS neste regime'
     ].filter(Boolean),
     observacoes: [
       `Presunção IRPJ: ${(presuncaoIRPJ * 100).toFixed(0)}%`,
-      `PIS/COFINS Cumulativo: 3.65% sobre faturamento bruto`
+      `ICMS Não-Cumulativo habilitado para este cálculo`,
+      `PIS/COFINS Cumulativo: 3.65% s/ faturamento`
     ]
   };
 }
@@ -705,7 +690,7 @@ export function gerarDadosGraficoComparacao(resultado: TaxComparisonResult): Cha
     dados.push({
       regime: 'Simples Nacional',
       imposto_bruto: resultado.cenarios.simples.imposto_bruto_anual,
-      creditos: 0,
+      creditos: resultado.cenarios.simples.creditos_aproveitados,
       imposto_liquido: resultado.cenarios.simples.imposto_liquido_anual,
       cor_debito: '#ef4444',
       cor_credito: '#22c55e'
@@ -715,7 +700,7 @@ export function gerarDadosGraficoComparacao(resultado: TaxComparisonResult): Cha
   dados.push({
     regime: 'Lucro Presumido',
     imposto_bruto: resultado.cenarios.presumido.imposto_bruto_anual,
-    creditos: 0,
+    creditos: resultado.cenarios.presumido.creditos_aproveitados,
     imposto_liquido: resultado.cenarios.presumido.imposto_liquido_anual,
     cor_debito: '#ef4444',
     cor_credito: '#22c55e'

@@ -46,7 +46,8 @@ Você deve extrair e normalizar os dados para este formato JSON:
       "servicos_pj": number, // Serviços tomados de outras empresas
       "outros_insumos": number,
       "transporte_frete": number,
-      "manutencao": number
+      "manutencao": number,
+      "tarifas_bancarias": number
     },
     
     "despesas_sem_credito": {
@@ -54,7 +55,8 @@ Você deve extrair e normalizar os dados para este formato JSON:
       "pro_labore": number,
       "despesas_financeiras": number, // Juros, taxas
       "tributos": number,
-      "uso_pessoal": number
+      "uso_pessoal": number,
+      "outras": number
     },
     
     "lucro_liquido": number
@@ -66,15 +68,25 @@ Você deve extrair e normalizar os dados para este formato JSON:
   }
 }
 
+## INSTRUÇÕES DE CONTEXTO UNIFICADO
+Você pode receber "DADOS PRÉ-PROCESSADOS (JSON)" que representam o estado atual do perfil preenchido pelo usuário.
+1. **Mesclar e Atualizar**: Se receber JSON pré-existente, use-o como base. Apenas altere os campos que a nova entrada (texto/arquivo/áudio) explicitamente modificar ou adicionar.
+2. **Não Zerar**: Não zere campos que já estavam preenchidos, a menos que o usuário peça explicitamente (ex: "Excluir despesas financeiras").
+3. **Resolver Conflitos**: Se a nova entrada contradiz o JSON, a nova entrada tem prioridade (o usuário está corrigindo).
+
 ## REGRAS DE EXTRAÇÃO
-1. **Valores Mensais**: Se o documento for anual (ex: DRE anual), DIVIDA por 12 para preencher os campos mensais, exceto 'faturamento_anual' e 'lucro_liquido' ou campos explicitamente anuais. O padrão do JSON de saída para despesas é MENSAL.
-2. **Prioridade de Crédito**: Identifique claramente despesas que geram crédito na reforma (Aluguel, Energia, Serviços PJ). Separe da Folha de Pagamento (que não gera).
-3. **Impostos**: Se encontrar valores de impostos pagos, coloque em 'despesas_sem_credito.tributos'.
-4. **Estimativa Segura**: Se um valor não estiver explícito mas puder ser inferido com alta confiança pelo contexto (ex: aluguel mencionado em texto), extraia. Se for muito incerto, deixe null ou 0.
-5. **CNPJ/CNAE**: Tente extrair com exatidão se visível.
+1. **Diferenciação Mensal/Anual**: 
+   - Campos de despesa no JSON DEVEM ser MENSALIZADOS. Se encontrar valores anuais (DRE), divida por 12.
+   - 'faturamento_anual' e 'lucro_liquido' são explicitamente TOTAIS DO ANO.
+   - Se o usuário falar "Faturamento de 100k", assuma MENSAL. Se falar "Faturamento anual de 1M", divida por 12 para 'faturamento_mensal' e use o total em 'faturamento_anual'.
+2. **Identificação de Regime**: Procure por termos como "Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Regime Normal".
+3. **Prioridade de Crédito**: Identifique claramente despesas que geram crédito (Aluguel, Energia, Serviços PJ). Separe da Folha de Pagamento.
+4. **Estimativa Segura**: Se um valor puder ser inferido (ex: pro-labore em empresa de um sócio), extraia. Se for incerto, deixe 0.
+5. **Normalização**: Remova "R$", pontos de milhar e converta vírgulas decimais para pontos antes de gerar o número.
 
 ## FORMATO DE RESPOSTA
 Apenas o JSON, sem markdown.`;
+
 
 
 // ============================================================================

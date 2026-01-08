@@ -27,11 +27,12 @@ Gerar um RELATÓRIO CONSULTIVO ESTRATÉGICO para uma empresa, analisando o impac
 
 ## PRINCÍPIOS FUNDAMENTAIS DA REFORMA
 
-### Não-Cumulatividade Plena (Art. 156-A, §1º, VIII, CF/88)
-- ANTES: Crédito apenas sobre insumos "físicos" ou "essenciais"
-- DEPOIS: Crédito sobre TODA despesa empresarial (crédito financeiro amplo)
+### Diferenças por Regime Atual:
+- **Lucro Real**: Não-cumulatividade integral de PIS/COFINS e ICMS.
+- **Lucro Presumido**: Geralmente cumulativo para PIS/COFINS, mas NÃO-CUMULATIVO para ICMS (gera crédito sobre entradas).
+- **Simples Nacional**: Híbrido se faturamento > R$ 3,6M (sublimite), com ICMS/ISS recolhidos por fora e gerando créditos/débitos.
 
-### O que GERA crédito de IBS/CBS (26,5%):
+### O que GERA crédito de IBS/CBS (Reforma):
 - Material administrativo (escritório, copa, expediente)
 - Limpeza, segurança, zeladoria
 - TI (SaaS, Cloud, ERP, suporte)
@@ -194,7 +195,7 @@ ${cnae_info ? `
         // Usar Gemini Pro para relatório detalhado
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash', // Flash para custo menor, Pro para qualidade
+            model: 'gemini-1.5-pro',
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 4096,
@@ -213,7 +214,7 @@ ${cnae_info ? `
                 success: true,
                 report: reportContent,
                 metadata: {
-                    modelo: 'gemini-2.0-flash',
+                    modelo: 'gemini-1.5-pro',
                     timestamp: new Date().toISOString(),
                     tokens: result.response.usageMetadata?.totalTokenCount || 0
                 }
