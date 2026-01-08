@@ -194,6 +194,7 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   let impostoSimples = faturamentoAnual * aliquotaEfetiva;
   let impostoExtra = 0;
   let creditosExtra = 0;
+  let icmsDebitoHibrido = 0;
 
   if (isHibrido) {
     // Se ultrapassa sublimite, remove ICMS/ISS da alíquota do Simples e calcula por fora
@@ -203,9 +204,9 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
 
     // Cálculo por fora (Não-Cumulativo para ICMS, por exemplo)
     if (!isServico) {
-      const icmsDebito = faturamentoAnual * 0.18;
+      icmsDebitoHibrido = faturamentoAnual * 0.18;
       const icmsCredito = (perfil.despesas_com_credito.cmv * 12) * 0.12;
-      impostoExtra = Math.max(0, icmsDebito - icmsCredito);
+      impostoExtra = Math.max(0, icmsDebitoHibrido - icmsCredito);
       creditosExtra = icmsCredito;
     } else {
       impostoExtra = faturamentoAnual * 0.05; // ISS cheio
@@ -213,12 +214,14 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   }
 
   const impostoTotal = impostoSimples + impostoExtra;
+  // Imposto bruto = Simples federal + débito estadual/municipal (antes de créditos)
+  const impostoBruto = impostoSimples + (isHibrido && !isServico ? icmsDebitoHibrido : impostoExtra);
 
   return {
     nome: isHibrido ? 'Simples Nacional (Híbrido)' : 'Simples Nacional',
     codigo: 'simples',
     elegivel: true,
-    imposto_bruto_anual: impostoSimples + (isHibrido && !isServico ? faturamentoAnual * 0.18 : impostoExtra),
+    imposto_bruto_anual: impostoBruto,
     creditos_aproveitados: creditosExtra,
     imposto_liquido_anual: impostoTotal,
     carga_efetiva_percentual: (impostoTotal / faturamentoAnual) * 100,
@@ -230,7 +233,7 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
     },
     pros: [
       isHibrido ? 'Permite manter tributação federal reduzida' : 'Guia única (DAS) e menor burocracia',
-      isHibrido ? `Aproveitamento de R$ ${creditosExtra.toLocaleString('pt-BR')} em créditos (Regime Híbrido)` : '',
+      isHibrido ? `Aproveitamento de R$ ${creditosExtra.toLocaleString('pt-BR')} em créditos de ICMS (Regime Híbrido)` : '',
     ].filter(Boolean),
     contras: [
       isHibrido ? 'Complexidade: ICMS/ISS calculados e pagos em guias separadas' : 'Sem aproveitamento de créditos de PIS/COFINS',
@@ -238,8 +241,9 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
     ].filter(Boolean),
     observacoes: [
       isHibrido ? `Ultrapassou sublimite de R$ 3.6M (ICMS/ISS por fora)` : `Faturamento dentro do sublimite`,
-      `Alíquota Efetiva SN: ${(aliquotaEfetiva * 100).toFixed(2)}%`
-    ]
+      `Alíquota Efetiva SN: ${(aliquotaEfetiva * 100).toFixed(2)}%`,
+      isHibrido && !isServico ? `ICMS Débito: R$ ${icmsDebitoHibrido.toLocaleString('pt-BR')} | Crédito: R$ ${creditosExtra.toLocaleString('pt-BR')}` : ''
+    ].filter(Boolean)
   };
 }
 
@@ -341,6 +345,7 @@ export function calcularLucroPresumido(perfil: TaxProfile): TaxScenarioResult {
 
 export function calcularLucroReal(perfil: TaxProfile): TaxScenarioResult {
   const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
+  const isServico = isServicoAltoPresuncao(perfil.cnae_principal);
 
   // Calcular despesas
   const despesasComCredito = calcularTotalDespesasComCredito(perfil);
@@ -362,36 +367,44 @@ export function calcularLucroReal(perfil: TaxProfile): TaxScenarioResult {
   // PIS/COFINS Não-Cumulativo
   // Débito: 1.65% + 7.6% = 9.25%
   const pisCofinsDebito = faturamentoAnual * 0.0925;
-
   // Crédito sobre despesas elegíveis (CMV, aluguel, energia, serviços, insumos)
   const pisCofinsCredito = despesasComCredito * 0.0925;
-
   const pisCofinsLiquido = Math.max(0, pisCofinsDebito - pisCofinsCredito);
 
-  // Total
-  const impostoBruto = irpjTotal + csll + pisCofinsDebito;
-  const impostoLiquido = irpjTotal + csll + pisCofinsLiquido;
+  // ICMS (Não-Cumulativo) para comércio/indústria
+  const icmsDebito = !isServico ? faturamentoAnual * 0.18 : 0;
+  const icmsCredito = !isServico ? (perfil.despesas_com_credito.cmv * 12) * 0.12 : 0;
+  const icmsLiquido = Math.max(0, icmsDebito - icmsCredito);
+
+  // ISS para serviços
+  const iss = isServico ? faturamentoAnual * 0.05 : 0;
+
+  // Totais
+  const impostoBruto = irpjTotal + csll + pisCofinsDebito + icmsDebito + iss;
+  const totalCreditos = pisCofinsCredito + icmsCredito;
+  const impostoLiquido = irpjTotal + csll + pisCofinsLiquido + icmsLiquido + iss;
 
   return {
     nome: 'Lucro Real',
     codigo: 'real',
     elegivel: true,
     imposto_bruto_anual: impostoBruto,
-    creditos_aproveitados: pisCofinsCredito,
+    creditos_aproveitados: totalCreditos, // PIS/COFINS + ICMS
     imposto_liquido_anual: impostoLiquido,
     carga_efetiva_percentual: faturamentoAnual > 0 ? (impostoLiquido / faturamentoAnual) * 100 : 0,
     detalhes: {
-      consumo: pisCofinsLiquido,
+      consumo: pisCofinsLiquido + icmsLiquido,
       irpj: irpjTotal,
       csll: csll,
-      iss_icms: 0 // Simplificado
+      iss_icms: iss + icmsLiquido
     },
     pros: [
       `Crédito de PIS/COFINS de R$ ${pisCofinsCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
+      !isServico ? `Crédito de ICMS de R$ ${icmsCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}` : '',
       'Imposto sobre lucro real (paga menos se tiver prejuízo)',
       'Pode compensar prejuízos fiscais acumulados (até 30%)',
-      'Aluguel, energia e CMV geram crédito'
-    ],
+      'Aluguel, energia e CMV geram crédito de PIS/COFINS'
+    ].filter(Boolean),
     contras: [
       'Maior complexidade contábil (ECD, ECF, LALUR)',
       'Necessita contabilidade completa e auditável',
@@ -399,8 +412,9 @@ export function calcularLucroReal(perfil: TaxProfile): TaxScenarioResult {
     ],
     observacoes: [
       `Lucro tributável: R$ ${lucroTributavel.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
-      `Base de crédito PIS/COFINS: R$ ${despesasComCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
-    ]
+      `Base de crédito PIS/COFINS: R$ ${despesasComCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
+      !isServico ? `Base de crédito ICMS (CMV): R$ ${(perfil.despesas_com_credito.cmv * 12).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}` : ''
+    ].filter(Boolean)
   };
 }
 
