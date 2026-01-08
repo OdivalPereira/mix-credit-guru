@@ -7,7 +7,7 @@
  * Wizard de 3 etapas: Entrada de Dados → Validação → Dashboard
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -162,6 +162,46 @@ export default function PlanejamentoTributario() {
     // Report state
     const [reportContent, setReportContent] = useState<string | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+    // Carregar dados do localStorage (vindos do módulo de importação de documentos)
+    useEffect(() => {
+        const savedProfile = localStorage.getItem('tax_profile');
+        const updatedAt = localStorage.getItem('tax_profile_updated_at');
+
+        if (savedProfile && updatedAt) {
+            // Verifica se foi atualizado recentemente (últimos 5 minutos)
+            const updatedDate = new Date(updatedAt);
+            const now = new Date();
+            const diffMinutes = (now.getTime() - updatedDate.getTime()) / 1000 / 60;
+
+            if (diffMinutes < 5) {
+                try {
+                    const parsed = JSON.parse(savedProfile);
+                    setProfile(prev => ({
+                        ...prev,
+                        ...parsed,
+                        despesas_com_credito: { ...prev.despesas_com_credito, ...parsed.despesas_com_credito },
+                        despesas_sem_credito: { ...prev.despesas_sem_credito, ...parsed.despesas_sem_credito },
+                    }));
+
+                    // Ir direto para validação se tiver dados
+                    if (parsed.faturamento_mensal > 0) {
+                        setCurrentStep('validation');
+                        toast({
+                            title: 'Dados importados!',
+                            description: 'Os dados do balancete foram carregados automaticamente.',
+                        });
+                    }
+
+                    // Limpa o localStorage após usar
+                    localStorage.removeItem('tax_profile');
+                    localStorage.removeItem('tax_profile_updated_at');
+                } catch (e) {
+                    console.error('Erro ao carregar perfil do localStorage:', e);
+                }
+            }
+        }
+    }, []);
 
     // ============================================================================
     // HELPERS

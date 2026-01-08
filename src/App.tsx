@@ -36,6 +36,7 @@ const PlanejamentoTributario = lazy(() => import("./pages/PlanejamentoTributario
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const UnidadesConversoes = lazy(() => import("./pages/UnidadesConversoes"));
 const Historico = lazy(() => import("./pages/Historico"));
+const ImportarDocumentos = lazy(() => import("./pages/ImportarDocumentos"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -99,6 +100,7 @@ const App = () => (
                       <Route path="relatorios" element={<Relatorios />} />
                       <Route path="unidades-conversoes" element={<UnidadesConversoes />} />
                       <Route path="historico" element={<Historico />} />
+                      <Route path="importar-documentos" element={<ImportarDocumentos />} />
                     </Route>
                   </Routes>
                 </Suspense>
