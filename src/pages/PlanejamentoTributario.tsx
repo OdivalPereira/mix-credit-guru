@@ -1562,18 +1562,18 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                             </CardHeader>
                             <CardContent>
                                 <div
-                                    className="prose prose-sm dark:prose-invert max-w-none overflow-auto max-h-[600px]"
+                                    className="prose prose-sm dark:prose-invert max-w-none overflow-auto max-h-[600px] report-preview"
                                     dangerouslySetInnerHTML={{
                                         __html: reportContent
-                                            .replace(/\n/g, '<br/>')
-                                            .replace(/#{3}\s(.+)/g, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-                                            .replace(/#{2}\s(.+)/g, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
-                                            .replace(/#{1}\s(.+)/g, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
-                                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                                            .replace(/✅/g, '<span class="text-green-500">✅</span>')
-                                            .replace(/⚠️/g, '<span class="text-yellow-500">⚠️</span>')
-                                            .replace(/💡/g, '<span class="text-blue-500">💡</span>')
-                                            .replace(/📊/g, '<span class="text-purple-500">📊</span>')
+                                            .replace(/#{3}\s(.+)/g, '<h3 class="text-lg font-bold mt-6 mb-2 text-primary border-b border-primary/20 pb-1">$1</h3>')
+                                            .replace(/#{2}\s(.+)/g, '<h2 class="text-xl font-bold mt-8 mb-4 text-blue-400 border-l-4 border-primary pl-3">$1</h2>')
+                                            .replace(/#{1}\s(.+)/g, '<h1 class="text-2xl font-black mt-10 mb-6 text-white bg-primary/20 p-4 rounded-lg">$1</h1>')
+                                            .replace(/\*\*(.+?)\*\*/g, '<strong class="text-primary-foreground font-bold">$1</strong>')
+                                            // Boxes no Preview
+                                            .replace(/\[!\]\s(.+)/g, '<div class="p-4 my-4 bg-red-500/10 border-l-4 border-red-500 rounded-r-lg text-red-200"><span class="block text-xs font-black uppercase mb-1">Risco / Alerta</span>$1</div>')
+                                            .replace(/\[OK\]\s(.+)/g, '<div class="p-4 my-4 bg-green-500/10 border-l-4 border-green-500 rounded-r-lg text-green-200"><span class="block text-xs font-black uppercase mb-1">Recomendação</span>$1</div>')
+                                            .replace(/\[i\]\s(.+)/g, '<div class="p-4 my-4 bg-blue-500/10 border-l-4 border-blue-500 rounded-r-lg text-blue-200"><span class="block text-xs font-black uppercase mb-1">Informação</span>$1</div>')
+                                            .split('\n').join('<br/>')
                                     }}
                                 />
                             </CardContent>
