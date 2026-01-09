@@ -101,7 +101,7 @@ function calcularTotalDespesasSemCredito(perfil: TaxProfile): number {
 /**
  * Busca informações do CNAE
  */
-function getCnaeInfo(cnae: string): CnaeInfo | null {
+export function getCnaeInfo(cnae: string): CnaeInfo | null {
   const cnaes = cnaeDatabase.cnaes;
   return cnaes[cnae] || null;
 }

@@ -69,12 +69,33 @@ Deno.serve(async (req: Request) => {
             generationConfig: { responseMimeType: 'application/json' }
         });
 
-        const prompt = `Analise estrategicamente este cenário:
-        
-        PERFIL: ${JSON.stringify(profile)}
-        RESULTADOS: ${JSON.stringify(results)}
-        
-        Gere 3 a 5 insights estratégicos de alto impacto.`;
+        const prompt = `Analise estrategicamente este cenário de PLANEJAMENTO TRIBUTÁRIO:
+
+## DADOS DA EMPRESA
+${JSON.stringify(profile, null, 2)}
+
+## RESULTADOS DOS CALCULOS COMPARATIVOS
+${JSON.stringify(results, null, 2)}
+
+## SOLICITACAO
+Gere EXATAMENTE entre 5 e 7 insights estratégicos de alto impacto, cobrindo obrigatoriamente:
+
+1. **Comparação de Regimes**: Qual o melhor regime atual e por quê? Quanto pode economizar?
+2. **Impacto da Reforma Tributária**: A empresa ganha ou perde com o IVA Dual (IBS/CBS)?
+3. **Cadeia de Fornecedores**: Impacto do mix de fornecedores do Simples Nacional
+4. **Folha de Pagamento**: A folha é alta ou baixa? Impacto no Fator R e na Reforma?
+5. **Oportunidades Imediatas**: O que fazer AGORA para otimizar?
+6. **Riscos e Pontos de Atenção**: Limites de faturamento, compliance, saldos legados
+7. **Estratégia de Transição 2026-2033**: Timeline de ações
+
+Cada insight DEVE ter:
+- tipo: "positivo" | "negativo" | "alerta" | "neutro"
+- titulo: frase curta e impactante
+- descricao: 1-2 frases explicativas com NUMEROS REAIS do contexto
+- impacto_financeiro: valor numérico em R$ (ou null se não aplicável)
+- acao_sugerida: ação concreta e direta
+
+Responda APENAS o JSON (array de insights).`;
 
         const result = await model.generateContent([
             { text: SYSTEM_PROMPT },

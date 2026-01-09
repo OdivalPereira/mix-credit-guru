@@ -51,7 +51,8 @@ import {
     gerarDadosGraficoCreditos,
     gerarDadosTimeline,
     ALIQUOTA_IBS_CBS_PADRAO,
-    getReducaoSetorial
+    getReducaoSetorial,
+    getCnaeInfo
 } from "@/lib/tax-planning-engine";
 import { parseSpedFile, isSpedFile, getSpedSummary } from "@/lib/sped-parser";
 import { parseExcelFile, getExcelSummary } from "@/lib/excel-parser";
@@ -272,6 +273,11 @@ export default function PlanejamentoTributario() {
             d.tributos + d.uso_pessoal + d.outras) || 0;
         return Number(total.toFixed(2));
     }, [profile.despesas_sem_credito]);
+
+    const cnaeInfo = useMemo(() => {
+        if (!profile.cnae_principal) return null;
+        return getCnaeInfo(profile.cnae_principal);
+    }, [profile.cnae_principal]);
 
     // ============================================================================
     // FILE HANDLING
@@ -1300,10 +1306,11 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                         </Alert>
                     )}
 
-                    {/* Preview dos valores */}
+                    {/* Resumo do Perfil - Expandido */}
                     <Card className="glass-card">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
+                                <Building2 className="h-5 w-5" />
                                 Resumo do Perfil
                                 {profile.faturamento_mensal * 12 > 3600000 && profile.regime_atual === 'simples' && (
                                     <Badge variant="outline" className="text-amber-500 border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 transition-colors">
@@ -1312,9 +1319,43 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                     </Badge>
                                 )}
                             </CardTitle>
-                            <CardDescription>Confira se os valores estão corretos antes de calcular</CardDescription>
+                            <CardDescription>Dados da empresa e valores para cálculo</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-6">
+                            {/* Dados da Empresa */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-lg bg-muted/30 border border-border/50">
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Razão Social</p>
+                                    <p className="font-semibold text-foreground truncate">{profile.razao_social || 'Não informada'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">CNPJ</p>
+                                    <p className="font-mono text-foreground">{profile.cnpj || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">CNAE Principal</p>
+                                    <p className="font-semibold text-foreground">{profile.cnae_principal || 'Não informado'}</p>
+                                    {cnaeInfo && <p className="text-xs text-muted-foreground truncate">{cnaeInfo.descricao}</p>}
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">UF</p>
+                                    <p className="font-semibold text-foreground">{profile.uf || 'Não informada'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Regime Atual</p>
+                                    <Badge variant="secondary" className="mt-1">
+                                        {profile.regime_atual === 'simples' ? 'Simples Nacional' :
+                                            profile.regime_atual === 'presumido' ? 'Lucro Presumido' :
+                                                profile.regime_atual === 'real' ? 'Lucro Real' : 'Não definido'}
+                                    </Badge>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Fornecedores Simples</p>
+                                    <p className="font-semibold text-foreground">{profile.percentual_fornecedores_simples || 0}%</p>
+                                </div>
+                            </div>
+
+                            {/* Valores Financeiros */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="p-4 rounded-lg bg-green-500/10 text-center">
                                     <p className="text-sm text-muted-foreground">Faturamento Anual</p>
