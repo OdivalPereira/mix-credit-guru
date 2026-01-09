@@ -158,8 +158,7 @@ export default function PlanejamentoTributario() {
     const [descricaoTexto, setDescricaoTexto] = useState('');
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [cnpjLoading, setCnpjLoading] = useState(false);
-
+    const [loadingCnpj, setLoadingCnpj] = useState(false);
 
     // Profile state
     const [profile, setProfile] = useState<TaxProfile>(INITIAL_PROFILE);
@@ -242,6 +241,68 @@ export default function PlanejamentoTributario() {
         // Remove tudo que não é dígito ou vírgula
         const clean = value.replace(/[^\d,]/g, '').replace(',', '.');
         return parseFloat(clean) || 0;
+    };
+
+    const formatCNPJ = (value: string) => {
+        return value
+            .replace(/\D/g, '')
+            .replace(/^(\d{2})(\d)/, '$1.$2')
+            .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+            .replace(/\.(\d{3})(\d)/, '.$1/$2')
+            .replace(/(\d{4})(\d)/, '$1-$2')
+            .substring(0, 18);
+    };
+
+    const formatCNAE = (value: string | number) => {
+        const str = String(value).replace(/\D/g, '');
+        if (str.length !== 7) return String(value);
+        return str.replace(/^(\d{4})(\d{1})(\d{2})$/, '$1-$2/$3');
+    };
+
+    const handleConsultarCNPJ = async () => {
+        const cnpjLimpo = profile.cnpj?.replace(/\D/g, '');
+
+        if (!cnpjLimpo || cnpjLimpo.length !== 14) {
+            toast({
+                title: "CNPJ inválido",
+                description: "Digite um CNPJ válido com 14 dígitos.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setLoadingCnpj(true);
+        try {
+            const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+
+            if (!response.ok) {
+                throw new Error('Falha na consulta');
+            }
+
+            const data = await response.json();
+
+            setProfile(prev => ({
+                ...prev,
+                razao_social: data.razao_social,
+                cnae_principal: formatCNAE(data.cnae_fiscal),
+                uf: data.uf,
+                municipio: data.municipio
+            }));
+
+            toast({
+                title: "CNPJ Consultado!",
+                description: `${data.razao_social} encontrada com sucesso.`
+            });
+
+        } catch (error) {
+            toast({
+                title: "Erro na consulta",
+                description: "Não foi possível buscar os dados do CNPJ. Verifique o número ou tente novamente.",
+                variant: "destructive"
+            });
+        } finally {
+            setLoadingCnpj(false);
+        }
     };
 
     const updateProfile = useCallback((field: string, value: any) => {
@@ -587,49 +648,7 @@ export default function PlanejamentoTributario() {
         }
     }, [descricaoTexto, supabase.functions, setProfile, setAiAnalysis, setCurrentStep, toast]);
 
-    const handleConsultarCNPJ = async () => {
-        const cnpjLimpo = profile.cnpj?.replace(/\D/g, '');
 
-        if (!cnpjLimpo || cnpjLimpo.length !== 14) {
-            toast({
-                title: "CNPJ Inválido",
-                description: "Por favor, informe um CNPJ válido com 14 dígitos.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        setCnpjLoading(true);
-        try {
-            const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
-
-            if (!response.ok) {
-                throw new Error('Erro ao consultar CNPJ');
-            }
-
-            const data = await response.json();
-
-            // Mapeamento correto conforme solicitado
-            updateProfile('razao_social', data.razao_social);
-            updateProfile('cnae_principal', `${data.cnae_fiscal}`); // Garantir string e apenas números
-            updateProfile('municipio', data.municipio);
-            updateProfile('uf', data.uf);
-
-            toast({
-                title: "CNPJ Encontrado",
-                description: `Dados de ${data.razao_social} carregados.`
-            });
-
-        } catch (error) {
-            toast({
-                title: "Erro na Busca",
-                description: "Não foi possível encontrar dados para este CNPJ.",
-                variant: "destructive"
-            });
-        } finally {
-            setCnpjLoading(false);
-        }
-    };
 
 
     // ============================================================================
@@ -872,30 +891,20 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                     {/* CNPJ (Busca) */}
                                     <div className="space-y-2">
                                         <Label>CNPJ</Label>
-                                        <div className="flex gap-2 items-end">
+                                        <div className="flex gap-2">
                                             <Input
                                                 placeholder="00.000.000/0000-00"
                                                 value={profile.cnpj || ''}
-                                                onChange={(e) => {
-                                                    let v = e.target.value.replace(/\D/g, '');
-                                                    if (v.length > 14) v = v.slice(0, 14);
-                                                    // Mascara simples
-                                                    if (v.length > 12) {
-                                                        v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-                                                    }
-                                                    updateProfile('cnpj', v);
-                                                }}
                                                 maxLength={18}
-                                                disabled={cnpjLoading}
+                                                onChange={(e) => updateProfile('cnpj', formatCNPJ(e.target.value))}
                                             />
                                             <Button
                                                 variant="outline"
                                                 size="icon"
                                                 onClick={handleConsultarCNPJ}
-                                                disabled={cnpjLoading || !profile.cnpj || profile.cnpj.length < 14}
-                                                title="Consultar Dados"
+                                                disabled={loadingCnpj}
                                             >
-                                                {cnpjLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                                {loadingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                                             </Button>
                                         </div>
                                     </div>
@@ -904,14 +913,12 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                     <div className="space-y-2 md:col-span-2">
                                         <Label>Razão Social</Label>
                                         <Input
-                                            placeholder="Razão Social"
+                                            placeholder="Nome da Empresa"
                                             value={profile.razao_social || ''}
                                             onChange={(e) => updateProfile('razao_social', e.target.value)}
-                                            disabled={cnpjLoading}
                                         />
                                     </div>
 
-                                    {/* Campos Originais */}
                                     <div className="space-y-2">
                                         <Label>CNAE Principal *</Label>
                                         <Input
@@ -942,13 +949,22 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>UF</Label>
-                                        <Input
-                                            placeholder="SP"
-                                            maxLength={2}
-                                            value={profile.uf || ''}
-                                            onChange={(e) => updateProfile('uf', e.target.value.toUpperCase())}
-                                        />
+                                        <Label>Município / UF</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                placeholder="Município"
+                                                value={profile.municipio || ''}
+                                                onChange={(e) => updateProfile('municipio', e.target.value)}
+                                                className="flex-1"
+                                            />
+                                            <Input
+                                                placeholder="UF"
+                                                maxLength={2}
+                                                value={profile.uf || ''}
+                                                onChange={(e) => updateProfile('uf', e.target.value.toUpperCase())}
+                                                className="w-16"
+                                            />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
