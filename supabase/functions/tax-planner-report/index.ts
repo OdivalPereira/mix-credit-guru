@@ -97,6 +97,8 @@ Deno.serve(async (req: Request) => {
         }
 
         // Preparar contexto para a IA
+        console.log('Gerando relatório para:', profile.razao_social || 'Sem Nome');
+
         const contexto = `
 ## DADOS DA EMPRESA
 
@@ -109,7 +111,7 @@ Deno.serve(async (req: Request) => {
 
 ### Receita
 - Faturamento Mensal: R$ ${(profile.faturamento_mensal || 0).toLocaleString('pt-BR')}
-- Faturamento Anual: R$ ${(profile.faturamento_anual || profile.faturamento_mensal * 12 || 0).toLocaleString('pt-BR')}
+- Faturamento Anual: R$ ${(profile.faturamento_anual || (profile.faturamento_mensal || 0) * 12).toLocaleString('pt-BR')}
 
 ### Despesas que GERAM Crédito (IBS/CBS) - Valores Mensais
 - Perfil de Fornecedores: ${(profile.percentual_fornecedores_simples || 0)}% compras via Simples Nacional (Crédito reduzido)
@@ -161,10 +163,10 @@ ${cnae_info ? `
 ` : ''}
 `;
 
-        // Usar Gemini Pro para relatório detalhado
+        // Usar Gemini 1.5 Pro ou Flash
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'gemini-1.5-pro',
+            model: 'gemini-1.5-pro', // Você pode trocar para gemini-1.5-flash se houver erro de quota
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 4096,
@@ -176,7 +178,8 @@ ${cnae_info ? `
             { text: `Gere o relatório consultivo para a seguinte empresa:\n\n${contexto}` }
         ]);
 
-        const reportContent = result.response.text();
+        const responseData = await result.response;
+        const reportContent = responseData.text();
 
         return new Response(
             JSON.stringify({
@@ -185,18 +188,19 @@ ${cnae_info ? `
                 metadata: {
                     modelo: 'gemini-1.5-pro',
                     timestamp: new Date().toISOString(),
-                    tokens: result.response.usageMetadata?.totalTokenCount || 0
+                    tokens: responseData.usageMetadata?.totalTokenCount || 0
                 }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
 
-    } catch (error) {
-        console.error('Error:', error);
+    } catch (error: any) {
+        console.error('Error details:', error);
         return new Response(
             JSON.stringify({
                 success: false,
-                error: error instanceof Error ? error.message : 'Erro interno'
+                error: error.message || 'Erro interno desconhecido na Edge Function',
+                details: error.stack
             }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
