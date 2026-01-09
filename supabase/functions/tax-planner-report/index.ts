@@ -173,7 +173,7 @@ ${cnae_info ? `
             model: 'gemini-flash-latest',
             generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 4096,
+                maxOutputTokens: 8192,
             }
         });
 
