@@ -58,7 +58,7 @@ Produza o relatório em Markdown com EXATAMENTE estas 9 seções:
 
 ### 8. Recomendações Estratégicas
 - Dividir em: Curto Prazo (imediato), Médio Prazo (2026-2027) e Longo Prazo.
-- Use 💡 para dicas estratégicas exclusivas.
+- Use [DICA] para dicas estratégicas exclusivas.
 
 ### 9. Conclusão e Próximos Passos
 - Fechamento consultivo reforçando a proposta de valor.
@@ -69,8 +69,8 @@ Produza o relatório em Markdown com EXATAMENTE estas 9 seções:
    - [!] para Risco/Perigo (Box Vermelho)
    - [OK] para Recomendação/Sucesso (Box Verde)
    - [i] para Informação Relevante (Box Azul)
-   - 💡 para Sugestão Estratégica
-   - ⚠️ para Ponto de Atenção
+   - [DICA] para Sugestão Estratégica
+   - [AVISO] para Ponto de Atenção
 3. **Escrita**: Tom técnico, sênior e direto. Use números reais conforme contexto fornecido.`;
 
 // ============================================================================
@@ -178,8 +178,7 @@ ${cnae_info ? `
             { text: `Gere o relatório consultivo para a seguinte empresa:\n\n${contexto}` }
         ]);
 
-        const responseData = await result.response;
-        const reportContent = responseData.text();
+        const reportContent = result.response.text();
 
         return new Response(
             JSON.stringify({
@@ -188,7 +187,7 @@ ${cnae_info ? `
                 metadata: {
                     modelo: 'gemini-1.5-pro',
                     timestamp: new Date().toISOString(),
-                    tokens: responseData.usageMetadata?.totalTokenCount || 0
+                    tokens: result.response.usageMetadata?.totalTokenCount || 0
                 }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

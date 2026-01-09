@@ -1573,6 +1573,8 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                             .replace(/\[!\]\s(.+)/g, '<div class="p-4 my-4 bg-red-500/10 border-l-4 border-red-500 rounded-r-lg text-red-200"><span class="block text-xs font-black uppercase mb-1">Risco / Alerta</span>$1</div>')
                                             .replace(/\[OK\]\s(.+)/g, '<div class="p-4 my-4 bg-green-500/10 border-l-4 border-green-500 rounded-r-lg text-green-200"><span class="block text-xs font-black uppercase mb-1">Recomendação</span>$1</div>')
                                             .replace(/\[i\]\s(.+)/g, '<div class="p-4 my-4 bg-blue-500/10 border-l-4 border-blue-500 rounded-r-lg text-blue-200"><span class="block text-xs font-black uppercase mb-1">Informação</span>$1</div>')
+                                            .replace(/\[DICA\]\s(.+)/g, '<div class="p-4 my-4 bg-blue-500/10 border-l-4 border-blue-500 rounded-r-lg text-blue-100"><span class="block text-xs font-black uppercase mb-1">Sugestão Estratégica</span>$1</div>')
+                                            .replace(/\[AVISO\]\s(.+)/g, '<div class="p-4 my-4 bg-amber-500/10 border-l-4 border-amber-500 rounded-r-lg text-amber-100"><span class="block text-xs font-black uppercase mb-1">Ponto de Atenção</span>$1</div>')
                                             .split('\n').join('<br/>')
                                     }}
                                 />

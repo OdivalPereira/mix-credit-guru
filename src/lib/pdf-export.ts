@@ -309,8 +309,8 @@ function convertMarkdownToHTML(markdown: string): string {
     { pattern: /\[\?\] (.*)/gim, class: 'box-info', title: 'Insight / Dica' },
     { pattern: /\[OK\] (.*)/gim, class: 'box-success', title: 'Recomendação' },
     { pattern: /\[i\] (.*)/gim, class: 'box-info', title: 'Informação' },
-    { pattern: /💡 (.*)/gim, class: 'box-info', title: 'Sugestão Estratégica' },
-    { pattern: /⚠️ (.*)/gim, class: 'box-warning', title: 'Ponto de Atenção' }
+    { pattern: /\[DICA\] (.*)/gim, class: 'box-info', title: 'Sugestão Estratégica' },
+    { pattern: /\[AVISO\] (.*)/gim, class: 'box-warning', title: 'Ponto de Atenção' }
   ];
 
   boxPatterns.forEach(bp => {
