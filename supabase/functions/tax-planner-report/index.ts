@@ -167,10 +167,10 @@ ${cnae_info ? `
 ` : ''}
 `;
 
-        // Usar Gemini 1.5 Flash (Estável na v1beta)
+        // Usar Gemini 1.5 Flash (Versão específica 001 - Estável)
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-1.5-flash-001',
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 4096,
