@@ -167,10 +167,10 @@ ${cnae_info ? `
 ` : ''}
 `;
 
-        // Usar Gemini 1.5 Pro ou Flash
+        // Usar Gemini 1.5 Flash (Estável na v1beta)
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'gemini-1.5-pro', // Você pode trocar para gemini-1.5-flash se houver erro de quota
+            model: 'gemini-1.5-flash',
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 4096,
