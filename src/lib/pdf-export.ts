@@ -283,7 +283,7 @@ export function createPDFContainer(
 /**
  * Enhanced Markdown to HTML converter for professional PDF
  */
-function convertMarkdownToHTML(markdown: string): string {
+export function convertMarkdownToHTML(markdown: string): string {
   let html = markdown;
 
   // 1. Tables (Markdown Table syntax)

@@ -277,3 +277,64 @@
 .driver-popover-custom .driver-popover-arrow-side-bottom {
   border-color: hsl(var(--card)) !important;
 }
+
+/* Report Preview Styles (Matches PDF Export) */
+@layer components {
+  .report-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.875rem; /* text-sm */
+    @apply border border-border rounded-lg overflow-hidden;
+  }
+  
+  .report-preview thead {
+    @apply bg-muted;
+  }
+
+  .report-preview th {
+    @apply px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border;
+  }
+
+  .report-preview td {
+    @apply px-4 py-3 text-sm border-b border-border/50 align-top;
+  }
+
+  .report-preview tr:last-child td {
+    border-bottom: none;
+  }
+
+  .report-preview tr:nth-child(even) {
+    @apply bg-muted/20;
+  }
+
+  /* Highlight Boxes */
+  .box {
+    @apply p-4 my-4 rounded-r-lg border-l-4 bg-opacity-10;
+  }
+
+  .box-title {
+    @apply block text-xs font-black uppercase mb-1 opacity-90;
+  }
+
+  /* Box Variants */
+  .box-danger {
+    @apply bg-red-500/10 border-red-500 text-red-500 dark:text-red-400;
+  }
+  
+  .box-success {
+    @apply bg-green-500/10 border-green-500 text-green-600 dark:text-green-400;
+  }
+  
+  .box-info {
+    @apply bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400;
+  }
+  
+  .box-tip {
+    @apply bg-sky-500/10 border-sky-500 text-sky-600 dark:text-sky-400;
+  }
+  
+  .box-warning {
+    @apply bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400;
+  }
+}
