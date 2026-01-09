@@ -200,9 +200,10 @@ ${cnae_info ? `
             JSON.stringify({
                 success: false,
                 error: error.message || 'Erro interno desconhecido na Edge Function',
-                details: error.stack
+                details: error.stack,
+                context: 'Acompanhamento de erro para depuração'
             }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }
 });
