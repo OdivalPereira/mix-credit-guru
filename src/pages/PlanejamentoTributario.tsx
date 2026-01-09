@@ -26,7 +26,7 @@ import {
     Loader2, X, Info, BarChart3, Target, Lightbulb,
     Home, Zap, Receipt, Truck, Wrench, Package,
     Wallet, CreditCard, Scale, AlertTriangle, FileDown, ScrollText, Map as MapIcon,
-    Store, Percent
+    Store, Percent, Search
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
@@ -158,6 +158,8 @@ export default function PlanejamentoTributario() {
     const [descricaoTexto, setDescricaoTexto] = useState('');
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [cnpjLoading, setCnpjLoading] = useState(false);
+
 
     // Profile state
     const [profile, setProfile] = useState<TaxProfile>(INITIAL_PROFILE);
@@ -585,6 +587,51 @@ export default function PlanejamentoTributario() {
         }
     }, [descricaoTexto, supabase.functions, setProfile, setAiAnalysis, setCurrentStep, toast]);
 
+    const handleConsultarCNPJ = async () => {
+        const cnpjLimpo = profile.cnpj?.replace(/\D/g, '');
+
+        if (!cnpjLimpo || cnpjLimpo.length !== 14) {
+            toast({
+                title: "CNPJ Inválido",
+                description: "Por favor, informe um CNPJ válido com 14 dígitos.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setCnpjLoading(true);
+        try {
+            const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+
+            if (!response.ok) {
+                throw new Error('Erro ao consultar CNPJ');
+            }
+
+            const data = await response.json();
+
+            // Mapeamento correto conforme solicitado
+            updateProfile('razao_social', data.razao_social);
+            updateProfile('cnae_principal', `${data.cnae_fiscal}`); // Garantir string e apenas números
+            updateProfile('municipio', data.municipio);
+            updateProfile('uf', data.uf);
+
+            toast({
+                title: "CNPJ Encontrado",
+                description: `Dados de ${data.razao_social} carregados.`
+            });
+
+        } catch (error) {
+            toast({
+                title: "Erro na Busca",
+                description: "Não foi possível encontrar dados para este CNPJ.",
+                variant: "destructive"
+            });
+        } finally {
+            setCnpjLoading(false);
+        }
+    };
+
+
     // ============================================================================
     // CALCULATION
     // ============================================================================
@@ -822,6 +869,49 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {/* CNPJ (Busca) */}
+                                    <div className="space-y-2">
+                                        <Label>CNPJ</Label>
+                                        <div className="flex gap-2 items-end">
+                                            <Input
+                                                placeholder="00.000.000/0000-00"
+                                                value={profile.cnpj || ''}
+                                                onChange={(e) => {
+                                                    let v = e.target.value.replace(/\D/g, '');
+                                                    if (v.length > 14) v = v.slice(0, 14);
+                                                    // Mascara simples
+                                                    if (v.length > 12) {
+                                                        v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+                                                    }
+                                                    updateProfile('cnpj', v);
+                                                }}
+                                                maxLength={18}
+                                                disabled={cnpjLoading}
+                                            />
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={handleConsultarCNPJ}
+                                                disabled={cnpjLoading || !profile.cnpj || profile.cnpj.length < 14}
+                                                title="Consultar Dados"
+                                            >
+                                                {cnpjLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* Razão Social */}
+                                    <div className="space-y-2 md:col-span-2">
+                                        <Label>Razão Social</Label>
+                                        <Input
+                                            placeholder="Razão Social"
+                                            value={profile.razao_social || ''}
+                                            onChange={(e) => updateProfile('razao_social', e.target.value)}
+                                            disabled={cnpjLoading}
+                                        />
+                                    </div>
+
+                                    {/* Campos Originais */}
                                     <div className="space-y-2">
                                         <Label>CNAE Principal *</Label>
                                         <Input
