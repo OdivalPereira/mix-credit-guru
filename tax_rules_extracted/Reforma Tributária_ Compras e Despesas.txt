@@ -1,0 +1,185 @@
+Documentação Técnica: Reforma Tributária - Simples Nacional e Lucro Presumido (2026-2033) - Inclusão de Módulo de Estratégia de Compras e Classificação de Despesas
+1. Introdução e Fundamentação Normativa do Novo Sistema Tributário
+A reestruturação do Sistema Tributário Nacional (STN), consubstanciada na Emenda Constitucional nº 132/2023 e regulamentada pela Lei Complementar nº 214, de 16 de janeiro de 2025 (originária do PLP 68/2024), representa a mais profunda alteração na arquitetura fiscal brasileira das últimas cinco décadas.1 Este documento técnico tem por escopo fornecer uma análise exaustiva e diretrizes de implementação para sistemas de gestão (ERP), governança corporativa e planejamento estratégico de compras, com foco específico nas entidades enquadradas no Simples Nacional e no extinto regime de tributação cumulativa do PIS/COFINS (Lucro Presumido), abrangendo o horizonte temporal de transição de 2026 a 2033.
+A reforma substitui um modelo disfuncional, caracterizado pela cumulatividade, complexidade locacional e insegurança jurídica, por um sistema de Imposto sobre Valor Adicionado (IVA) Dual, alinhado às melhores práticas internacionais. A extinção do PIS, COFINS, IPI, ICMS e ISS dará lugar à Contribuição Social sobre Bens e Serviços (CBS), de competência federal, e ao Imposto sobre Bens e Serviços (IBS), de competência compartilhada entre Estados, Municípios e o Distrito Federal, além do Imposto Seletivo (IS), de natureza extrafiscal.2
+Para os contribuintes, especialmente aqueles que operam sob regimes diferenciados ou simplificados, a mudança transcende a mera substituição de siglas ou alíquotas. Trata-se de uma ruptura paradigmática na formação de preços, na gestão de fluxo de caixa e, crucialmente, na estratégia de procurement. A capacidade de uma empresa manter sua margem de lucro e competitividade dependerá diretamente da eficiência de seus algoritmos de compra na identificação, qualificação e apropriação de créditos tributários sob as novas regras de não cumulatividade plena.
+1.1 Princípios Vetores da Lei Complementar nº 214/2025
+A análise da LC 214/2025 revela que o legislador infraconstitucional buscou operacionalizar os princípios constitucionais da simplicidade, transparência, justiça tributária e equilíbrio federativo. No entanto, para o gestor tributário e para o arquiteto de sistemas, o princípio mais impactante é o da não cumulatividade plena e financeira.
+Diferentemente do regime anterior, onde o direito ao crédito de ICMS era restringido pela barreira do "crédito físico" (apenas insumos que se integravam fisicamente ao produto final) e o crédito de PIS/COFINS dependia de critérios subjetivos de "essencialidade e relevância", o novo modelo IBS/CBS adota uma base ampla. O direito ao crédito nasce do pagamento do imposto na etapa anterior, independentemente da incorporação física do bem adquirido ao produto vendido, estendendo-se a bens de uso e consumo, ativo imobilizado e serviços, ressalvadas apenas as vedações expressas para uso pessoal e bens supérfluos.3
+A neutralidade tributária é outro pilar central. O sistema foi desenhado para que o imposto não seja um fator de decisão na organização da produção. Isso significa que, teoricamente, a carga tributária deve ser idêntica independentemente da quantidade de etapas na cadeia produtiva. Contudo, como demonstraremos nas seções subsequentes, a interação entre o Regime Regular do IBS/CBS e o Regime do Simples Nacional cria assimetrias que exigem intervenção estratégica imediata na gestão de compras.5
+1.2 O Cronograma de Implementação e a Convivência de Regimes
+A transição para o novo modelo não é um evento singular, mas um processo gradual e complexo que exigirá que os sistemas corporativos operem com "dupla personalidade" tributária por um período de sete anos. O planejamento estratégico deve considerar os seguintes marcos críticos definidos na legislação:
+Marco Temporal
+Evento Regulatório
+Impacto nos Sistemas e Processos de Compras
+2026
+Fase de Testes (Piloto): Cobrança de alíquota de 0,9% para a CBS e 0,1% para o IBS. O valor recolhido é compensável com o PIS/COFINS devido.
+Parametrização dos ERPs para cálculo paralelo. Validação das conexões bancárias para o Split Payment. Ajuste das obrigações acessórias para informar a nova apuração sem impacto financeiro líquido. 2
+2027
+Virada Federal: Extinção do PIS e da COFINS. Cobrança plena da CBS (estimada em 8,8% a 10%). Redução a zero das alíquotas do IPI (exceto para produtos da Zona Franca de Manaus).
+Revisão completa da formação de custos e preços. O "custo PIS/COFINS" desaparece, substituído pela CBS não cumulativa. Impacto imediato no fluxo de caixa devido às alíquotas maiores e liquidação antecipada. 2
+2029 - 2032
+Transição Escalonada do IBS: Redução gradual das alíquotas de ICMS e ISS e aumento proporcional da alíquota do IBS (10% em 2029, 20% em 2030, 30% em 2031, 40% em 2032 da alíquota final).
+Período de maior complexidade (Compliance Cost máximo). Coexistência de quatro sistemas de apuração e recolhimento. O módulo de compras deve calcular o "custo misto" de aquisição. 7
+2033
+Vigência Plena: Extinção definitiva do ICMS e ISS. O sistema opera 100% no modelo IVA Dual (IBS + CBS) com cobrança no destino.
+Simplificação das obrigações acessórias. Fim da Guerra Fiscal. Consolidação das estratégias de localização logística baseadas em eficiência real, não em incentivos fiscais. 2
+Esta cronologia impõe um desafio de engenharia de software e de gestão fiscal: as empresas não podem simplesmente "virar a chave" em 2033. A estratégia de compras deve ser calibrada anualmente. Em 2029, por exemplo, um fornecedor situado em um estado com incentivo de ICMS agressivo ainda pode ser vantajoso para 90% da carga tributária estadual, mas essa vantagem se erodirá ano a ano até desaparecer em 2033. O Módulo de Estratégia de Compras deve incorporar essa curva de decadência dos incentivos fiscais na análise de Valor Presente Líquido (VPL) de contratos de fornecimento de longo prazo.2
+2. A Nova Dinâmica do Simples Nacional: Análise de Créditos e Competitividade
+O Regime Especial Unificado de Arrecadação de Tributos e Contribuições devidos pelas Microempresas e Empresas de Pequeno Porte (Simples Nacional) recebe tratamento constitucional diferenciado. A Reforma Tributária mantém o Simples Nacional, mas altera drasticamente sua mecânica de interação com o restante da economia, criando um dilema estratégico para fornecedores e compradores.
+A LC 214/2025 estabelece que as empresas do Simples Nacional podem optar por dois caminhos distintos em relação ao IBS e à CBS, e essa escolha define o valor do crédito tributário que será transferido ao adquirente (cliente corporativo).5
+2.1 Cenário A: Simples Nacional no Regime Padrão (Guia Única DAS)
+Neste cenário, a empresa continua recolhendo todos os seus tributos, inclusive IBS e CBS, dentro da guia única do Documento de Arrecadação do Simples Nacional (DAS), aplicando as alíquotas progressivas sobre a receita bruta conforme os Anexos da LC 123/2006.
+Mecânica de Transferência de Crédito:
+A empresa do Simples Nacional no regime padrão não destaca a alíquota cheia do IBS/CBS na nota fiscal. Ela transfere ao adquirente apenas um crédito equivalente ao montante efetivamente cobrado a título de IBS e CBS dentro da alíquota do DAS.6
+Fórmula do Crédito Transferível:$$Crédito = Valor_{Operação} \times Alíquota_{Efetiva(IBS+CBS)}$$
+Análise de Impacto: As alíquotas efetivas de IBS/CBS dentro do Simples são significativamente inferiores à alíquota do Regime Regular (estimada em 26,5% a 28%). Por exemplo, uma empresa comercial no Simples pode ter uma carga total de 10%, onde a parcela de IBS/CBS representa apenas 3% ou 4%.
+Consequência para o Comprador (Regime Regular): Ao adquirir insumos de um fornecedor do Simples Padrão, o comprador apropria um crédito de apenas ~4%, enquanto comprando de um fornecedor do Regime Regular apropriaria 26,5%. Isso gera um "Resíduo Tributário" que encarece o custo final do produto do comprador, tornando a compra do Simples financeiramente ineficiente, a menos que o preço de venda do fornecedor do Simples seja reduzido para compensar essa diferença de crédito (aproximadamente 22,5% de gap).
+Vedação de Crédito na Entrada: Importante notar que a empresa do Simples no regime padrão não tem direito a se creditar do IBS/CBS pago em suas próprias aquisições. O regime permanece cumulativo para ela.6
+2.2 Cenário B: Simples Nacional Híbrido (Opção pelo Recolhimento "Por Fora")
+A legislação permite que a empresa do Simples opte por recolher o IBS e a CBS de acordo com as regras do Regime Regular (não cumulativo), mantendo os demais tributos (IRPJ, CSLL, CPP) no regime simplificado (DAS).5
+Mecânica de Transferência de Crédito:
+Neste caso, a empresa destaca e recolhe o IBS e a CBS pela alíquota cheia (de referência). Consequentemente, ela transfere ao adquirente o crédito integral, equiparando-se competitivamente a qualquer outra empresa do Lucro Real ou Presumido.
+Vantagem Competitiva: Elimina a barreira de entrada em grandes cadeias de suprimentos (indústrias, grandes varejistas) que exigem recuperação integral de créditos.
+Vantagem de Custo: A empresa do Simples passa a ter direito ao crédito integral sobre suas próprias compras. Se ela tiver uma cadeia de suprimentos com muitos créditos (ex: revenda de produtos industrializados), pode ser vantajoso.
+Desafio Operacional: Aumenta a complexidade burocrática, exigindo apuração de débito e crédito, entrega de obrigações acessórias do IBS/CBS e sujeição ao Split Payment.
+2.3 Algoritmo de Decisão de Compras: O Fator de Equivalência
+O Módulo de Estratégia de Compras deve implementar um algoritmo que neutralize a distorção causada pelos diferentes regimes. O sistema não deve comparar preços brutos, mas sim o Custo Líquido Recuperável.
+Definição do Algoritmo de Compra:
+Entradas: Preço do Fornecedor ($P$), Regime do Fornecedor ($R$), Alíquota de Referência IBS/CBS ($A_{ref}$), Alíquota Efetiva Simples ($A_{simp}$).
+Lógica:
+Se Fornecedor = Regime Regular ou Simples Híbrido:$$Custo_{Líquido} = P - (P \times A_{ref})$$
+Se Fornecedor = Simples Padrão:$$Custo_{Líquido} = P - (P \times A_{simp})$$
+Análise de Break-even: Para que o fornecedor do Simples Padrão seja competitivo, seu preço ($P_{simp}$) deve ser inferior ao preço do fornecedor regular ($P_{reg}$) na seguinte proporção:$$P_{simp} < P_{reg} \times \frac{(1 - A_{ref})}{(1 - A_{simp})}$$
+Exemplo Numérico:
+Assumindo $A_{ref} = 26,5\%$ e $A_{simp} = 4\%$.
+O Fornecedor Regular vende por R$ 100,00. Custo Líquido = R$ 73,50.
+Para o Fornecedor Simples empatar no Custo Líquido de R$ 73,50, ele precisa vender por:
+$$Price = 73,50 / (1 - 0,04) = R\$ 76,56$$
+Ou seja, o fornecedor do Simples precisa oferecer um desconto de 23,4% no preço de face para ser financeiramente equivalente ao fornecedor do Regime Regular. O sistema de compras deve alertar automaticamente se o desconto não atingir esse patamar.
+3. A Extinção do Lucro Presumido para Fins de Consumo e o Impacto no Setor de Serviços
+O regime de Lucro Presumido, tecnicamente uma modalidade de apuração do IRPJ e da CSLL, historicamente beneficiava-se do regime cumulativo de PIS/COFINS (alíquota combinada de 3,65% sem crédito nas entradas). Com a Reforma, a tributação sobre o consumo é desvinculada do regime de imposto de renda. Todas as empresas que não forem do Simples Nacional (e que hoje estão no Lucro Presumido ou Real) migram para o Regime Regular do IBS/CBS.2
+3.1 O Choque de Carga Tributária para Prestadores de Serviços
+O impacto mais severo recairá sobre as empresas de serviços (sociedades de advogados, engenharia, consultoria, software, segurança, limpeza), que possuem poucos insumos geradores de crédito (a folha de salários não gera crédito de IBS/CBS) e migrarão de uma alíquota de 3,65% (federal) para a alíquota cheia da CBS+IBS.
+Mesmo com a extinção do ISS (que varia de 2% a 5%), a carga nominal total saltaria de aprox. 8,65% para ~26,5%. Para mitigar esse efeito, a LC 214/2025 instituiu regimes diferenciados com redutores de alíquotas.11
+3.2 Regimes Diferenciados e Redutores: Parametrização no ERP
+O Módulo de Classificação de Despesas deve reconhecer automaticamente os fornecedores enquadrados nos regimes de redução de alíquota para calcular corretamente o crédito a ser apropriado.
+Redução de 30% (Profissões Regulamentadas): Aplicável a serviços de profissão intelectual de natureza científica, literária ou artística, desde que submetidos a fiscalização por conselho profissional (advogados, contadores, médicos, engenheiros, etc.). A alíquota efetiva estimada será de 70% da alíquota padrão (ex: $26,5\% \times 0,7 = 18,55\%$).11
+Redução de 60% (Serviços Essenciais): Aplicável a serviços de educação, saúde, dispositivos médicos, transporte coletivo rodoviário e ferroviário urbano. A alíquota efetiva será de 40% da padrão (ex: $26,5\% \times 0,4 = 10,6\%$).11
+Insight Estratégico: Para uma empresa do Lucro Presumido que contrata esses serviços (ex: um escritório de arquitetura contratando uma consultoria de engenharia), o crédito gerado será menor (18,55% ou 10,6%) do que o débito gerado na sua própria receita (se não tiver redutor), exigindo um planejamento financeiro rigoroso para suportar o desembolso de caixa da diferença.
+4. Especificação Técnica: Módulo de Estratégia de Compras e Classificação de Despesas
+Esta seção detalha os requisitos funcionais e lógicos para o desenvolvimento ou parametrização do sistema ERP, visando a conformidade e otimização sob a LC 214/2025.
+4.1 Submódulo de Vendor Rating Tributário (VRT)
+O sistema deve possuir uma camada de inteligência que intercepta a cotação de preços e aplica a equalização tributária antes da aprovação da Ordem de Compra.
+Requisitos de Dados (Master Data):
+Cadastro de Fornecedor: Deve incluir campo obrigatório Regime_Tributario_Consumo (Regular, Simples Padrão, Simples Híbrido).
+Cadastro de Fornecedor Simples: Campo dinâmico Aliquota_Efetiva_Transferivel (atualizável mensalmente via integração com portal do fornecedor ou declaração).
+Cadastro de Material/Serviço (Item): Campo Eligibilidade_Credito (Sim/Não - baseado na regra de uso e consumo).
+Lógica de Processamento:
+Receber cotações de $N$ fornecedores.
+Para cada cotação, verificar a Eligibilidade_Credito do item.
+Se Não (uso pessoal/vedado): $Custo\_Liquido = Preço\_Bruto$.
+Se Sim: Calcular o valor do crédito baseado no Regime_Tributario do fornecedor e aplicar a fórmula de Net Cost detalhada na Seção 2.3.
+Gerar ranking ordenado pelo $Custo\_Liquido$.
+Alerta de Compliance: Se o fornecedor for Simples Nacional, o sistema deve verificar a validade da alíquota declarada. Se a alíquota não for informada, o sistema deve assumir a menor alíquota possível do anexo correspondente como medida conservadora de risco.8
+4.2 Classificação de Despesas: O Novo Paradigma de "Uso e Consumo"
+A LC 214/2025 revoluciona o conceito de crédito sobre materiais de uso e consumo. No sistema anterior (ICMS), o crédito sobre materiais que não se integravam ao produto (ex: material de escritório, energia da administração) era vedado ou postergado. No novo sistema IBS/CBS, a regra é o crédito financeiro amplo, limitado apenas por exceções taxativas.3
+Matriz de Classificação Automática no ERP:
+O sistema deve classificar cada linha da nota fiscal de entrada em uma das categorias abaixo para determinar a apropriação do crédito:
+Categoria de Despesa
+Tratamento Jurídico (LC 214/2025)
+Regra de Sistema (Ação)
+Insumos Diretos (Matéria-prima, embalagem)
+Crédito Integral Permitido.
+CREDIT_FULL
+Ativo Imobilizado (Máquinas, Equipamentos)
+Crédito Integral e Imediato (fim do parcelamento em 48x do CIAP). 15
+CREDIT_FULL_IMMEDIATE
+Uso e Consumo Operacional (Material de escritório, limpeza, TI, manutenção predial, energia adm.)
+Crédito Integral Permitido. (Grande mudança em relação ao ICMS). 3
+CREDIT_FULL
+Uso Pessoal (Bebidas alcoólicas, joias, bens de luxo, despesas pessoais de sócios)
+Crédito Vedado. 13
+CREDIT_BLOCKED
+Serviços Tomados (Consultoria, segurança, advocacia)
+Crédito Permitido (observar alíquota do prestador se houver redutor).
+CREDIT_VARIABLE
+Detalhamento Técnico sobre Materiais de Escritório e Limpeza:
+O artigo 29 do PLP 68/2024 (agora incorporado na LC 214) veda créditos apenas para bens de uso pessoal. A interpretação jurídica consolidada é que despesas necessárias à manutenção da fonte produtora (conceito similar ao do IRPJ) geram crédito de IBS/CBS. Portanto, o ERP deve ser reconfigurado para apropriar créditos de notas fiscais de papelaria, produtos de limpeza e materiais de copa (café/água para colaboradores), que anteriormente eram lançados sem crédito de ICMS.3
+4.3 Gestão de Estoque e Créditos
+Como o crédito é financeiro e desvinculado do produto físico, o sistema de controle de estoque deve manter o rastreamento do custo médio ponderado sem os impostos recuperáveis. A avaliação de estoque passa a ser líquida de IBS/CBS para fins gerenciais e fiscais, simplificando a contabilidade de custos que não precisa mais carregar o "custo do imposto" no inventário.
+5. Operacionalização do Split Payment (Pagamento Dividido)
+O Split Payment é o mecanismo estrutural de combate à sonegação da Reforma Tributária e impacta diretamente o módulo financeiro (Contas a Pagar) e a tesouraria das empresas.16
+5.1 Fluxo Operacional e Integração Bancária
+O pagamento da nota fiscal deixará de ser uma transferência simples para o fornecedor. O sistema bancário atuará como agente de retenção tributária.
+Emissão da NF-e: O fornecedor emite a NF-e com os campos de IBS e CBS preenchidos e gera um instrumento de pagamento (Boleto, Pix, Cartão) vinculado a essa nota.
+Liquidação Financeira (Ação do Comprador):
+O ERP do comprador envia a ordem de pagamento do valor total (Bruto) ao banco.
+Split Inteligente: O banco consulta a base de dados do Comitê Gestor (CGIBS) e da RFB. O sistema central informa quanto daquele valor deve ser segregado para imposto e quanto vai para o fornecedor.
+Liquidação: O banco envia a Parcela A (Líquida) para a conta do fornecedor e a Parcela B (Impostos) para a Conta Única do Tesouro.17
+Conciliação no ERP: O grande desafio técnico é a conciliação. O extrato bancário poderá apresentar uma ou duas saídas (dependendo do banco), mas a baixa do título no Contas a Pagar deve corresponder ao valor total da obrigação.
+O ERP deve suportar o retorno do arquivo CNAB (ou API) contendo o detalhamento do split para contabilizar:
+Débito: Fornecedor (Passivo) - Valor Total.
+Crédito: Banco (Ativo) - Valor Líquido.
+Crédito: Banco (Ativo) - Valor Imposto (ou conta transitória de imposto pago).
+5.2 O Impacto no Capital de Giro
+Para o comprador, o impacto é de fluxo de processo. Para o fornecedor (empresa do Simples ou Lucro Presumido vendendo), o impacto é de caixa. O Split Payment elimina o "float" tributário. O imposto é recolhido no D+0 da venda (recebimento), e não mais no dia 20 do mês subsequente. O Módulo de Tesouraria deve recalcular a necessidade de Capital de Giro (NCG) considerando a redução do prazo médio de pagamento de tributos a zero.19
+5.3 Métodos de Split e Contingência
+A legislação prevê o "Split Simplificado" caso o Inteligente não esteja disponível. Nesse modelo, aplica-se um percentual fixo estimado de imposto na liquidação, e o ajuste (para mais ou menos) é feito na apuração mensal. O sistema deve estar preparado para identificar qual método foi aplicado pelo banco na transação para realizar a conciliação contábil correta.21
+6. Regimes Específicos e Setoriais
+Setores chave da economia receberam tratamentos específicos que alteram a lógica padrão de débito e crédito. O módulo de compras deve tratar essas exceções.
+6.1 Incorporação Imobiliária e Construção Civil
+O texto final aprovado pelo Senado para a LC 214/2025 trouxe alterações profundas para o setor imobiliário, visando evitar o aumento do custo da moradia.
+Redutores de Base de Cálculo/Alíquota: As operações de alienação, incorporação e construção civil terão uma redução de 60% nas alíquotas de referência do IBS e CBS. Para operações de locação (aluguel), a redução é de 80%.22
+Dedução do Terreno: Na base de cálculo do IBS/CBS na venda de imóveis, permite-se a dedução do valor do terreno, reduzindo a base tributável.24
+Regime de Transição Opcional (RET): Projetos de incorporação iniciados antes de 2029 e submetidos ao patrimônio de afetação poderão optar por um regime de transição onde recolhem tributos com alíquotas fixas sobre a receita (similar ao RET atual), sem direito a crédito nas entradas e sem gerar crédito nas saídas. O sistema deve controlar cada "Centro de Custo/Obra" como uma unidade tributária distinta, pois uma obra pode estar no RET (sem crédito) e outra no Regime Regular (com crédito).25
+Requisito de Sistema: O ERP de uma construtora deve bloquear a apropriação de créditos de materiais (cimento, aço) destinados a obras enquadradas no RET de transição, enquanto permite a apropriação para obras novas no regime regular (com redutor de 60%).
+6.2 Combustíveis e Lubrificantes (Regime Monofásico)
+Os combustíveis (gasolina, diesel, GLP, etanol anidro, biodiesel) sujeitam-se a um regime monofásico com alíquotas ad rem (valor fixo em reais por litro/kg, e não percentual sobre o preço). A tributação concentra-se no produtor/importador.27
+Apropriação de Crédito pelo Adquirente: Embora o posto de gasolina ou distribuidor não destaque débito na venda (pois o imposto já foi recolhido na refinaria), o adquirente (empresa do Lucro Presumido/Simples que usa combustível como insumo, ex: frota de entrega) tem direito ao crédito.
+Cálculo do Crédito: O crédito é calculado multiplicando-se a quantidade de litros adquirida pela alíquota ad rem vigente. O sistema de compras deve ter uma tabela atualizada das alíquotas ad rem por tipo de combustível para calcular o crédito automaticamente na entrada da nota fiscal, independentemente do valor monetário da nota.27
+7. Análise de Riscos e Compliance na Transição
+A implementação do novo sistema traz riscos significativos de não conformidade que devem ser mitigados tecnologicamente.
+7.1 Risco de Crédito "Podre" (Inadimplência do Fornecedor)
+Embora o Split Payment mitigue o risco de não recolhimento, existem transações que podem ocorrer fora do sistema bancário (ex: compensação de contas, permutas). Nesses casos, a legislação condiciona o aproveitamento do crédito ao efetivo recolhimento do imposto pelo fornecedor.
+Recomendação Técnica: O ERP deve bloquear a apropriação de crédito de qualquer nota fiscal que não tenha sido liquidada via Split Payment bancário até que haja comprovação do recolhimento (DARF) pelo fornecedor. O adquirente torna-se solidário ou deve recolher o imposto em nome do fornecedor para garantir seu crédito.16
+7.2 Gestão das Alíquotas de Transição (2029-2033)
+Durante a transição do IBS, o sistema terá de lidar com alíquotas fracionadas.
+Exemplo em 2031: A alíquota do IBS será 30% da alíquota final, e a do ICMS/ISS será 70% da alíquota original.7
+Complexidade: O ERP precisará calcular na mesma nota fiscal:
+CBS Cheia.
+IBS Parcial (Regra Nova - Destino).
+ICMS/ISS Parcial (Regra Antiga - Origem/Mista).Isso exige a manutenção de dois motores de cálculo fiscal operando simultaneamente por quatro anos.
+8. Conclusão
+A Lei Complementar nº 214/2025 impõe uma reengenharia completa nos processos de negócios das empresas do Simples Nacional e do Lucro Presumido. Para as primeiras, a escolha entre o regime padrão e o híbrido determinará sua viabilidade comercial no mercado B2B. Para as segundas, a gestão rigorosa de créditos de IBS/CBS sobre todas as despesas (inclusive as de uso e consumo, agora permitidas) será a única forma de amortecer o aumento da alíquota nominal.
+A implementação do Módulo de Estratégia de Compras descrito neste documento não é uma melhoria incremental, mas um requisito de sobrevivência. Recomenda-se a formação imediata de um comitê multidisciplinar (TI, Tax, Compras) para iniciar o saneamento dos cadastros de produtos (classificação de uso/consumo) e fornecedores (regime tributário), preparando a organização para a fase de testes em 2026.
+Referências citadas
+PLP 68/2024 - Senado Federal, acessado em janeiro 9, 2026, https://www25.senado.leg.br/web/atividade/materias/-/materia/164914
+Reforma Tributária 2026: guia completo sobre o que muda e a ..., acessado em janeiro 9, 2026, https://www.taxgroup.com.br/intelligence/reforma-tributaria-2026-guia-completo-sobre-o-que-muda-e-a-transicao/
+GRUPO DE TRABALHO REGULAMENTAÇÃO DA REFORMA TRIBUTÁRIA - PLP 68/2024 - Câmara dos Deputados, acessado em janeiro 9, 2026, https://www2.camara.leg.br/atividade-legislativa/comissoes/grupos-de-trabalho/57a-legislatura/grupo-de-trabalho-sobre-a-regulamentacao-da-reforma-tributaria-plp-68-de-2024/outros-documentos/Relatrio100724.pdf
+plp068 - Planalto, acessado em janeiro 9, 2026, https://www.planalto.gov.br/CCIVIL_03/Projetos/Ato_2023_2026/2024/PLP/plp-068.htm
+“O pulo do gato” sobre o Simples Nacional e a Reforma Tributária (LC 214/2025), acessado em janeiro 9, 2026, https://www.contabeis.com.br/artigos/73075/o-pulo-do-gato-sobre-o-simples-nacional-e-a-reforma-tributaria-lc-214-2025/
+IBS E CBS SOBRE OPERAÇÕES 1) Fato Gerador O IBS e a CBS incidem sobre todas as operações onerosas que tenham por objeto bens, acessado em janeiro 9, 2026, https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/reforma-tributaria/regulamentacao-da-reforma-tributaria/lei-geral-do-ibs-da-cbs-e-do-imposto-seletivo/resumos-tecnicos/plp-68-2024_resumo-ibs-e-cbs-sobre-operacoes.pdf
+Reforma Tributária - Destaques e Principais Aspectos - Notícias e Informações, acessado em janeiro 9, 2026, http://iguape.sftransito.com.br/ajuda/noticias-e-informacoes-reforma-tributaria-destaques-e-principais-aspectos-bf9d4db7
+senado federal - projeto de lei complementar n° 68, de 2024 - Poder360, acessado em janeiro 9, 2026, https://static.poder360.com.br/2024/09/Senado-proj-lei-complementar-n%C2%B0-68-de-2024.pdf
+Reforma Tributária: empresas do Simples poderão optar pelo regime regular duas vezes ao ano - FecomercioSP, acessado em janeiro 9, 2026, https://www.fecomercio.com.br/noticia/reforma-tributaria-empresas-do-simples-poderao-optar-pelo-regime-regular-duas-vezes-ao-ano
+Como a Reforma Tributária impacta o profissional PJ: impostos e lucro - Contabilizei, acessado em janeiro 9, 2026, https://www.contabilizei.com.br/contabilidade-online/como-a-reforma-tributaria-impacta-o-profissional-pj-impostos-e-lucro/
+O que mudou na reforma tributária para profissionais liberais? - Omie, acessado em janeiro 9, 2026, https://www.omie.com.br/blog/reforma-tributaria-para-profissionais-liberais/
+Profissionais liberais na Reforma Tributária: veja a lista de categorias que terão alíquota reduzida – Conselho Regional de Contabilidade em Pernambuco - CRC PE, acessado em janeiro 9, 2026, https://crcpe.org.br/noticia/profissionais-liberais-na-reforma-tributaria-veja-a-lista-de-categorias-que-terao-aliquota-reduzida/
+REFORMA TRIBUTÁRIA: Projeto de Lei Complementar n.º 68/2024 | Insights - Mayer Brown, acessado em janeiro 9, 2026, https://www.mayerbrown.com/pt/insights/publications/2024/05/brazilian-tax-reformcomplementary-bill-of-law-no-682024
+A não Cumulatividade do IBS e da CBS e o Impedimento à Dedução de Créditos sobre Aquisições de Bens e Serviços de Uso o - Instituto Brasileiro de Direito Tributário, acessado em janeiro 9, 2026, https://revista.ibdt.org.br/index.php/RDTA/article/download/2658/2404/8706
+substitutivo ao plp 68/2024 parte geral, acessado em janeiro 9, 2026, https://www.marizadvogados.com.br/wp-content/uploads/2024/12/Substitutivo-PLP-68-Parte-Geral.pdf
+Reforma Tributária no Brasil - EY, acessado em janeiro 9, 2026, https://www.ey.com/content/dam/ey-unified-site/ey-com/pt-br/campaigns/reforma-tributaria/documents/ey-brasil-reforma-tributaria6-05-13-2024.pdf
+7º Episódio - IBS e CBS: Formas de recolhimento e split payment . - YouTube, acessado em janeiro 9, 2026, https://www.youtube.com/watch?v=EZE45VrqYes
+A Reforma Tributária, o crédito vinculado ao pagamento e as formas de, acessado em janeiro 9, 2026, https://reformatributaria.fiesp.com.br/docs/a-reforma-tributaria.pdf
+Sindilojas-SP analisa impactos do split payment para o varejo - Monitor Mercantil, acessado em janeiro 9, 2026, https://monitormercantil.com.br/sindilojas-sp-analisa-impactos-do-split-payment-para-o-varejo/
+Alcance estimado da nova cobrança é bilionário, diz estudo - - Peers Consulting, acessado em janeiro 9, 2026, https://peers.com.br/alcance-estimado-da-nova-cobranca-e-bilionario-diz-estudo/
+Split payment: o que é e como funciona na Reforma Tributária? - Focus NFe, acessado em janeiro 9, 2026, https://focusnfe.com.br/blog/split-payment/
+EMENDA Nº (ao PLP 68/2024) - Senado Federal, acessado em janeiro 9, 2026, https://legis.senado.leg.br/sdleg-getter/documento?dm=9783672&ts=1731608410097&disposition=inline
+Principais alterações aprovadas pelo Senado ... - Schneider Pugliese, acessado em janeiro 9, 2026, https://www.schneiderpugliese.com.br/principais-alteracoes-aprovadas-pelo-senado-federal-na-deliberacao-do-plp-68-2024/
+Reforma Tributária e o Setor Imobiliário: PLP nº 68/2024 é aprovado pelo Legislativo e segue para sanção presidencial - lacazmartins.com.br, acessado em janeiro 9, 2026, https://www.lacazmartins.com.br/publicacoes/reforma-tributaria-e-o-setor-imobiliario-plp-no-68-2024-e-aprovado-pelo-legislativo-e-segue-para-sancao-presidencial/
+EMENDA Nº (ao PLP 68/2024) - Senado Federal, acessado em janeiro 9, 2026, https://legis.senado.leg.br/sdleg-getter/documento?dm=9781058&ts=1727716759069&disposition=inline
+A Reforma Tributária e as Operações com Bens Imóveis, acessado em janeiro 9, 2026, https://lageportilhojardim.com.br/blog/a-reforma-tributaria-e-as-operacoes-com-bens-imoveis/
+PLP 68/2024 | Resumo – Regime específico de Combus veis - Portal Gov.br, acessado em janeiro 9, 2026, https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/reforma-tributaria/regulamentacao-da-reforma-tributaria/lei-geral-do-ibs-da-cbs-e-do-imposto-seletivo/resumos-tecnicos/plp-68-2024_resumo-regime-especifico-de-combustiveis.pdf
+IBS E CBS - REGIME ESPECÍFICO APLICADO AOS COMBUSTÍVEIS, acessado em janeiro 9, 2026, https://www2.camara.leg.br/atividade-legislativa/comissoes/grupos-de-trabalho/57a-legislatura/grupo-de-trabalho-sobre-a-regulamentacao-da-reforma-tributaria-plp-68-de-2024/apresentacoes-em-eventos/2024.06.11LuizClaudioNogueira.pdf
+EMENDA Nº (ao PLP 68/2024) - Senado Federal, acessado em janeiro 9, 2026, https://legis.senado.leg.br/sdleg-getter/documento?dm=9855274&ts=1733531284161

@@ -57,4 +57,14 @@ export interface TaxRules {
             aliquota_padrao_total: number;
         };
     };
+    iss: {
+        aliquota_padrao: number;
+        aliquota_maxima: number;
+        retencao_fonte: boolean;
+    };
+    icms: {
+        aliquota_interna_media: number;
+        credito_estimado: number;
+        difal_aliq_media: number;
+    };
 }

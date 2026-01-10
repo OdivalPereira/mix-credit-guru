@@ -138,10 +138,11 @@ export function getReducaoSetorial(cnae: string): number {
 
 export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   const limiteSN = 4800000;
-  const sublimiteSN = 3600000; // Sublimite para ICMS/ISS na maioria dos estados
+  // Sublimite para ICMS/ISS: 3.6M para a maioria dos estados, 1.8M para AC, AP, RR
+  const sublimiteSN = ['AC', 'AP', 'RR'].includes(perfil.uf || '') ? 1800000 : 3600000;
   const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
 
-  // Verificar elegibilidade
+  // 1. Verificação de Elegibilidade
   if (faturamentoAnual > limiteSN) {
     return {
       nome: 'Simples Nacional',
@@ -160,24 +161,61 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
   }
 
   const cnaeInfo = getCnaeInfo(perfil.cnae_principal);
-  const isServico = isServicoAltoPresuncao(perfil.cnae_principal);
 
-  // Determinar anexo e calcular Fator R
+  // Validar elegibilidade pelo CNAE
+  if (cnaeInfo?.simples && !cnaeInfo.simples.permitido) {
+    return {
+      nome: 'Simples Nacional',
+      codigo: 'simples',
+      elegivel: false,
+      motivo_inelegibilidade: `Atividade (CNAE ${perfil.cnae_principal}) impeditiva ao Simples Nacional: ${cnaeInfo.simples.motivo || 'Vedação legal'}`,
+      imposto_bruto_anual: 0,
+      creditos_aproveitados: 0,
+      imposto_liquido_anual: 0,
+      carga_efetiva_percentual: 0,
+      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
+      pros: [],
+      contras: [],
+      observacoes: []
+    };
+  }
+
+  // 2. Determinação do Anexo e Fator R
   const folhaAnual = (perfil.despesas_sem_credito.folha_pagamento + perfil.despesas_sem_credito.pro_labore) * 12;
   const fatorR = faturamentoAnual > 0 ? folhaAnual / faturamentoAnual : 0;
 
-  const anexo = cnaeInfo?.simples?.anexo_padrao || 'III';
-  let anexoAplicado = anexo;
+  let anexoAplicado = cnaeInfo?.simples?.anexo_padrao || (isServicoAltoPresuncao(perfil.cnae_principal) ? 'V' : 'I');
+  const anexoAlternativo = cnaeInfo?.simples?.anexo_fator_r;
+  const fatorRMinimo = cnaeInfo?.simples?.fator_r_minimo || 0.28;
+  const sujeitoFatorR = !!anexoAlternativo;
 
-  if (anexo === 'V' && fatorR >= 0.28 && cnaeInfo?.simples?.anexo_fator_r) {
-    anexoAplicado = cnaeInfo.simples.anexo_fator_r;
+  // Lógica do Fator R (Ex: Padrao V, se R >= 28% vai para III)
+  if (sujeitoFatorR && anexoAlternativo && fatorR >= fatorRMinimo) {
+    anexoAplicado = anexoAlternativo;
   }
 
-  // Calcular alíquota efetiva (Federal)
   const anexoData = taxRules.simples_nacional.anexos[anexoAplicado];
+  if (!anexoData) {
+    return {
+      nome: 'Simples Nacional',
+      codigo: 'simples',
+      elegivel: false,
+      motivo_inelegibilidade: `Erro de configuração: Tabela do Anexo ${anexoAplicado} não encontrada`,
+      imposto_bruto_anual: 0,
+      creditos_aproveitados: 0,
+      imposto_liquido_anual: 0,
+      carga_efetiva_percentual: 0,
+      detalhes: { consumo: 0, irpj: 0, csll: 0, iss_icms: 0 },
+      pros: [],
+      contras: [],
+      observacoes: []
+    };
+  }
+
+  // 3. Cálculo da Alíquota Efetiva
   let aliquotaNominal = 0;
   let deducao = 0;
-  for (const faixa of anexoData?.faixas || []) {
+  for (const faixa of anexoData.faixas) {
     if (faturamentoAnual <= faixa.limite) {
       aliquotaNominal = faixa.aliquota;
       deducao = faixa.deducao;
@@ -187,63 +225,94 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
     deducao = faixa.deducao;
   }
 
-  const aliquotaEfetiva = faturamentoAnual > 0 ? ((faturamentoAnual * aliquotaNominal) - deducao) / faturamentoAnual : 0;
+  const aliquotaEfetiva = faturamentoAnual > 0 ? Math.max(0, ((faturamentoAnual * aliquotaNominal) - deducao) / faturamentoAnual) : 0;
 
-  // Lógica de Sublimite (Híbrido)
+  // 4. Lógica de Sublimite (Simples Híbrido > 3.6M)
   const isHibrido = faturamentoAnual > sublimiteSN;
-  let impostoSimples = faturamentoAnual * aliquotaEfetiva;
-  let impostoExtra = 0;
-  let creditosExtra = 0;
+  let impostoSimplesFederal = 0;
+  let impostoIcmsIssExterno = 0;
+  let creditosExternos = 0;
   let icmsDebitoHibrido = 0;
 
-  if (isHibrido) {
-    // Se ultrapassa sublimite, remove ICMS/ISS da alíquota do Simples e calcula por fora
-    // Aproximadamente 33% da alíquota do Simples é ICMS/ISS
-    const percIcmsIssNoSimples = 0.33;
-    impostoSimples = impostoSimples * (1 - percIcmsIssNoSimples);
+  const dist = anexoData.distribuicao_tributos || { irpj: 0, csll: 0, cofins: 0, pis: 0, cpp: 0, icms: 0, iss: 0 };
+  const shareIcmsIss = (dist.icms || 0) + (dist.iss || 0);
+  const shareFederal = 1 - shareIcmsIss;
 
-    // Cálculo por fora (Não-Cumulativo para ICMS, por exemplo)
-    if (!isServico) {
-      icmsDebitoHibrido = faturamentoAnual * 0.18;
-      const icmsCredito = (perfil.despesas_com_credito.cmv * 12) * 0.12;
-      impostoExtra = Math.max(0, icmsDebitoHibrido - icmsCredito);
-      creditosExtra = icmsCredito;
+  if (isHibrido) {
+    // Parte federal reduzida (remove ICMS/ISS da alíquota efetiva)
+    const aliquotaFederal = aliquotaEfetiva * shareFederal;
+    impostoSimplesFederal = faturamentoAnual * aliquotaFederal;
+
+    const isServico = !!dist.iss;
+    if (isServico) {
+      const aliqIss = taxRules.iss.aliquota_maxima || 0.05;
+      impostoIcmsIssExterno = faturamentoAnual * aliqIss;
     } else {
-      impostoExtra = faturamentoAnual * 0.05; // ISS cheio
+      const aliqIcms = taxRules.icms.aliquota_interna_media || 0.18;
+      const aliqCredito = taxRules.icms.credito_estimado || 0.12;
+      icmsDebitoHibrido = faturamentoAnual * aliqIcms;
+      const icmsCredito = (perfil.despesas_com_credito.cmv * 12) * aliqCredito;
+      impostoIcmsIssExterno = Math.max(0, icmsDebitoHibrido - icmsCredito);
+      creditosExternos = icmsCredito;
     }
+  } else {
+    impostoSimplesFederal = faturamentoAnual * aliquotaEfetiva;
+    impostoIcmsIssExterno = 0;
   }
 
-  const impostoTotal = impostoSimples + impostoExtra;
-  // Imposto bruto = Simples federal + débito estadual/municipal (antes de créditos)
-  const impostoBruto = impostoSimples + (isHibrido && !isServico ? icmsDebitoHibrido : impostoExtra);
+  // 5. CPP Separado (Anexo IV)
+  let cppSeparado = 0;
+  if (anexoData.cpp_separado) {
+    const aliquotaCpp = anexoData.cpp_aliquota || 0.20;
+    cppSeparado = folhaAnual * aliquotaCpp;
+  }
+
+  const impostoTotalPagar = impostoSimplesFederal + impostoIcmsIssExterno + cppSeparado;
+
+  // Breakdown para detalhes (Normalização do DAS para achar componentes)
+  const totalDasBase = isHibrido ? (impostoSimplesFederal / shareFederal) : impostoSimplesFederal;
+
+  const vConsumo = isHibrido
+    ? (totalDasBase * (dist.pis + dist.cofins))
+    : (impostoSimplesFederal * (dist.pis + dist.cofins));
+
+  const vIrpj = totalDasBase * (dist.irpj || 0);
+  const vCsll = totalDasBase * (dist.csll || 0);
+  const vCppDas = totalDasBase * (dist.cpp || 0);
+  const vIssIcms = isHibrido ? impostoIcmsIssExterno : (totalDasBase * shareIcmsIss);
 
   return {
-    nome: isHibrido ? 'Simples Nacional (Híbrido)' : 'Simples Nacional',
+    nome: isHibrido ? `Simples Nacional (Híbrido - Anexo ${anexoAplicado})` : `Simples Nacional (Anexo ${anexoAplicado})`,
     codigo: 'simples',
     elegivel: true,
-    imposto_bruto_anual: impostoBruto,
-    creditos_aproveitados: creditosExtra,
-    imposto_liquido_anual: impostoTotal,
-    carga_efetiva_percentual: (impostoTotal / faturamentoAnual) * 100,
+    imposto_bruto_anual: impostoSimplesFederal + (isHibrido ? (icmsDebitoHibrido || impostoIcmsIssExterno) : (totalDasBase * shareIcmsIss)) + cppSeparado,
+    creditos_aproveitados: creditosExternos,
+    imposto_liquido_anual: impostoTotalPagar,
+    carga_efetiva_percentual: (impostoTotalPagar / faturamentoAnual) * 100,
     detalhes: {
-      consumo: impostoSimples * 0.4 + impostoExtra,
-      irpj: impostoSimples * 0.15,
-      csll: impostoSimples * 0.10,
-      iss_icms: isHibrido ? impostoExtra : impostoSimples * 0.33
+      consumo: vConsumo || 0,
+      irpj: vIrpj || 0,
+      csll: vCsll || 0,
+      iss_icms: vIssIcms || 0,
+      cpp: (vCppDas || 0) + cppSeparado
     },
     pros: [
-      isHibrido ? 'Permite manter tributação federal reduzida' : 'Guia única (DAS) e menor burocracia',
-      isHibrido ? `Aproveitamento de R$ ${creditosExtra.toLocaleString('pt-BR')} em créditos de ICMS (Regime Híbrido)` : '',
+      isHibrido ? 'Burocracia Reduzida na parte Federal' : 'Guia única (DAS) e simplicidade de gestão',
+      sujeitoFatorR && fatorR >= fatorRMinimo ? `Fator R (${(fatorR * 100).toFixed(1)}%) permitiu enquadramento no Anexo ${anexoAplicado} (Menor Alíquota)` : '',
+      anexoData.cpp_separado ? '' : 'CPP (INSS Patronal) já incluso na alíquota única',
+      !isHibrido ? 'Isenção de cobrança de ICMS/ISS fora do DAS' : ''
     ].filter(Boolean),
     contras: [
-      isHibrido ? 'Complexidade: ICMS/ISS calculados e pagos em guias separadas' : 'Sem aproveitamento de créditos de PIS/COFINS',
-      fatorR < 0.28 && anexo === 'V' ? 'Fator R baixo mantém no Anexo V' : ''
-    ].filter(Boolean),
+      isHibrido ? 'Complexidade elevada: apuração de ICMS/ISS no regime normal (Débito/Crédito)' : 'Veda tomada de créditos de PIS/COFINS pelos clientes (desvantagem competitiva B2B)',
+      anexoData.cpp_separado ? 'CPP (INSS Patronal) cobrada à parte (20% sobre folha) - Anexo IV' : '',
+      sujeitoFatorR && fatorR < fatorRMinimo ? `Fator R baixo (${(fatorR * 100).toFixed(1)}%) forçou tributação pelo Anexo ${anexoAplicado} (Mais caro). Aumente sua folha.` : ''
+    ].filter(Boolean) as string[],
     observacoes: [
-      isHibrido ? `Ultrapassou sublimite de R$ 3.6M (ICMS/ISS por fora)` : `Faturamento dentro do sublimite`,
-      `Alíquota Efetiva SN: ${(aliquotaEfetiva * 100).toFixed(2)}%`,
-      isHibrido && !isServico ? `ICMS Débito: R$ ${icmsDebitoHibrido.toLocaleString('pt-BR')} | Crédito: R$ ${creditosExtra.toLocaleString('pt-BR')}` : ''
-    ].filter(Boolean)
+      `Anexo ${anexoAplicado} | Alíquota Nominal: ${(aliquotaNominal * 100).toFixed(2)}% | Efetiva: ${(aliquotaEfetiva * 100).toFixed(2)}%`,
+      `Fator R: ${(fatorR * 100).toFixed(2)}% (Folha: R$ ${folhaAnual.toLocaleString('pt-BR')})`,
+      isHibrido ? `Sublimite Excedido (R$ 3.6M). ICMS/ISS recolhidos fora do DAS.` : null,
+      cppSeparado > 0 ? `Adicional CPP (Anexo IV): R$ ${cppSeparado.toLocaleString('pt-BR')}` : null
+    ].filter(Boolean) as string[]
   };
 }
 

@@ -1,0 +1,493 @@
+Documentação Técnica: Reforma Tributária - Simples Nacional e Lucro Presumido (2026-2033)
+1. Objetivo e Premissas do Projeto
+Este documento define a base lógica central para a implementação dos motores de cálculo de transição tributária, realização de comparativos de cenários em tempo real, gerenciamento da apropriação de créditos via Split Payment e Estratégia de Compras (Vendor Rating). O sistema deve ser capaz de processar a convivência de regimes e antecipar impactos financeiros de longo prazo de forma automatizada.
+2. Cronograma Detalhado de Transição
+O sistema deve monitorar a "Data de Competência" de cada transação para aplicar as regras vigentes conforme o calendário abaixo, garantindo que a conformidade seja mantida em períodos de sobreposição de leis.
+Janeiro de 2026 (Fase de Calibração e Teste):
+Mecânica Operacional: Início da cobrança da CBS à alíquota de $0,9\%$ e do IBS à alíquota de $0,1\%$.
+Finalidade e Ajustes: Esta fase funciona como um "projeto-piloto" em escala nacional para permitir a calibração dos sistemas de arrecadação do Comitê Gestor e da Receita Federal, fornecendo dados para o cálculo das alíquotas de referência.
+Compensação e Fluxo de Caixa: Os valores pagos a título de IBS e CBS são integralmente compensáveis com as contribuições para o PIS/PASEP e a COFINS. Caso não haja débitos suficientes desses tributos, o saldo poderá ser utilizado para abater débitos previdenciários ou ser objeto de ressarcimento, garantindo a neutralidade financeira.
+Requisito de Sistema: Gerar guias de recolhimento híbridas e monitorar o saldo credor gerado para compensação automática na EFD-Contribuições.
+Janeiro de 2027 (A Virada de Chave Federal):
+Extinção de Tributos: Extinção definitiva e total das contribuições ao PIS e à COFINS. O IPI terá suas alíquotas reduzidas a zero para a maioria dos produtos, permanecendo apenas como instrumento de proteção para itens da Zona Franca de Manaus (ZFM).
+Vigência Plena da CBS: A CBS assume sua alíquota definitiva (estimada em ~$8,8\%$). Para empresas do Lucro Real e do Lucro Presumido, inicia-se o regime de não-cumulatividade plena.
+Impacto no Lucro Presumido: O setor de serviços no regime Presumido abandona o modelo cumulativo e passa a apurar a CBS pelo método de débito e crédito. A lógica do sistema deve capturar créditos de insumos, aluguéis e energia elétrica anteriormente desconsiderados.
+2029 a 2032 (A Escada da Transição Gradual do IBS):
+Redução Proporcional: Substituição gradual do ICMS (Estadual) e do ISS (Municipal) pelo IBS. As alíquotas dos impostos antigos serão reduzidas na proporção de $1/10$ (dez por cento) ao ano.
+Elevação do IBS: Simultaneamente à queda do ICMS/ISS, a alíquota do IBS será elevada para manter a neutralidade arrecadatória.
+Complexidade Híbrida: O cálculo operará em "modo híbrido". Uma única Nota Fiscal pode conter ISS (alíquota reduzida) convivendo com o IBS (alíquota ascendente). O motor de cálculo deve gerenciar as tabelas de transição específicas para cada ano e tributo.
+Janeiro de 2033 (O Estado Final de Unificação Total):
+Extinção de Fronteiras Fiscais: O ICMS e o ISS deixam de existir. O sistema tributário sobre o consumo opera exclusivamente sob o binômio IBS e CBS (IVA Dual).
+Consolidação do Destino: Aplicação absoluta do princípio do destino. $100\%$ do IBS deve ser direcionado ao local do consumo.
+Simplificação Extreme: O módulo de conformidade deve focar apenas na norma unificada do Comitê Gestor, eliminando o monitoramento de legislações estaduais e municipais de consumo.
+3. Lógica do Simples Híbrido (Misto)
+A partir de 2027, o sistema deve fornecer suporte à tomada de decisão estratégica para empresas do Simples Nacional, automatizando a comparação entre as duas modalidades de convivência com o IBS e a CBS. A escolha entre o regime "Puro" ou "Misto" altera profundamente a atratividade comercial da empresa perante clientes que apuram impostos pelo regime de não-cumulatividade (Lucro Real e Lucro Presumido).
+Simples Nacional Puro (Regime de Recolhimento Único):
+Funcionamento: O IBS e a CBS permanecem integrados ao cálculo do Documento de Arrecadação do Simples (DAS), mantendo a praticidade da guia única.
+Consequência de Crédito: O crédito transferido ao adquirente é limitado ao valor da parcela de IBS/CBS efetivamente paga no DAS, resultando no chamado Crédito Reduzido. Por exemplo, uma empresa de comércio na primeira faixa paga uma alíquota nominal de $4,00\%$. Com a repartição interna de ~$15,50\%$ para os novos impostos, o crédito gerado para o cliente seria de apenas ~$0,62\%$.
+Implicações de Mercado: Esta modalidade é recomendada para empresas cujo público-alvo é predominantemente o consumidor final (B2C), onde o aproveitamento de crédito pelo comprador não é um fator relevante na decisão de preço. Em transações B2B, o "Crédito Reduzido" pode afastar clientes corporativos que buscam a neutralidade fiscal oferecida por fornecedores que transferem a alíquota cheia.
+Simples Nacional Misto (Regime de Recolhimento por Fora):
+Funcionamento: A empresa opta por retirar o IBS e a CBS da cesta de impostos do Simples Nacional. Nesta configuração, o IRPJ, CSLL e CPP continuam sendo pagos de forma simplificada no DAS, enquanto o IBS e a CBS passam a ser apurados pelo regime regular de débito e crédito (alíquota cheia, estimada em $26,5\%$).
+Vantagem Competitiva: Permite a transferência de Crédito Integral aos clientes, equiparando a micro e pequena empresa aos grandes contribuintes em termos de eficiência tributária na cadeia de suprimentos.
+Análise de Viabilidade do Sistema: O motor de cálculo deve realizar uma simulação mensal comparativa. A desvantagem de pagar uma alíquota maior sobre o faturamento deve ser pesada contra dois fatores positivos: o direito ao crédito sobre insumos (aluguel, energia, mercadorias) e o potencial ganho de mercado ao se tornar um fornecedor "neutro" para empresas do Lucro Real.
+Impacto no Fluxo de Caixa: A empresa passa a lidar com o Split Payment na alíquota de destino cheia, o que exige um controle rigoroso dos créditos de entrada para que o sistema valide automaticamente o abatimento do imposto a pagar e mantenha a margem de lucro operacional.
+3.1. Algoritmo de Decisão de Compras: O Fator de Equivalência
+Para neutralizar a distorção causada pelos diferentes regimes ao comprar de fornecedores do Simples, o sistema deve implementar o Fator de Equivalência. O objetivo é comparar o "Custo Líquido Recuperável" e não o preço bruto.
+Fórmula de Break-even: Para que um fornecedor do Simples Padrão (Crédito Reduzido) seja competitivo frente a um fornecedor do Regime Regular (Crédito Cheio), seu preço ($P_{simp}$) deve ser inferior na seguinte proporção:$$P_{simp} < P_{reg} \times \frac{(1 - A_{ref})}{(1 - A_{simp})}$$Onde $A_{ref}$ é a alíquota de referência (ex: 26,5%) e $A_{simp}$ é a alíquota efetiva de crédito do Simples (ex: 4%).
+Exemplo Numérico: Se o fornecedor regular vende a R$ 100,00 (Custo Líquido R$ 73,50), o fornecedor do Simples (crédito 4%) precisa vender a R$ 76,56 para entregar o mesmo custo líquido. O sistema deve alertar se o desconto for inferior a ~23,4%.
+4. Tabelas de Cálculo e Repartição (Comércio e Indústria)
+O sistema deve processar as tabelas de repartição para isolar a parcela tributária correspondente ao IBS e à CBS. Essa segregação é fundamental para determinar o crédito que será transferido ao adquirente no "Regime Puro" e para ajustar a guia DAS quando a empresa atingir o sublimite estadual de R$ 3,6 milhões. O cálculo da alíquota efetiva segue a fórmula: $AE = \frac{(RBT12 \times Alíq.Nominal) - Parcela.Deduzir}{RBT12}$.
+4.1. ANEXO I - Comércio (Venda de Mercadorias)
+A tabela de comércio é a porta de entrada para a maioria das pequenas empresas. O Jules deve monitorar a transição da parcela do ICMS para o IBS e do PIS/COFINS para a CBS.
+Faixa
+Receita Bruta em 12 Meses (RBT12)
+Alíquota Nominal
+Parcela a Deduzir
+% Repartição IBS/CBS (Est.)
+1ª
+Até R$ 180.000,00
+$4,00\%$
+R$ 0,00
+$15,50\%$
+2ª
+De R$ 180.000,01 a R$ 360.000,00
+$7,30\%$
+R$ 5.940,00
+$16,98\%$
+3ª
+De R$ 360.000,01 a R$ 720.000,00
+$9,50\%$
+R$ 13.860,00
+$19,70\%$
+4ª
+De R$ 720.000,01 a R$ 1.800.000,00
+$10,70\%$
+R$ 22.500,00
+$21,57\%$
+5ª
+De R$ 1.800.000,01 a R$ 3.600.000,00
+$14,30\%$
+R$ 87.300,00
+$23,15\%$
+6ª
+De R$ 3.600.000,01 a R$ 4.800.000,00
+$19,00\%$
+R$ 378.000,00
+$0,00\%^*$
+*Nota: Na 6ª faixa, as empresas ultrapassam o sublimite de R$ 3,6 milhões para tributos sobre o consumo. O sistema deve calcular o IBS e a CBS por fora do DAS pelo regime de débito e crédito, mantendo apenas os tributos federais de renda e folha na guia única.
+4.2. ANEXO II - Indústria (Transformação Industrial)
+Para a indústria, o motor de cálculo deve considerar a extinção progressiva do IPI e a sua substituição pela CBS ou pelo Imposto Seletivo, dependendo da classificação NCM do produto.
+Faixa
+Receita Bruta em 12 Meses (RBT12)
+Alíquota Nominal
+Parcela a Deduzir
+% Repartição IBS/CBS (Est.)
+1ª
+Até R$ 180.000,00
+$4,50\%$
+R$ 0,00
+$14,35\%$
+2ª
+De R$ 180.000,01 a R$ 360.000,00
+$7,80\%$
+R$ 5.940,00
+$15,80\%$
+3ª
+De R$ 360.000,01 a R$ 720.000,00
+$10,00\%$
+R$ 13.860,00
+$18,20\%$
+4ª
+De R$ 720.000,01 a R$ 1.800.000,00
+$11,20\%$
+R$ 22.500,00
+$19,40\%$
+5ª
+De R$ 1.800.000,01 a R$ 3.600.000,00
+$14,70\%$
+R$ 85.500,00
+$21,10\%$
+6ª
+De R$ 3.600.000,01 a R$ 4.800.000,00
+$30,00\%$
+R$ 720.000,00
+$0,00\%^*$
+*Nota: Assim como no comércio, a ultrapassagem do sublimite de R$ 3,6 milhões exige a segregação do IBS/CBS para o regime normal de apuração.
+5. Tabelas de Cálculo e Repartição (Serviços)
+O setor de serviços é segmentado em três anexos distintos (III, IV e V), cada um com regras próprias de previdência e incidência. O sistema deve primeiro processar o enquadramento da atividade e, nos casos de anexos "concorrentes" (III vs V), validar o Fator R antes de aplicar as tabelas abaixo.
+5.1. ANEXO III - Serviços Gerais, Manutenção, Instalação e Corretagem
+Este anexo abrange atividades com alto uso de mão de obra e serviços de natureza técnica menos complexa. A carga tributária inicial é de $6\%$, o que o torna o alvo preferencial das estratégias de otimização de Fator R.
+Faixa
+Receita Bruta em 12 Meses (RBT12)
+Alíquota Nominal
+Parcela a Deduzir
+Repartição IBS/CBS (Est.)
+1ª
+Até R$ 180.000,00
+$6,00\%$
+R$ 0,00
+$33,50\%$
+2ª
+De R$ 180.000,01 a R$ 360.000,00
+$11,20\%$
+R$ 9.360,00
+$32,00\%$
+3ª
+De R$ 360.000,01 a R$ 720.000,00
+$13,50\%$
+R$ 17.640,00
+$32,50\%$
+4ª
+De R$ 720.000,01 a R$ 1.800.000,00
+$16,00\%$
+R$ 35.640,00
+$32,50\%$
+5ª
+De R$ 1.800.000,01 a R$ 3.600.000,00
+$21,00\%$
+R$ 125.640,00
+$33,00\%$
+6ª
+De R$ 3.600.000,01 a R$ 4.800.000,00
+$33,00\%$
+R$ 648.000,00
+$0,00\%^*$
+*Nota de Sistema: A partir de R$ 3,6 milhões, o ISS (substituído pelo IBS) e o PIS/COFINS (substituído pela CBS) deixam de ser calculados pela tabela e passam para o regime de débito e crédito integral.
+5.2. ANEXO IV - Serviços de Construção Civil, Limpeza, Vigilância e Advocacia
+O Anexo IV possui uma particularidade crítica: a CPP (Contribuição Patronal Previdenciária) não está inclusa na guia DAS. Ela deve ser calculada separadamente pela folha de pagamento ($20\%$ sobre a folha). Isso altera o percentual de repartição interna do IBS/CBS, que tende a ser maior proporcionalmente ao valor da guia.
+Faixa
+Receita Bruta em 12 Meses (RBT12)
+Alíquota Nominal
+Parcela a Deduzir
+Repartição IBS/CBS (Est.)
+1ª
+Até R$ 180.000,00
+$4,50\%$
+R$ 0,00
+$44,50\%$
+2ª
+De R$ 180.000,01 a R$ 360.000,00
+$9,00\%$
+R$ 8.100,00
+$40,00\%$
+3ª
+De R$ 360.000,01 a R$ 720.000,00
+$10,20\%$
+R$ 12.420,00
+$40,00\%$
+4ª
+De R$ 720.000,01 a R$ 1.800.000,00
+$14,00\%$
+R$ 39.780,00
+$40,00\%$
+5ª
+De R$ 1.800.000,01 a R$ 3.600.000,00
+$22,00\%$
+R$ 183.780,00
+$40,00\%$
+6ª
+De R$ 3.600.000,01 a R$ 4.800.000,00
+$33,00\%$
+R$ 828.000,00
+$0,00\%^*$
+5.3. ANEXO V - Serviços Intelectuais, Engenharia, Medicina e Consultoria
+O Anexo V é o regime de "penalização" para empresas com baixa folha de pagamento. O sistema deve processar os alertas de migração para o Anexo III sempre que o Fator R se aproximar dos $28\%$. As alíquotas começam em pesados $15,5\%$.
+Faixa
+Receita Bruta em 12 Meses (RBT12)
+Alíquota Nominal
+Parcela a Deduzir
+Repartição IBS/CBS (Est.)
+1ª
+Até R$ 180.000,00
+$15,50\%$
+R$ 0,00
+$14,00\%$
+2ª
+De R$ 180.000,01 a R$ 360.000,00
+$18,00\%$
+R$ 4.500,00
+$14,00\%$
+3ª
+De R$ 360.000,01 a R$ 720.000,00
+$19,50\%$
+R$ 9.900,00
+$14,00\%$
+4ª
+De R$ 720.000,01 a R$ 1.800.000,00
+$20,50\%$
+R$ 17.100,00
+$14,00\%$
+5ª
+De R$ 1.800.000,01 a R$ 3.600.000,00
+$23,00\%$
+R$ 62.100,00
+$14,00\%$
+6ª
+De R$ 3.600.000,01 a R$ 4.800.000,00
+$30,50\%$
+R$ 540.000,00
+$0,00\%^*$
+6. Lógica do Fator R e Otimização Tributária
+O Fator R é o multiplicador que determina se uma atividade de serviços será tributada pelo Anexo III (mais benéfico) ou pelo Anexo V (mais oneroso). Esta lógica deve ser processada mensalmente com base nos dados dos últimos 12 meses.
+Fórmula de Cálculo: $Fator R = \frac{\text{Folha de Pagamento (Massa Salarial) L12}}{\text{Receita Bruta L12}}$
+6.1. Critérios de Enquadramento e Implicações
+Fator R $\ge 28\%$: A empresa é tributada pelas alíquotas do Anexo III.
+Fator R $< 28\%$: A empresa é tributada pelas alíquotas do Anexo V.
+6.2. Exemplo Prático de Cálculo e Decisão
+Considere uma empresa de tecnologia com Receita Bruta (L12) de R$ 500.000,00.
+Cenário A: Folha de Pagamento (L12) de R$ 100.000,00.
+$Fator R = 100.000 / 500.000 = 20\%$.
+Resultado: Tributação pelo Anexo V (Alíquota inicial de $15,5\%$).
+Cenário B: Folha de Pagamento (L12) de R$ 145.000,00 (Ex: pro-labore ajustado).
+$Fator R = 145.000 / 500.000 = 29\%$.
+Resultado: Tributação pelo Anexo III (Alíquota inicial de $6\%$).
+Implicação Estratégica: O sistema deve calcular o "Ponto de Equilíbrio do Pro-labore". Muitas vezes, aumentar o recolhimento de CPP e IR sobre o pro-labore para atingir os $28\%$ gera uma economia no Simples Nacional que supera o custo adicional da folha, resultando em um lucro líquido maior para o sócio.
+7. Lógica do Split Payment
+O Split Payment consiste na retenção automática de IBS/CBS na liquidação financeira.
+Venda: NF-e emitida com destaque de IBS/CBS.
+Liquidação: O banco retém o imposto no ato do pagamento pelo cliente.
+Neutralidade: O valor não deve compor a receita bruta disponível da empresa, garantindo crédito imediato ao comprador.
+7.1. Modalidades de Split e Contingência
+Split Inteligente: O banco consulta em tempo real a base de dados do Comitê Gestor (CGIBS) e da RFB para segregar o valor exato do imposto devido naquela operação.
+Split Simplificado: Utilizado em casos de indisponibilidade de comunicação. Aplica-se um percentual fixo estimado na liquidação, e o ajuste (débito ou crédito remanescente) é realizado na apuração mensal do contribuinte.
+Impacto no Capital de Giro: O Split Payment elimina o float tributário (o ganho financeiro de reter o imposto até o dia do vencimento). O sistema de Tesouraria deve prever o recolhimento em D+0 (no ato do recebimento).
+8. Algoritmo de Cálculo e Geração de Créditos (Simples Nacional)
+O motor de cálculo deve seguir um fluxo lógico rigoroso para garantir que o recolhimento unificado no DAS seja decomposto corretamente, permitindo a transparência tributária exigida pela reforma e a correta transferência de créditos na cadeia produtiva.
+8.1. Passo 1: Determinação da Alíquota Efetiva (AE)
+O sistema deve realizar a leitura da Receita Bruta Total acumulada nos últimos 12 meses (RBT12) para identificar a faixa de enquadramento nos Anexos pertinentes.
+Fórmula Aplicada: $AE = \frac{(RBT12 \times Alíquota.Nominal) - Parcela.a.Deduzir}{RBT12}$
+Exemplo de Processamento: Uma empresa comercial na 2ª faixa (RBT12 de R$ 200.000,00) aplica: $\frac{(200.000 \times 0,073) - 5.940}{200.000}$. A Alíquota Efetiva resultante para este faturamento é de 4,33%. Este valor representa o percentual total de impostos contidos na guia DAS para aquela competência.
+8.2. Passo 2: Isolação da Parcela IBS/CBS (Repartição Tributária)
+Após obter a AE, o sistema deve consultar as tabelas dinâmicas de repartição (Seções 4 e 5) para isolar a parcela correspondente ao IBS e à CBS.
+Lógica de Separação: $Percentual.Crédito = AE \times \%.Repartição.IBS.CBS.Anexo$
+Contexto do "Regime Puro": Se o percentual de repartição para comércio na 2ª faixa for de ~$16,98\%$, o crédito gerado para o comprador será de $4,33\% \times 0,1698 = \mathbf{0,73\%}$. O algoritmo deve garantir que esta segregação ocorra em tempo real para cada item da nota fiscal, respeitando as isenções ou reduções de base de cálculo específicas de cada produto (ex: cesta básica).
+8.3. Passo 3: Geração de Metadados e XML da NF-e
+A etapa final do algoritmo consiste na tradução dos valores calculados para a linguagem de marcação dos documentos fiscais.
+Mapeamento de Tags: O valor do crédito de IBS e CBS calculado no passo anterior deve ser mapeado para os novos campos do layout da NF-e (equivalentes aos antigos campos de alíquota de crédito de ICMS do Simples).
+Informações Complementares: O sistema deve inserir automaticamente uma frase padrão no campo de observações: "Permite o aproveitamento do crédito de IBS no valor de R$ X e CBS no valor de R$ Y, correspondente à alíquota de Z%, nos termos do regime unificado."
+Segurança Jurídica: Esta automação previne o erro humano na digitação manual e garante que o comprador (especialmente se for do Lucro Real) visualize o benefício fiscal imediatamente, aumentando a atratividade comercial do fornecedor.
+8.4. Implicações Estratégicas do Cálculo
+A precisão deste algoritmo evita o acúmulo de resíduos tributários e garante a fluidez do Split Payment. Caso o cálculo da AE esteja incorreto, a retenção bancária será divergente da apuração mensal, gerando pendências no Comitê Gestor. Portanto, o motor de cálculo deve realizar uma validação dupla (receita mensal vs. faturamento acumulado) antes de assinar digitalmente o XML.
+9. Lucro Presumido na Reforma e a Quebra da Cumulatividade
+O Lucro Presumido sofre a transformação mais drástica entre todos os regimes não-simplificados. Historicamente baseado no regime cumulativo para PIS e COFINS (alíquota baixas, mas sem direito a crédito), o regime migra para uma estrutura de não-cumulatividade plena para a CBS e, gradualmente, para o IBS. Isso exige que o sistema redefina o conceito de margem bruta, pois o custo tributário agora depende da eficiência na tomada de créditos.
+9.1. Tabela de Coexistência de Regimes (IRPJ, CSLL e CBS/IBS)
+Diferente do Simples, o Lucro Presumido não possui uma alíquota única. O sistema deve calcular o IRPJ e a CSLL com base na presunção de lucro, enquanto o IBS e a CBS seguem o regime regular de débito e crédito. A base de cálculo para a presunção deve ser a Receita Líquida de IBS/CBS, o que representa uma exclusão obrigatória para evitar a tributação do imposto sobre o próprio imposto.
+Grupo de Atividade Econômica
+Presunção IRPJ
+Presunção CSLL
+CBS / IBS (Regime)
+Comércio Geral / Indústria
+$8\%$
+$12\%$
+Débito e Crédito Integral
+Revenda de Combustíveis e Gás
+$1,6\%$
+$12\%$
+Débito e Crédito Integral
+Serviços Profissionais Regulamentadas
+$32\%$
+$32\%$
+Débito e Crédito Integral
+Transporte de Carga
+$8\%$
+$12\%$
+Débito e Crédito Integral
+Serviços Hospitalares (Regra ANVISA)
+$8\%$
+$12\%$
+Débito e Crédito Integral
+Atividades Imobiliárias (Venda/Loteamento)
+$8\%$
+$12\%$
+Débito e Crédito Integral
+9.2. Implicações Estratégicas da Não-Cumulatividade
+Para as empresas do Lucro Presumido, a partir de 2027, o sistema deve registrar obrigatoriamente todos os créditos de insumos (aluguéis, energia elétrica, bens para revenda). Se uma empresa de serviços intelectuais (presunção de $32\%$) tem poucos insumos tributáveis, ela verá sua carga tributária nominal sobre o faturamento saltar de $3,65\%$ (PIS/COFINS antigo) para ~$26,5\%$ (IBS/CBS), o que pode exigir a revisão de contratos e precificação.
+10. Algoritmo de Cálculo e Apuração (Lucro Presumido)
+O motor de cálculo para o Lucro Presumido deve operar de forma bipartida, tratando separadamente os impostos sobre a renda e os impostos sobre o consumo, integrando-os apenas na etapa final de emissão da nota fiscal.
+10.1. Etapa 1: Mapeamento de Atividades via CNAE
+O sistema deve cruzar o CNAE principal e secundário da empresa com a tabela de presunção (Seção 9.1). Caso a empresa possua múltiplas atividades, o cálculo deve segregar o faturamento por item de serviço ou mercadoria para aplicar a presunção correta a cada linha de receita.
+10.2. Etapa 2: Cálculo da CBS e IBS (A partir de 2027)
+O algoritmo deve processar o regime de Débito e Crédito:
+Débito: $Vendas.Brutas \times Alíquota.Padrão$ (ex: $26,5\%$).
+Crédito: $\sum(Insumos.Tributados \times Alíquota.Fornecedor)$.
+Resultado Consumo: Valor retido via Split Payment menos os créditos validados.
+Nota de Requisito: O sistema deve alertar se o fornecedor for do Simples Nacional no regime "Puro", pois o crédito de entrada será reduzido, impactando o saldo a pagar da empresa no Lucro Presumido.
+10.3. Etapa 3: Cálculo do IRPJ e CSLL (Trimestral/Mensal)
+Determinação da Base: $Receita.Bruta - (IBS + CBS.Retidos)$.
+Aplicação da Margem: $Base \times \%.Presunção.Atividade$.
+Imposto Nominal: Aplicar $15\%$ de IRPJ (mais adicional de $10\%$ se exceder teto) e $9\%$ de CSLL sobre a margem encontrada.
+Finalização: Gerar as guias de IRPJ/CSLL ou provisionar o pagamento mensal para evitar surpresas no fechamento trimestral.
+11. Lucro Real na Reforma: O Paradigma do Crédito Amplo
+No Lucro Real, a transição para o IBS e a CBS representa a consolidação do regime de Crédito Amplo, que rompe com as restrições históricas do PIS/COFINS não-cumulativo. O sistema deve ser configurado para abandonar o conceito subjetivo de "essencialidade e relevância" e adotar o critério objetivo de vinculação à atividade econômica.
+11.1. Ampliação da Base de Créditos
+Diferente do regime anterior, onde despesas com marketing, serviços administrativos ou consultorias geravam frequentes disputas com o fisco, a lógica do novo sistema assegura crédito integral sobre todas as despesas vinculadas à atividade.
+Exemplo de Configuração: O motor de cálculo deve ser programado para identificar notas fiscais de serviços de TI, publicidade, honorários profissionais e aluguéis de equipamentos como geradores imediatos de crédito de IBS/CBS, sem necessidade de análise de mérito industrial.
+Restrição Única: O sistema deve manter um filtro de bloqueio apenas para gastos de uso pessoal de sócios ou administradores, que não compõem a cadeia econômica da empresa.
+11.2. Gestão de Ressarcimento Ágil
+Uma funcionalidade crítica para empresas no Lucro Real (especialmente exportadoras ou com alto investimento) é o controle do Saldo Credor Acumulado. A reforma prevê prazos rigorosos de até 60 dias para o ressarcimento desses valores pelo Comitê Gestor. O sistema deve emitir alertas automáticos caso o prazo de auditoria governamental seja excedido, permitindo a atualização monetária dos créditos parados.
+12. Algoritmo de Cálculo e Conciliação Financeira (Lucro Real)
+O motor de cálculo para o Lucro Real integra os lançamentos contábeis diretamente com o módulo fiscal, assegurando que o lucro apurado para fins de IRPJ/CSLL reflita a nova realidade dos impostos sobre o consumo.
+12.1. Passo 1: Apuração do Lucro Líquido (Via LALUR/LACS)
+O sistema deve processar o Lucro Líquido Antes do Imposto sobre a Renda (LAIR) considerando os débitos e créditos de IBS/CBS como contas patrimoniais (Ativo e Passivo) e não como despesas operacionais, mantendo a neutralidade do IVA na demonstração de resultados.
+Ação do Sistema: Conciliar o Livro de Apuração do Lucro Real (LALUR) com o Livro de Apuração da Contribuição Social (LACS), garantindo que as adições e exclusões temporárias respeitem a competência da reforma.
+12.2. Passo 2: Exclusão do IBS/CBS da Receita Bruta
+O algoritmo de cálculo deve aplicar a exclusão obrigatória do IBS e da CBS da base de cálculo do IRPJ e da CSLL.
+Fórmula de Cálculo da Base: $Base.Renda = Receita.Bruta.Total - (IBS.Faturado + CBS.Faturado)$.
+Implicação: Esta etapa é fundamental para evitar o "imposto sobre imposto", assegurando que o tributo pago pelo consumidor final não seja contabilizado como ganho de lucro para a empresa prestadora ou vendedora.
+12.3. Passo 3: Validação via Conciliação com Split Payment
+O diferencial tecnológico no Lucro Real é a Validação Obrigatória do Crédito. O sistema só deve liberar o crédito de uma entrada para compensação após confirmar que o imposto foi efetivamente recolhido via Split Payment na transação original com o fornecedor.
+Mecânica de Checagem: O sistema deve realizar uma consulta em tempo real ao banco de dados do Comitê Gestor para cada chave de acesso da NF-e de entrada.
+Tratamento de Pendências: Caso o fornecedor não tenha quitado o imposto no momento do pagamento, o Jules deve sinalizar o crédito como "em suspenso", impedindo o seu uso imediato até a regularização financeira da cadeia.
+13. Regiras de Crédito de Bens de Capital (Ativo Imobilizado)
+Crédito Integral e Imediato: Fim do sistema CIAP de 48 meses.
+Apropriação: Lançamento de $100\%$ do crédito de IBS/CBS no mês da aquisição do bem.
+14. Algoritmo de Apropriação (Bens de Capital)
+Detectar CFOP/NCM de imobilizado.
+Validar pagamento e retenção via Split Payment.
+Efetuar o lançamento do crédito total na apuração do período de entrada.
+15. Retenções na Fonte (O Novo Paradigma)
+Extinção CSRF: As contribuições PIS/COFINS deixam de ser objeto de retenção manual in 2027.
+Manutenção IRRF/CSLL: Incidência sobre a base líquida de IBS/CBS.
+16. Algoritmo de Retenção e Liquidação
+Calcular retenção de renda sobre o valor líquido da operação.
+Instruir a instituição financeira via API para a segregação dos valores (Líquido, IRRF/CSLL e IBS/CBS).
+17. Regimes Diferenciados: Setor Imobiliário e Construção Civil
+O setor imobiliário e de construção civil recebe tratamento diferenciado na LC 214/2025, visando mitigar o impacto do IVA sobre o custo de moradia.
+Redução de 60% nas Alíquotas: Operações de alienação (venda) de imóveis, incorporação imobiliária e construção civil sujeitam-se a uma redução de 60% sobre as alíquotas de referência do IBS e CBS. Na prática, o setor paga apenas 40% da alíquota padrão.
+Redução de 80% na Locação: Operações de aluguel e locação de bens imóveis possuem uma redução de 80% sobre as alíquotas de referência (pagamento efetivo de 20% da alíquota padrão).
+Regime de Transição do RET: Projetos de incorporação que tenham aderido ao Regime Especial de Tributação (RET) e iniciado sob o regime de Patrimônio de Afetação antes de 2029 poderão optar por um regime de transição específico, recolhendo tributos com alíquotas fixas sobre a receita, sem direito a crédito nas entradas e sem gerar crédito nas saídas (semelhante ao RET atual). O sistema deve controlar centros de custo por obra para aplicar a regra correta (RET antigo vs. Novo Regime).
+Abatimento do Terreno: Permite-se a dedução do valor de aquisição do terreno da base de cálculo do IBS/CBS na venda de unidades, evitando a tributação sobre a parcela do ativo que não sofreu agregação de valor.
+18. Algoritmo para Incorporação Imobiliária
+Base_Ajustada = (VGV - Custo_Terreno).
+Identificar operação: Se Venda/Construção, aplicar Alíquota_Efetiva = Alíquota_Padrão * 0.4.
+Se Locação, aplicar Alíquota_Efetiva = Alíquota_Padrão * 0.2.
+19. Comércio Exterior: Exportação e Importação
+Exportação: Imunidade plena (alíquota zero) com manutenção de créditos de entrada e ressarcimento prioritário.
+Importação: Tributação total na entrada conforme o Princípio do Destino.
+20. Algoritmo de Comércio Exterior
+Identificar Natureza da Operação (Exportação ou Importação).
+Para Exportação: Alíquota zero e fluxo de pedido de ressarcimento de créditos acumulados.
+Para Importação: Cálculo de IBS/CBS sobre valor aduaneira adicionado de II e IPI.
+21. Fluxo de Devoluções e Estornos
+O sistema deve automatizar a reversão do Split Payment e anular sistemicamente os débitos e créditos em casos de devolução de mercadoria ou cancelamento de serviço.
+22. Imposto Seletivo (IS) - "Imposto do Pecado"
+Incidência monofásica sobre produtos prejudiciais à saúde ou meio ambiente. O valor do IS compõe a base de cálculo do IBS e da CBS.
+23. Algoritmo do Imposto Seletivo
+Identificar NCM sujeito ao imposto.
+Efetuar o cálculo do IS e adicionar o montante ao valor da operação para definição da base de cálculo do IBS/CBS.
+24. Regras de Transição de Saldos Credores
+24.1. Créditos Federais (PIS/COFINS e IPI)
+Saldos acumulados até 31/12/2026 devem ser compensáveis integralmente com a CBS a partir de 2027.
+24.2. Créditos Estaduais e Municipais (ICMS e ISS)
+Saldos em 31/12/2032 devem ser aproveitados no IBS em 240 parcelas mensais, com atualização pelo IPCA.
+25. Algoritmo de Transição de Saldos
+Provisionamento das 240 parcelas mensais de crédito de ICMS.
+Abatimento mensal automático do IBS a pagar com correção do saldo residual.
+26. Cooperativas e Entidades Sem Fins Lucrativos
+26.1. Cooperativas (Ato Cooperativo)
+Não incidência de IBS/CBS nas operações internas entre cooperativa e associado.
+26.2. Entidades Imunes
+Manutenção da imunidade sobre finalidades essenciais. Tributação restrita a receitas comerciais desvinculadas da finalidade imune.
+27. Algoritmo para Cooperativas
+Classificação da operação como Ato Cooperativo ou operação com terceiros.
+Gerenciamento do repasse de créditos de insumos adquiridos de forma centralizada.
+28. Setor de Combustíveis e Biocombustíveis (Diferenciação Ambiental)
+O setor de combustíveis migra para um modelo de incidência monofásica, mas com uma camada estratégica de Diferenciação Ambiental, protegida constitucionalmente. O sistema deve garantir que combustíveis renováveis mantenham uma carga tributária inferior aos fósseis, incentivando a descarbonização.
+28.1. O Princípio da Diferenciação e o "Selo Verde" Tributário
+Tratamento Favorecido: Biocombustíveis (Etanol, Biodiesel, Biometano) devem possuir alíquotas de IBS e CBS significativamente inferiores às da Gasolina e do Diesel fóssil.
+Vantagem do Etanol: A Constituição assegura que o diferencial competitivo do etanol hidratado em relação à gasolina seja mantido no novo sistema. O motor de cálculo deve aplicar automaticamente o redutor ambiental sobre a alíquota padrão do setor.
+28.2. Alíquotas Ad Rem vs. Ad Valorem
+Diferente da alíquota percentual padrão, o setor pode operar com alíquotas fixas por unidade de medida (ex: reais por litro). O sistema deve ser capaz de processar conversões de volume para base de cálculo tributária.
+28.3. Manutenção de Créditos ESG para Consumidores Industriais
+Empresas que utilizam combustíveis renováveis em sua frota ou processo produtivo poderão apropriar créditos integrais do imposto pago na refinaria/usina.
+Implicação Logística: O sistema deve destacar o "Crédito Ambiental" na escrituração de entrada, permitindo que empresas de transporte otimizem seu fluxo de caixa ao optar por matrizes energéticas limpas.
+29. Algoritmo para Combustíveis e Biocombustíveis
+O motor de cálculo deve processar a monofasia considerando o impacto ambiental do produto identificado pelo NCM.
+29.1. Passo 1: Identificação do Índice de Emissão
+Consultar a tabela de Fator de Impacto Ambiental vinculada ao NCM.
+Atribuir o multiplicador de redução (ex: Gasolina = 1.0; Etanol = 0.4).
+29.2. Passo 2: Cálculo do Imposto Monofásico (Refinaria/Importação)
+Base = Volume_Total_Vendido.
+Alíquota_Ajustada = Alíquota_Setorial_Fixa * Fator_Impacto.
+IBS_CBS_Devido = Base * Alíquota_Ajustada.
+29.3. Passo 3: Repasse de Crédito na Cadeia B2B
+Para fins de não-cumulatividade de empresas consumidoras (Lucro Real/Presumido):
+O sistema deve ler a informação de imposto retido na fonte monofásica informada pelo distribuidor/posto.
+Realizar o lançamento de crédito integral na conta gráfica do adquirente, validando via Split Payment se a retenção na origem foi efetivada.
+31. Substituição Tributária (ST) na Transição
+A ST baseada em MVA é eliminada no IBS/CBS, migrando para o sistema de débito e crédito puro.
+32. Algoritmo de Substituição Tributária (Transição)
+Aplicação do redutor anual proporcional (10% a 40%) sobre o cálculo do ICMS-ST entre 2029 e 2032.
+Cálculo de IBS/CBS sobre o valor real da nota.
+34. Cesta Básica Nacional e Alíquota Zero
+34.1. Alíquota Zero
+Itens da Cesta Nacional com carga zero e permissão de manutenção de créditos de insumos.
+34.2. Cashback Social
+Mecanismo de devolução de imposto pago para famílias do CadÚnico via integração com o sistema financeiro.
+35. Regimes Diferenciados: Educação e Saúde
+Redução de 60% na alíquota padrão para serviços essenciais.
+36. Algoritmo para Regimes de Alíquota Reduzida/Zero
+Aplicação de Fator_Carga = 0,4 para Saúde/Educação e 0,7 para Profissões Regulamentadas sobre a alíquota nominal.
+38. Setor de Eventos, Turismo e Hotelaria
+Redução de 60% na alíquota nominal. Deve-se monitorar a migração dos benefícios do PERSE para o novo modelo.
+39. Fundo Nacional de Desenvolvimento Regional (FNDR)
+Mecanismo de compensação para perdas de incentivos fiscais estaduais de ICMS validados até 2032.
+40. Escrituração Fiscal Digital (EFD) e Conformidade
+A escrituração deve ser centralizada no Comitê Gestor. A validação da conformidade baseia-se na liquidação financeira real do Split Payment.
+40.1. Análise de Riscos e Compliance na Transição
+A implementação do novo sistema traz riscos significativos de não conformidade que devem ser mitigados tecnologicamente.
+Risco de Crédito "Podre" (Inadimplência do Fornecedor): Embora o Split Payment mitigue o risco, transações fora do sistema bancário (como permutas ou compensações de contas) condicionam o crédito ao efetivo recolhimento do imposto pelo fornecedor. O ERP deve bloquear a apropriação de crédito de notas não liquidadas via Split Payment até a comprovação do recolhimento (DARF), pois o adquirente torna-se solidário na dívida.
+Gestão de Alíquotas de Transição (Motores Paralelos): Entre 2029 e 2032, o sistema terá de lidar com alíquotas fracionadas. Exemplo em 2031: 30% da alíquota do IBS e 70% do ICMS/ISS. O ERP precisará manter dois motores de cálculo operando simultaneamente: um para a CBS cheia e IBS parcial (regras novas/destino) e outro para o ICMS/ISS parcial (regras antigas/origem), aumentando a complexidade de compliance.
+42. Setor de Transporte Público de Passageiros
+42.1. Alíquota Zero
+Transporte urbano e metropolitano com carga zero e manutenção integral de créditos de insumos operacionais.
+43. Zonas de Processamento de Exportação (ZPE)
+43.1. Suspensão e Isenção
+Suspensão de IBS/CBS na aquisição de insumos, com conversão em isenção após a efetiva exportação do produto final.
+44. Resíduo Tributário e Crédito sobre Estoques (31/12/2032)
+44.1. Inventário de Transição
+Recuperação do ICMS "embutido" nos produtos em estoque no encerramento de 2032 para prevenir bitributação em 2033 sob o IBS.
+45. Algoritmo de Virada de Regime (01/01/2033)
+Auditoria de Estoque na data de corte.
+Lançamento do Credito_IBS_Estoque como saldo credor inicial do novo regime em Janeiro/2033.
+47. Setor de Saneamento e Energia Elétrica
+Regras de diferimento e regimes especiais para infraestrutura essencial.
+47.1. Diferimento na Cadeia de Geração e Transmissão
+Lógica: O pagamento do IBS/CBS pode ser diferido para a etapa da Distribuição (Consumo Final) para evitar acúmulo de créditos.
+Requisito: O sistema deve identificar operações B2B nestas cadeias e aplicar a suspensão do imposto.
+47.2. Regime de Investimentos
+Regra: Projetos de expansão de rede geram créditos imediatos. O sistema deve validar o direito ao ressarcimento prioritário de créditos acumulados em fases de construção.
+48. Algoritmo para Saneamento e Energia
+Identificação dos elos da cadeia para aplicação de Diferimento ou Alíquota Padrão.
+Monitoramento da liquidação do diferimento no recebimento da fatura pelo consumidor.
+Desconto automático de subsídios governamentais da base de cálculo.
+49. Compras Governamentais e Imunidade Recíproca
+Geração de orçamentos e faturamento líquidos de IBS/CBS para entes públicos.
+49.1. Preço Líquido de Impostos
+Nas licitações, os fornecedores devem apresentar preços líquidos dos novos impostos.
+Mecânica: O sistema deve considerar o imposto como "compensado" automaticamente na transação com o ente público.
+50. Contencioso Administrativo e o Comitê Gestor do IBS
+Resolução unificada de disputas tributárias.
+50.1. Gestão de Processos
+Requisito: O sistema deve integrar-se com os portais de contencioso para monitorar prazos e suspender a exigibilidade do débito tributário no ERP durante o julgamento.
+50.2. Uniformidade de Interpretação
+As decisões do Comitê Gestor devem ser aplicadas de forma transversal a todas as esferas federativas simultaneamente.
+52. Módulo de Estratégia de Compras e Classificação de Despesas
+Este módulo adiciona uma camada de inteligência ao ERP para otimizar o procurement sob a ótica da LC 214/2025.
+52.1. Vendor Rating Tributário (VRT)
+O sistema deve interceptar a cotação de preços e aplicar a equalização tributária antes da aprovação da Ordem de Compra.
+Master Data: O cadastro de fornecedores deve incluir o campo Regime_Tributario_Consumo (Regular, Simples Padrão, Simples Híbrido) e, para os do Simples, a Aliquota_Efetiva_Transferivel.
+Cálculo de Custo Líquido:
+Se Fornecedor Regular/Híbrido: $Custo\_Liq = Preço - (Preço \times Alíquota\_Ref)$.
+Se Fornecedor Simples Padrão: $Custo\_Liq = Preço - (Preço \times Alíquota\_Efetiva\_Simples)$.
+Ranking: O sistema gera um ranking ordenado pelo Custo Líquido, evidenciando que um preço de face menor no Simples pode ser mais caro no final devido ao menor crédito gerado.
+52.2. Classificação de Despesas: O Novo Paradigma de "Uso e Consumo"
+Com o crédito financeiro amplo, o sistema deve reclassificar automaticamente despesas anteriormente vedadas.
+Matriz de Classificação:
+Insumos Diretos: Crédito Integral (CREDIT_FULL).
+Ativo Imobilizado: Crédito Integral e Imediato (CREDIT_FULL_IMMEDIATE).
+Uso e Consumo Operacional: Crédito Integral Permitido (CREDIT_FULL). Inclui material de escritório, limpeza, TI e copa, desde que necessários à manutenção da fonte produtora.
+Uso Pessoal: Crédito Vedado (CREDIT_BLOCKED). Inclui despesas pessoais de sócios ou bens de luxo não relacionados à atividade.
+54. Próximos Passos (A Adicionar)
+Lógica de Fundo de Participação dos Municípios (FPM) e repartição automática.
+Detalhamento do Imposto sobre Heranças (ITCMD) e Imóveis (ITBI) na reforma.

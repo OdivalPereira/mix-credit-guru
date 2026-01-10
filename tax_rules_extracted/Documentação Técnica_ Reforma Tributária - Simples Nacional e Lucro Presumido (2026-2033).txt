@@ -1,0 +1,127 @@
+Documentação Técnica: Reforma Tributária - Simples Nacional, Lucro Presumido e Real (2026-2033)
+1. Objetivo e Premissas do Projeto
+Este documento define a base lógica central ("tax_rules") para a implementação dos motores de cálculo de transição tributária, realização de comparativos de cenários em tempo real (Simples x Híbrido x Lucro Real) e gerenciamento da apropriação de créditos via Split Payment. O sistema deve processar a convivência de regimes (Shadow Period) e antecipar impactos financeiros de longo prazo de forma automatizada, seguindo as diretrizes da Lei Complementar nº 214/2025 e da EC 132/2023.
+2. Cronograma Detalhado de Transição
+O sistema deve monitorar a "Data de Competência" e a "Data de Liquidação" de cada transação para aplicar as regras vigentes conforme o calendário oficial, garantindo compliance nos períodos de sobreposição.
+Janeiro de 2026 (Fase de Calibração e Teste):
+Mecânica Operacional: Início da cobrança da CBS à alíquota de $0,9\%$ e do IBS à alíquota de $0,1\%$ (Total $1,0\%$).
+Finalidade: "Projeto-piloto" para calibração dos sistemas de arrecadação do Comitê Gestor (CGIBS) e RFB.
+Compensação e Fluxo de Caixa: Os valores de IBS/CBS pagos são descontados do PIS/COFINS devidos na mesma competência. Se o valor de IBS/CBS for maior que o PIS/COFINS devido, o sistema deve provisionar o saldo para compensação com outros tributos federais ou pedido de ressarcimento em até 60 dias.1
+Requisito de Sistema: O motor deve calcular o "PIS/COFINS Líquido" ($PIS_{devido} - CBS_{0.9\%} - IBS_{0.1\%}$).
+Janeiro de 2027 (A Virada de Chave Federal):
+Extinção de Tributos: Extinção definitiva do PIS e da COFINS. O IPI terá alíquotas reduzidas a zero (exceto para produtos que tenham industrialização incentivada na Zona Franca de Manaus).2
+Vigência Plena da CBS: A CBS assume sua alíquota de referência (estimada em ~$8,8\%$). Início da não-cumulatividade plena para Lucro Real e Presumido (agora Regime Regular).
+Impacto no Lucro Presumido: Empresas do antigo Lucro Presumido migram compulsoriamente para o Regime Regular da CBS. O sistema deve abandonar o cálculo cumulativo ($3,65\%$) e iniciar a apuração de débito/crédito.
+2029 a 2032 (A Escada da Transição Gradual do IBS):
+Proporcionalidade Rígida (Art. 128 ADCT): Substituição gradual do ICMS e ISS pelo IBS. O sistema deve aplicar a seguinte matriz de redução das alíquotas originais dos tributos antigos:
+2029: Cobrança de $90\%$ do ICMS/ISS original; IBS sobe para $10\%$ da alíquota de referência.
+2030: Cobrança de $80\%$ do ICMS/ISS original; IBS sobe para $20\%$ da alíquota de referência.
+2031: Cobrança de $70\%$ do ICMS/ISS original; IBS sobe para $30\%$ da alíquota de referência.
+2032: Cobrança de $60\%$ do ICMS/ISS original; IBS sobe para $40\%$ da alíquota de referência.
+Complexidade Híbrida: O motor de cálculo deve suportar dual-stack tax calculation. Uma única NF-e terá campos para ICMS/ISS (reduzidos) e IBS/CBS (progressivos).
+Janeiro de 2033 (O Estado Final de Unificação Total):
+Extinção de Fronteiras Fiscais: ICMS e ISS deixam de existir. Vigência plena do IBS e CBS.
+Princípio do Destino: $100\%$ do imposto pertence ao local de consumo.
+Fim da Guerra Fiscal: O sistema deve ignorar tabelas de alíquotas interestaduais (4%, 7%, 12%) e diferenciais de alíquota (DIFAL) do modelo antigo.
+3. Lógica do Simples Híbrido (Misto) vs. Puro
+Para empresas do Simples Nacional, o sistema deve implementar uma "Matriz de Decisão" baseada na recuperabilidade de crédito pelo cliente.
+3.1. Simples Nacional Puro (Regime de Recolhimento Único)
+Lógica: IBS/CBS pagos dentro do DAS.
+Cálculo do Crédito Transferível: O crédito permitido ao adquirente (cliente) não é a alíquota cheia. É estritamente o valor efetivamente recolhido dentro da guia DAS.
+Fórmula de Crédito: $Credito = Valor_{Venda} \times Aliquota_{Efetiva(IBS+CBS)}$.
+Vedação: A empresa do Simples Puro não apropria créditos de suas compras.3
+3.2. Simples Nacional Misto (Híbrido - Recolhimento "Por Fora")
+Lógica: Empresa recolhe IR/CSLL/CPP/ISS(até 2029) no DAS, mas opta por recolher IBS e CBS pelo Regime Regular (Não-Cumulativo).
+Vantagem B2B: Permite transferir crédito integral (alíquota cheia, ex: $26,5\%$) para o cliente.
+Vantagem de Custo: A empresa ganha direito ao crédito sobre seus insumos.
+Algoritmo de Decisão: O sistema deve simular se $(Debito_{Regular} - Credito_{Insumos}) < IBS.CBS_{no.DAS}$. Se verdadeiro, sugere migração para o Híbrido. Se o cliente exigir crédito cheio para manter contrato, a migração é forçada comercialmente.
+4. Tabelas de Cálculo e Repartição (Comércio e Indústria)
+Atualização Lógica: As tabelas abaixo servem para calcular a alíquota nominal do DAS. Para o cálculo do crédito a transferir (Simples Puro), o sistema deve segregar a % específica do IBS/CBS definida pelo Comitê Gestor para cada faixa.
+Fórmula da Alíquota Efetiva (AE):
+$$AE = \frac{(RBT12 \times Aliq.Nominal) - Parcela.Deduzir}{RBT12}$$
+Nota de Implementação: Quando a RBT12 ultrapassar R$ 3.600.000,00 (Sublimite), o sistema deve bloquear o cálculo de IBS/CBS dentro do DAS e forçar o cálculo "por fora" (Regime Regular) automaticamente.
+5. Tabelas de Cálculo e Repartição (Serviços) - Atualizações PLP 68
+O sistema deve verificar o enquadramento em "Profissões Intelectuais" para aplicar redutores no Regime Regular, caso a empresa saia do Simples ou seja desenquadrada.
+5.1. ANEXO III vs. V (Fator R)
+Lógica Mantida: $Fator R = \frac{Massa.Salarial_{12m}}{Receita.Bruta_{12m}}$.
+Se $Fator R \ge 28\% \rightarrow$ Anexo III.
+Se $Fator R < 28\% \rightarrow$ Anexo V.
+6. Regime Regular: Profissões Intelectuais (Redutor de 30%)
+Para empresas que operam no Regime Regular (Lucro Presumido migrado ou Simples Híbrido), o sistema deve identificar se a atividade consta na lista de 18 profissões liberais com redução de 30% nas alíquotas de IBS e CBS.
+Lista de CNAEs Elegíveis (Mapeamento Obrigatório): Administradores, Advogados, Arquitetos/Urbanistas, Assistentes Sociais, Bibliotecários, Biólogos, Contabilistas, Economistas, Economistas Domésticos, Profissionais de Ed. Física, Engenheiros/Agrônomos, Estatísticos, Médicos, Veterinários, Museólogos, Químicos, Relações Públicas, Psicólogos.
+Requisitos de Validação:
+Fiscalização por conselho profissional.
+Sócios com habilitação profissional.
+Proibição de sócio pessoa jurídica (exceto se for sociedade profissional).
+Fórmula de Alíquota: $Aliq_{Final} = Aliq_{Padrao} \times 0,70$. (Ex: $26,5\% \times 0,7 = 18,55\%$).
+7. Lógica do Split Payment (Pagamento Dividido)
+O sistema deve tratar o Split Payment como o evento gerador financeiro da extinção do crédito tributário.
+7.1. Modalidades
+Split Inteligente (Smart): Consulta a base do Comitê Gestor no momento da transação. O banco retém exatamente o valor do imposto devido, considerando créditos que o vendedor possua.
+Split Simplificado: Retenção de um percentual fixo estimado, com ajuste posterior (débito/crédito) na apuração mensal.4
+7.2. Algoritmo de Conciliação Financeira
+Entrada: Valor da Venda ($V$), Alíquota Total ($T$), Crédito Disponível Vendedor ($C$).
+Cálculo da Retenção ($R$):
+Se $V \times T > C \rightarrow R = (V \times T) - C$ (O banco retém apenas a diferença).
+Se $V \times T \le C \rightarrow R = 0$ (Não há retenção, debita-se do saldo de créditos).
+Fluxo de Caixa: O sistema deve projetar o recebimento líquido: $Recebimento = V - R$.
+8. Algoritmo de Geração de Créditos (Non-Cumulativity Engine)
+O sistema deve abandonar o critério de "insumo físico" e adotar o "crédito financeiro amplo".
+8.1. Regras de Apropriação (Art. 28 PLP 68)
+Direito ao Crédito: Valor do IBS/CBS cobrado na etapa anterior.
+Condição: Idoneidade documental e pagamento via Split Payment (ou recolhimento comprovado).
+Momento: Na liquidação financeira da aquisição (regime de caixa para o crédito) ou no pagamento do imposto.
+8.2. Classificação de Itens (Uso e Consumo)
+Permitido: Materiais de escritório, limpeza, energia elétrica administrativa, softwares, marketing. O sistema deve marcar flags de crédito TRUE para esses itens.5
+Vedado (Personal Use): Bens de uso pessoal de sócios/administradores (jóias, vinhos, etc.) devem ter flag FALSE.6
+8.3. Bens de Capital (Ativo Imobilizado)
+Regra: Crédito imediato e integral.
+Fim do CIAP: O sistema deve desativar o controle de 1/48 avos para compras pós-2027 (CBS) e pós-2033 (IBS).
+9. Lucro Presumido: Fim da Presunção no Consumo
+Renda (IRPJ/CSLL): Mantém a lógica de presunção (ex: 32% para serviços).
+Consumo (IBS/CBS): Migra para Débito e Crédito Real.
+Impacto no Sistema: O ERP deve ter dois módulos de apuração rodando em paralelo: um presumido para Renda e um real para Consumo.
+10. Regimes Específicos: Imobiliário (Incorporação e Construção)
+Atualização crítica conforme texto do Senado.
+10.1. Redutores de Alíquota
+Venda/Incorporação: Redução de 60% na alíquota de referência ($Aliq_{Efetiva} \approx 10,6\%$).
+Locação (Aluguel): Redução de 80% na alíquota de referência.
+10.2. Base de Cálculo e Deduções
+Dedução do Terreno: O valor do terreno pode ser deduzido da base de cálculo do IBS/CBS na venda.
+Fórmula: $Base_{Calc} = (VGV - Valor_{Terreno}) \times (1 - \%Redutor)$.
+10.3. Nano-empreendedores
+Isenção: Pessoas físicas que realizam alienação de imóveis (até 3 imóveis ou receita < R$ 240k/ano) não são contribuintes do IBS/CBS.
+11. Regime de Combustíveis (Monofásico Ad Rem)
+Incidência: Única, na refinaria ou importador.
+Alíquota: Valor fixo em Reais por unidade de medida (ex: R$ X,XX por litro), uniforme em todo território nacional.7
+Crédito: O adquirente (ex: transportadora) toma crédito multiplicando a quantidade de litros pela alíquota ad rem vigente, mesmo que o documento fiscal não destaque o imposto (pois foi recolhido na origem).
+12. Cesta Básica Nacional (Alíquota Zero)
+Lista: Arroz, feijão, carnes, ovos, frutas, etc.
+Regra de Sistema: Itens com NCMs da Cesta Básica Nacional devem ter alíquota $0\%$ na saída e manutenção integral dos créditos na entrada (não há estorno de crédito).
+13. Cash Flow Engine (Motor de Impacto Financeiro)
+O sistema deve calcular o impacto do fim do diferimento do imposto.
+Cenário Atual: Venda D+0 $\rightarrow$ Recebimento D+30 $\rightarrow$ Pagamento Imposto D+50 (Ganho financeiro sobre o imposto).
+Cenário Split Payment: Venda D+0 $\rightarrow$ Recebimento D+30 (Líquido). Imposto retido em D+30.
+Perda de Capital de Giro: O sistema deve calcular o custo de oportunidade desse fluxo financeiro perdido.
+14. Matriz de Comparação de Regimes (Algoritmo de Decisão)
+O sistema deve cruzar as variáveis para gerar o output de recomendação:
+Entradas: Faturamento, Folha (Fator R), Compras Tributadas (Créditos), Perfil Cliente (B2B/B2C).
+Simulação Simples Puro: Custo = $DAS$. (Risco: Perda de cliente B2B por crédito baixo).
+Simulação Simples Híbrido: Custo = $DAS_{parcial} + (Vendas \times 26,5\%) - (Compras \times 26,5\%)$.
+Simulação Lucro Presumido/Real: Custo = $IR/CSLL + (Vendas \times 26,5\%) - (Compras \times 26,5\%)$.
+Output: Ranking de eficiência tributária líquida.
+15. Contencioso e Comitê Gestor
+Uniformidade: Regras de IBS são idênticas para todos os 5.570 municípios.
+Integração: O sistema deve consultar o Domicílio Tributário Eletrônico (DTE) unificado do Comitê Gestor para ciência de atos processuais.
+16. Próximos Passos (Itens Pendentes de Regulamentação Fina)
+Metodologia exata do cálculo da alíquota de referência pelo TCU (Teto de Carga).
+Lista definitiva de medicamentos com alíquota reduzida ou zero.
+Regulamentação do Cashback de energia e saneamento para baixa renda (operacionalização via conta de luz).
+Referências citadas
+Reforma Tributária 2026: guia completo sobre o que muda e a ..., acessado em janeiro 9, 2026, https://www.taxgroup.com.br/intelligence/reforma-tributaria-2026-guia-completo-sobre-o-que-muda-e-a-transicao/
+Regulamentação da Reforma Tributária sobre o consumo - Aprovação do PLP nº 68/2024 - PwC Brasil, acessado em janeiro 9, 2026, https://www.pwc.com.br/pt/thinking-about-taxes/tax-intelligence/2024/Reforma-Tributaria-sobre-o-Consumo-Aprovacao-do-PLP-n-68-2024.pdf
+plp068 - Planalto, acessado em janeiro 9, 2026, https://www.planalto.gov.br/CCIVIL_03/Projetos/Ato_2023_2026/2024/PLP/plp-068.htm
+7º Episódio - IBS e CBS: Formas de recolhimento e split payment . - YouTube, acessado em janeiro 9, 2026, https://www.youtube.com/watch?v=EZE45VrqYes
+GRUPO DE TRABALHO REGULAMENTAÇÃO DA REFORMA TRIBUTÁRIA - PLP 68/2024 - Câmara dos Deputados, acessado em janeiro 9, 2026, https://www2.camara.leg.br/atividade-legislativa/comissoes/grupos-de-trabalho/57a-legislatura/grupo-de-trabalho-sobre-a-regulamentacao-da-reforma-tributaria-plp-68-de-2024/outros-documentos/Relatrio100724.pdf
+REFORMA TRIBUTÁRIA: Projeto de Lei Complementar n.º 68/2024 | Insights - Mayer Brown, acessado em janeiro 9, 2026, https://www.mayerbrown.com/pt/insights/publications/2024/05/brazilian-tax-reformcomplementary-bill-of-law-no-682024
+PLP 68/2024 | Resumo – Regime específico de Combus veis - Portal Gov.br, acessado em janeiro 9, 2026, https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/reforma-tributaria/regulamentacao-da-reforma-tributaria/lei-geral-do-ibs-da-cbs-e-do-imposto-seletivo/resumos-tecnicos/plp-68-2024_resumo-regime-especifico-de-combustiveis.pdf
