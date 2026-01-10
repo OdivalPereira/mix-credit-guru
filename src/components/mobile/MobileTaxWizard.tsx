@@ -11,7 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TaxProfile, TaxComparisonResult, TaxInsight } from "@/types/tax-planning";
 import { toast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Target, Lightbulb, ArrowRight, RotateCcw, Home, FolderOpen, Calculator, BarChart3, Settings, History as HistoryIcon } from "lucide-react";
 
 interface MobileTaxWizardProps {
@@ -49,6 +50,18 @@ export function MobileTaxWizard({
     const [showIdentificationDrawer, setShowIdentificationDrawer] = useState(false);
     const [activeInsightIndex, setActiveInsightIndex] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Navigation items mirroring Layout.tsx
+    const navigationItems = [
+        { name: "Início", href: "/", icon: Home },
+        { name: "Cadastros", href: "/cadastros", icon: FolderOpen },
+        { name: "Cotação", href: "/cotacao", icon: Calculator },
+        { name: "Análise", href: "/analise", icon: BarChart3 },
+        { name: "Planejamento", href: "/planejamento", icon: Target },
+        { name: "Histórico", href: "/historico", icon: HistoryIcon },
+        { name: "Config", href: "/config", icon: Settings },
+    ];
 
     const handleCnpjSearch = async () => {
         await onSearchCnpj();
@@ -92,24 +105,28 @@ export function MobileTaxWizard({
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 py-2 border-t border-b border-muted/50">
-                        {[
-                            { name: "Início", href: "/", icon: Home },
-                            { name: "Cadastros", href: "/cadastros", icon: FolderOpen },
-                            { name: "Cotação", href: "/cotacao", icon: Calculator },
-                            { name: "Análise", href: "/analise", icon: BarChart3 },
-                            { name: "Histórico", href: "/historico", icon: HistoryIcon }, // Using alias HistoryIcon to avoid clash if History is imported
-                            { name: "Config", href: "/config", icon: Settings },
-                        ].map((item) => (
-                            <Button
-                                key={item.href}
-                                variant="ghost"
-                                className="flex flex-col items-center justify-center h-20 gap-2 hover:bg-muted/50"
-                                onClick={() => navigate(item.href)}
-                            >
-                                <item.icon className="h-6 w-6 text-primary" />
-                                <span className="text-[10px] font-medium">{item.name}</span>
-                            </Button>
-                        ))}
+                        {navigationItems.map((item) => {
+                            const isActive = item.href === "/"
+                                ? location.pathname === item.href
+                                : location.pathname.startsWith(item.href);
+
+                            return (
+                                <Button
+                                    key={item.href}
+                                    variant="ghost"
+                                    className={cn(
+                                        "flex flex-col items-center justify-center h-20 gap-2 transition-all rounded-xl",
+                                        isActive
+                                            ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-card"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                    )}
+                                    onClick={() => navigate(item.href)}
+                                >
+                                    <item.icon className={cn("h-6 w-6", isActive ? "text-primary-foreground" : "text-primary")} />
+                                    <span className={cn("text-[10px] font-medium", isActive ? "text-primary-foreground" : "")}>{item.name}</span>
+                                </Button>
+                            );
+                        })}
                     </div>
 
                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={onOpenHistory}>
@@ -152,7 +169,7 @@ export function MobileTaxWizard({
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                         <Input
                                             placeholder="00.000.000/0000-00"
-                                            className="pl-12 h-14 text-lg rounded-2xl shadow-sm border-primary/20 bg-card"
+                                            className="pl-12 h-14 text-lg rounded-2xl bg-white/5 border-white/10 backdrop-blur-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-primary/20 transition-all shadow-lg"
                                             value={profile.cnpj || ''}
                                             onChange={(e) => {
                                                 // Simple mask logic or use helper
@@ -168,7 +185,7 @@ export function MobileTaxWizard({
                                     </div>
                                     <Button
                                         size="lg"
-                                        className="w-full h-14 rounded-2xl text-lg font-semibold shadow-lg shadow-primary/20"
+                                        className="w-full h-14 rounded-2xl text-lg font-semibold shadow-lg shadow-primary/25 bg-gradient-to-r from-primary to-primary/80 hover:scale-[1.02] active:scale-[0.98] transition-all"
                                         onClick={handleCnpjSearch}
                                         disabled={!profile.cnpj || profile.cnpj.length < 14}
                                     >
@@ -179,9 +196,9 @@ export function MobileTaxWizard({
 
                             {!loadingCnpj && (
                                 <div className="flex gap-2 justify-center">
-                                    <Badge variant="outline" className="bg-muted/50">Simples Nacional</Badge>
-                                    <Badge variant="outline" className="bg-muted/50">Lucro Presumido</Badge>
-                                    <Badge variant="outline" className="bg-muted/50">Lucro Real</Badge>
+                                    <Badge variant="outline" className="bg-white/5 border-white/10 backdrop-blur-sm">Simples Nacional</Badge>
+                                    <Badge variant="outline" className="bg-white/5 border-white/10 backdrop-blur-sm">Lucro Presumido</Badge>
+                                    <Badge variant="outline" className="bg-white/5 border-white/10 backdrop-blur-sm">Lucro Real</Badge>
                                 </div>
                             )}
                         </motion.div>

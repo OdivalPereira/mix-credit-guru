@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { TaxProfile } from "@/types/tax-planning";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { AudioRecorder } from "@/components/AudioRecorder"; // Assuming we reuse or adapt this
+// Removed unused AudioRecorder import
 
 interface StepConfig {
     id: string;
@@ -22,7 +22,7 @@ interface StepConfig {
 
 interface AiInterviewWizardProps {
     profile: TaxProfile;
-    onUpdateProfile: (field: string, value: any) => void;
+    onUpdateProfile: (field: string, value: string | number | boolean | null) => void;
     onComplete: () => void;
     isProcessing: boolean;
 }
@@ -74,7 +74,7 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
     const [manualInput, setManualInput] = useState("");
     const [isAiProcessing, setIsAiProcessing] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
-    const [showConfirmation, setShowConfirmation] = useState<{ value: any, text: string } | null>(null);
+    const [showConfirmation, setShowConfirmation] = useState<{ value: number, text: string } | null>(null);
     const [aiQuestion, setAiQuestion] = useState<string | null>(null);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -305,17 +305,17 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
             </div>
 
             <div className="pb-6 px-4">
-                <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 mb-4 h-14 bg-muted/50 rounded-2xl p-1">
-                        <TabsTrigger value="voice" className="rounded-xl h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "voice" | "type" | "import")} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 mb-4 h-14 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-1">
+                        <TabsTrigger value="voice" className="rounded-xl h-full data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">
                             <Mic className="h-5 w-5 mr-2" />
                             Falar
                         </TabsTrigger>
-                        <TabsTrigger value="type" className="rounded-xl h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                        <TabsTrigger value="type" className="rounded-xl h-full data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">
                             <Keyboard className="h-5 w-5 mr-2" />
                             Digitar
                         </TabsTrigger>
-                        <TabsTrigger value="import" className="rounded-xl h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                        <TabsTrigger value="import" className="rounded-xl h-full data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">
                             <Upload className="h-5 w-5 mr-2" />
                             PDF
                         </TabsTrigger>
@@ -367,7 +367,7 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
                                 value={manualInput}
                                 onChange={e => setManualInput(e.target.value)}
                                 placeholder="Digite o valor..."
-                                className="h-14 text-lg rounded-2xl bg-background border-muted-foreground/20"
+                                className="h-14 text-lg rounded-2xl bg-white/5 border-white/10 backdrop-blur-sm focus:border-primary/50 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground/50"
                                 type={currentStep.type === 'text' ? 'text' : 'tel'}
                             />
                             <Button
