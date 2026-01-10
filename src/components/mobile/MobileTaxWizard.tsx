@@ -195,10 +195,34 @@ export function MobileTaxWizard({
                             )}
 
                             {!loadingCnpj && (
-                                <div className="flex gap-2 justify-center">
-                                    <Badge variant="outline" className="bg-white/5 border-white/10 backdrop-blur-sm">Simples Nacional</Badge>
-                                    <Badge variant="outline" className="bg-white/5 border-white/10 backdrop-blur-sm">Lucro Presumido</Badge>
-                                    <Badge variant="outline" className="bg-white/5 border-white/10 backdrop-blur-sm">Lucro Real</Badge>
+                                <div className="space-y-4 w-full">
+                                    <p className="text-center text-xs text-muted-foreground uppercase tracking-widest font-semibold">Ou selecione o regime diretamente</p>
+                                    <div className="flex gap-2 justify-center">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9 glass-card border-white/10 text-[10px]"
+                                            onClick={() => confirmIdentification('simples')}
+                                        >
+                                            Simples Nacional
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9 glass-card border-white/10 text-[10px]"
+                                            onClick={() => confirmIdentification('presumido')}
+                                        >
+                                            Lucro Presumido
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9 glass-card border-white/10 text-[10px]"
+                                            onClick={() => confirmIdentification('real')}
+                                        >
+                                            Lucro Real
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                         </motion.div>
@@ -418,10 +442,10 @@ export function MobileTaxWizard({
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </main >
+            </main>
 
             {/* Drawer de Identificação (Hero Search Result) */}
-            < Drawer open={showIdentificationDrawer} onOpenChange={setShowIdentificationDrawer} >
+            <Drawer open={showIdentificationDrawer} onOpenChange={setShowIdentificationDrawer}>
                 <DrawerContent className="pb-8">
                     <DrawerHeader className="text-center">
                         <DrawerTitle className="text-2xl">{profile.razao_social || 'Empresa Encontrada'}</DrawerTitle>
@@ -452,7 +476,7 @@ export function MobileTaxWizard({
                         </div>
                     </div>
                 </DrawerContent>
-            </Drawer >
-        </div >
+            </Drawer>
+        </div>
     );
 }
