@@ -76,7 +76,7 @@ export function Layout() {
     <div className="min-h-screen bg-background">
       {/* Premium Header */}
       <header className="border-b border-border/50 bg-gradient-to-r from-card to-card/50 backdrop-blur-sm shadow-card">
-        <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3" data-tour="logo">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow shadow-glow">
               <Calculator className="h-5 w-5 text-primary-foreground" />
@@ -195,7 +195,7 @@ export function Layout() {
 
       {/* Premium Navigation */}
       <nav className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-screen-2xl flex-wrap gap-2 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex w-full flex-wrap gap-2 px-4 py-3 sm:px-6 lg:px-8">
           {navigation.map((item) => {
             const isActive =
               item.href === "/"
@@ -225,7 +225,7 @@ export function Layout() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="w-full px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumb />
         <Outlet />
       </main>

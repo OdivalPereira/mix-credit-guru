@@ -1004,8 +1004,7 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
     }
 
     return (
-
-        <div className="space-y-6 pb-8">
+        <div className="w-full space-y-6 pb-8">
             <HistoryDrawer
                 open={historyOpen}
                 onOpenChange={setHistoryOpen}
