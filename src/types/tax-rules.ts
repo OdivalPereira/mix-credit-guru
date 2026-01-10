@@ -57,6 +57,25 @@ export interface TaxRules {
             aliquota_padrao_total: number;
         };
     };
+    lucro_real: {
+        aliquotas: {
+            irpj: {
+                normal: number;
+                adicional: number;
+                base_adicional_anual: number;
+            };
+            csll: number;
+            pis: { aliquota: number };
+            cofins: { aliquota: number };
+        };
+    };
+    outros_tributos: {
+        inss_patronal: {
+            aliquota_padrao: number;
+            rat?: { grau_1: number; grau_2: number; grau_3: number };
+            terceiros?: { salario_educacao: number; incra: number; sesi_senai: number; outras: number };
+        };
+    };
     iss: {
         aliquota_padrao: number;
         aliquota_maxima: number;

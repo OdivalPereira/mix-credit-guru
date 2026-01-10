@@ -448,74 +448,105 @@ export function calcularLucroReal(perfil: TaxProfile): TaxScenarioResult {
   const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
   const isServico = isServicoAltoPresuncao(perfil.cnae_principal);
 
-  // Calcular despesas
+  // 1. Calcular Lucro Fiscal (LALUR)
   const despesasComCredito = calcularTotalDespesasComCredito(perfil);
   const despesasSemCredito = calcularTotalDespesasSemCredito(perfil);
   const despesasTotal = despesasComCredito + despesasSemCredito;
 
-  // Lucro tributável
   const lucroContabil = perfil.lucro_liquido || (faturamentoAnual - despesasTotal);
   const adicoes = perfil.adicoes_lalur || 0;
   const exclusoes = perfil.exclusoes_lalur || 0;
-  const lucroTributavel = Math.max(0, lucroContabil + adicoes - exclusoes);
+  const lucroTributavelAntesCompensacao = lucroContabil + adicoes - exclusoes;
 
-  // IRPJ e CSLL sobre lucro real
-  const irpjNormal = lucroTributavel * 0.15;
-  const irpjAdicional = lucroTributavel > 240000 ? (lucroTributavel - 240000) * 0.10 : 0;
+  // Regra de compensação de prejuízo: Limite de 30% do lucro real
+  // Mas aqui estamos projetando: se lucroTrib < 0, vira prejuízo acumulado não utilizado neste ano.
+  const lucroReal = Math.max(0, lucroTributavelAntesCompensacao);
+
+  // 2. IRPJ e CSLL (Lucro Real Anual)
+  const aliqIRPJ = taxRules.lucro_real.aliquotas.irpj;
+  const irpjNormal = lucroReal * aliqIRPJ.normal;
+
+  // Adicional: Excedente de 240k anuais
+  const irpjAdicional = lucroReal > (aliqIRPJ.base_adicional_anual || 240000)
+    ? (lucroReal - (aliqIRPJ.base_adicional_anual || 240000)) * aliqIRPJ.adicional
+    : 0;
   const irpjTotal = irpjNormal + irpjAdicional;
-  const csll = lucroTributavel * 0.09;
 
-  // PIS/COFINS Não-Cumulativo
-  // Débito: 1.65% + 7.6% = 9.25%
-  const pisCofinsDebito = faturamentoAnual * 0.0925;
-  // Crédito sobre despesas elegíveis (CMV, aluguel, energia, serviços, insumos)
-  const pisCofinsCredito = despesasComCredito * 0.0925;
-  const pisCofinsLiquido = Math.max(0, pisCofinsDebito - pisCofinsCredito);
+  const csll = lucroReal * taxRules.lucro_real.aliquotas.csll;
 
-  // ICMS (Não-Cumulativo) para comércio/indústria
-  const icmsDebito = !isServico ? faturamentoAnual * 0.18 : 0;
-  const icmsCredito = !isServico ? (perfil.despesas_com_credito.cmv * 12) * 0.12 : 0;
+  // 3. PIS e COFINS (Não-Cumulativo)
+  const aliqPis = taxRules.lucro_real.aliquotas.pis.aliquota || 0.0165;
+  const aliqCofins = taxRules.lucro_real.aliquotas.cofins.aliquota || 0.076;
+
+  const pisDebito = faturamentoAnual * aliqPis;
+  const cofinsDebito = faturamentoAnual * aliqCofins;
+
+  // Crédito PIS/COFINS: Aplica-se sobre despesas elegíveis (Insumos, energia, aluguel, etc.)
+  // Assumindo que 'despesasComCredito' engloba esses conceitos conforme interface
+  const pisCredito = despesasComCredito * aliqPis;
+  const cofinsCredito = despesasComCredito * aliqCofins;
+
+  const pisLiquido = Math.max(0, pisDebito - pisCredito);
+  const cofinsLiquido = Math.max(0, cofinsDebito - cofinsCredito);
+  const vConsumoFederal = pisLiquido + cofinsLiquido;
+
+  // 4. ICMS e ISS
+  const iss = isServico ? faturamentoAnual * (taxRules.iss.aliquota_padrao || 0.05) : 0;
+
+  const icmsDebito = !isServico ? faturamentoAnual * (taxRules.icms.aliquota_interna_media || 0.18) : 0;
+  const icmsCredito = !isServico ? (perfil.despesas_com_credito.cmv * 12) * (taxRules.icms.credito_estimado || 0.12) : 0;
   const icmsLiquido = Math.max(0, icmsDebito - icmsCredito);
 
-  // ISS para serviços
-  const iss = isServico ? faturamentoAnual * 0.05 : 0;
+  // 5. INSS Patronal (CPP) - Base Folha
+  const folhaAnual = (perfil.despesas_sem_credito.folha_pagamento + perfil.despesas_sem_credito.pro_labore) * 12;
+  const inssConfig = taxRules.outros_tributos.inss_patronal;
+  const aliqRat = inssConfig.rat?.grau_2 || 0.02;
+  const aliqTerceiros = (inssConfig.terceiros?.salario_educacao || 0.025)
+    + (inssConfig.terceiros?.incra || 0.002)
+    + (inssConfig.terceiros?.sesi_senai || 0.015)
+    + (inssConfig.terceiros?.outras || 0.016);
+  const aliqCppTotal = (inssConfig.aliquota_padrao || 0.20) + aliqRat + aliqTerceiros;
+
+  const cppTotal = folhaAnual * aliqCppTotal;
 
   // Totais
-  const impostoBruto = irpjTotal + csll + pisCofinsDebito + icmsDebito + iss;
-  const totalCreditos = pisCofinsCredito + icmsCredito;
-  const impostoLiquido = irpjTotal + csll + pisCofinsLiquido + icmsLiquido + iss;
+  const impostoBruto = irpjTotal + csll + pisDebito + cofinsDebito + icmsDebito + iss + cppTotal;
+  const totalCreditos = pisCredito + cofinsCredito + icmsCredito;
+  const impostoLiquido = irpjTotal + csll + vConsumoFederal + icmsLiquido + iss + cppTotal;
 
   return {
     nome: 'Lucro Real',
     codigo: 'real',
     elegivel: true,
     imposto_bruto_anual: impostoBruto,
-    creditos_aproveitados: totalCreditos, // PIS/COFINS + ICMS
+    creditos_aproveitados: totalCreditos,
     imposto_liquido_anual: impostoLiquido,
     carga_efetiva_percentual: faturamentoAnual > 0 ? (impostoLiquido / faturamentoAnual) * 100 : 0,
     detalhes: {
-      consumo: pisCofinsLiquido + icmsLiquido,
+      consumo: vConsumoFederal + icmsLiquido,
       irpj: irpjTotal,
       csll: csll,
-      iss_icms: iss + icmsLiquido
+      iss_icms: iss + icmsLiquido,
+      cpp: cppTotal
     },
     pros: [
-      `Crédito de PIS/COFINS de R$ ${pisCofinsCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
-      !isServico ? `Crédito de ICMS de R$ ${icmsCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}` : '',
-      'Imposto sobre lucro real (paga menos se tiver prejuízo)',
-      'Pode compensar prejuízos fiscais acumulados (até 30%)',
-      'Aluguel, energia e CMV geram crédito de PIS/COFINS'
+      `Aproveitamento de R$ ${(pisCredito + cofinsCredito).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} em créditos de PIS/COFINS`,
+      !isServico ? `Aproveitamento de R$ ${icmsCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} em créditos de ICMS` : '',
+      'Tributação justa baseada no lucro efetivo (ideal para margens baixas)',
+      lucroContabil < 0 ? 'Não paga IRPJ/CSLL em caso de prejuízo (apenas consumo e folha)' : '',
+      'Possibilidade de compensar prejuízos fiscais em exercícios futuros (trava de 30%)'
     ].filter(Boolean),
     contras: [
-      'Maior complexidade contábil (ECD, ECF, LALUR)',
-      'Necessita contabilidade completa e auditável',
-      'Risco de glosas fiscais se documentação inadequada'
-    ],
+      'Alta complexidade contábil e obrigatoriedade de SPEDs detalhados',
+      'Alíquotas nominais de PIS/COFINS mais altas (9.25%)',
+      `Custo elevado de Folha (CPP de aprox. ${(aliqCppTotal * 100).toFixed(1)}%) sem desoneração`,
+      'Risco elevado de autuação fiscal por inconsistência de créditos'
+    ].filter(Boolean),
     observacoes: [
-      `Lucro tributável: R$ ${lucroTributavel.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
-      `Base de crédito PIS/COFINS: R$ ${despesasComCredito.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`,
-      !isServico ? `Base de crédito ICMS (CMV): R$ ${(perfil.despesas_com_credito.cmv * 12).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}` : ''
-    ].filter(Boolean)
+      `Lucro Real Tributável: R$ ${lucroReal.toLocaleString('pt-BR')}`,
+      `PIS/COFINS Não-Cumulativo (1.65% + 7.60%)`,
+      `Base de créditos PIS/COFINS: R$ ${despesasComCredito.toLocaleString('pt-BR')}`
+    ]
   };
 }
 
