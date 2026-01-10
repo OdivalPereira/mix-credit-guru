@@ -19,7 +19,7 @@ interface MobileTaxWizardProps {
     profile: TaxProfile;
     setProfile: (profile: TaxProfile) => void;
     updateProfile: (field: string, value: any) => void;
-    onSearchCnpj: () => void;
+    onSearchCnpj: () => Promise<boolean>;
     onCalculate: () => void;
     loadingCnpj: boolean;
     isProcessing: boolean;
@@ -64,11 +64,10 @@ export function MobileTaxWizard({
     ];
 
     const handleCnpjSearch = async () => {
-        await onSearchCnpj();
-        // Assume success if profile has razao_social after search
-        // Ideally onSearchCnpj would return status or we verify profile.
-        // For now, we open drawer regardless to show result or ask confirmation
-        setShowIdentificationDrawer(true);
+        const success = await onSearchCnpj();
+        if (success === true) {
+            setShowIdentificationDrawer(true);
+        }
     };
 
     const confirmIdentification = (regime: 'simples' | 'presumido' | 'real') => {

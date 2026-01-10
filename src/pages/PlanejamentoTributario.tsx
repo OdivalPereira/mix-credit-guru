@@ -274,7 +274,7 @@ export default function PlanejamentoTributario() {
                 description: "Digite um CNPJ válido com 14 dígitos.",
                 variant: "destructive"
             });
-            return;
+            return false;
         }
 
         setLoadingCnpj(true);
@@ -300,12 +300,14 @@ export default function PlanejamentoTributario() {
                 description: `${data.razao_social} encontrada com sucesso.`
             });
 
+            return true;
         } catch (error) {
             toast({
                 title: "Erro na consulta",
                 description: "Não foi possível buscar os dados do CNPJ. Verifique o número ou tente novamente.",
                 variant: "destructive"
             });
+            return false;
         } finally {
             setLoadingCnpj(false);
         }
