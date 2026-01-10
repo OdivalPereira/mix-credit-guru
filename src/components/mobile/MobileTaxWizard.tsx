@@ -64,10 +64,12 @@ export function MobileTaxWizard({
     ];
 
     const handleCnpjSearch = async () => {
-        const success = await onSearchCnpj();
-        if (success === true) {
-            setShowIdentificationDrawer(true);
-        }
+        // Attempt search - validation errors are handled by onSearchCnpj toast
+        await onSearchCnpj();
+
+        // Always open drawer to allow user to proceed/manually select regime
+        // If API failed, they can still pick a regime and move to interview
+        setShowIdentificationDrawer(true);
     };
 
     const confirmIdentification = (regime: 'simples' | 'presumido' | 'real') => {
@@ -194,8 +196,8 @@ export function MobileTaxWizard({
                             )}
 
                             {!loadingCnpj && (
-                                <div className="space-y-4 w-full">
-                                    <p className="text-center text-xs text-muted-foreground uppercase tracking-widest font-semibold">Ou selecione o regime diretamente</p>
+                                <div className="space-y-4 w-full mt-8 border-t border-white/5 pt-6">
+                                    <p className="text-center text-sm font-medium text-muted-foreground/80">Seleção Rápida de Regime</p>
                                     <div className="flex gap-2 justify-center">
                                         <Button
                                             variant="outline"
