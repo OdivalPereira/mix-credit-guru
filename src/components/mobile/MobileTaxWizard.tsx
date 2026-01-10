@@ -11,7 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TaxProfile, TaxComparisonResult, TaxInsight } from "@/types/tax-planning";
 import { toast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Target, Lightbulb, ArrowRight, RotateCcw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { TrendingUp, TrendingDown, Target, Lightbulb, ArrowRight, RotateCcw, Home, FolderOpen, Calculator, BarChart3, Settings, History as HistoryIcon } from "lucide-react";
 
 interface MobileTaxWizardProps {
     profile: TaxProfile;
@@ -47,6 +48,7 @@ export function MobileTaxWizard({
     const [isHeaderOpen, setIsHeaderOpen] = useState(false);
     const [showIdentificationDrawer, setShowIdentificationDrawer] = useState(false);
     const [activeInsightIndex, setActiveInsightIndex] = useState(0);
+    const navigate = useNavigate();
 
     const handleCnpjSearch = async () => {
         await onSearchCnpj();
@@ -78,14 +80,38 @@ export function MobileTaxWizard({
                         </Button>
                     </CollapsibleTrigger>
                 </div>
-                <CollapsibleContent className="px-4 pb-4 space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                        Versão Mobile 2.0 • Entrevista Guiada por IA
-                    </p>
-                    <div className="flex gap-2">
-                        <Badge variant="outline">Fase: {wizardPhase === 'search' ? 'Identificação' : wizardPhase === 'interview' ? 'Diagnóstico' : 'Resultados'}</Badge>
-                        {profile.razao_social && <Badge variant="secondary" className="truncate max-w-[150px]">{profile.razao_social}</Badge>}
+                <CollapsibleContent className="px-4 pb-4 space-y-4">
+                    <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                            Versão Mobile 2.0 • Entrevista Guiada por IA
+                        </p>
+                        <div className="flex gap-2">
+                            <Badge variant="outline">Fase: {wizardPhase === 'search' ? 'Identificação' : wizardPhase === 'interview' ? 'Diagnóstico' : 'Resultados'}</Badge>
+                            {profile.razao_social && <Badge variant="secondary" className="truncate max-w-[150px]">{profile.razao_social}</Badge>}
+                        </div>
                     </div>
+
+                    <div className="grid grid-cols-3 gap-2 py-2 border-t border-b border-muted/50">
+                        {[
+                            { name: "Início", href: "/", icon: Home },
+                            { name: "Cadastros", href: "/cadastros", icon: FolderOpen },
+                            { name: "Cotação", href: "/cotacao", icon: Calculator },
+                            { name: "Análise", href: "/analise", icon: BarChart3 },
+                            { name: "Histórico", href: "/historico", icon: HistoryIcon }, // Using alias HistoryIcon to avoid clash if History is imported
+                            { name: "Config", href: "/config", icon: Settings },
+                        ].map((item) => (
+                            <Button
+                                key={item.href}
+                                variant="ghost"
+                                className="flex flex-col items-center justify-center h-20 gap-2 hover:bg-muted/50"
+                                onClick={() => navigate(item.href)}
+                            >
+                                <item.icon className="h-6 w-6 text-primary" />
+                                <span className="text-[10px] font-medium">{item.name}</span>
+                            </Button>
+                        ))}
+                    </div>
+
                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={onOpenHistory}>
                         <Search className="h-4 w-4 mr-2" />
                         Histórico de Simulações
