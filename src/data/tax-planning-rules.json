@@ -534,32 +534,34 @@
                 "aliquota_receita": 0.045,
                 "vigencia": "Até 2027 (com extinção gradual)"
             }
+        }
+    },
+    "iss": {
+        "aliquota_minima": 0.02,
+        "aliquota_maxima": 0.05,
+        "aliquota_padrao": 0.05,
+        "local_tributacao": "domicilio_prestador",
+        "excecoes_local": [
+            "construcao_civil",
+            "limpeza",
+            "vigilancia"
+        ]
+    },
+    "icms": {
+        "aliquota_interna_media": 0.18,
+        "credito_estimado": 0.12,
+        "aliquota_interestadual": {
+            "sul_sudeste_origem": 0.07,
+            "outras_regioes": 0.12
         },
-        "iss": {
-            "aliquota_minima": 0.02,
-            "aliquota_maxima": 0.05,
-            "local_tributacao": "domicilio_prestador",
-            "excecoes_local": [
-                "construcao_civil",
-                "limpeza",
-                "vigilancia"
+        "substituicao_tributaria": {
+            "produtos_comuns": [
+                "combustiveis",
+                "bebidas",
+                "automoveis",
+                "auto_pecas",
+                "eletronicos"
             ]
-        },
-        "icms": {
-            "aliquota_interna_media": 0.18,
-            "aliquota_interestadual": {
-                "sul_sudeste_origem": 0.07,
-                "outras_regioes": 0.12
-            },
-            "substituicao_tributaria": {
-                "produtos_comuns": [
-                    "combustiveis",
-                    "bebidas",
-                    "automoveis",
-                    "auto_pecas",
-                    "eletronicos"
-                ]
-            }
         }
     }
 }
