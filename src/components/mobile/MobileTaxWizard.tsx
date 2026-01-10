@@ -63,7 +63,7 @@ export function MobileTaxWizard({
     };
 
     return (
-        <div className="min-h-[100dvh] bg-background flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-background flex flex-col overflow-hidden">
             {/* 1. Header Retrátil */}
             <Collapsible open={isHeaderOpen} onOpenChange={setIsHeaderOpen} className="bg-card border-b shadow-sm z-10 w-full shrink-0">
                 <div className="flex items-center justify-between p-4 h-16">
@@ -120,21 +120,35 @@ export function MobileTaxWizard({
                                     </div>
                                 </div>
                             ) : (
-                                <Card
-                                    className="w-full shadow-xl border-primary/10 transition-all active:scale-95"
-                                    onClick={() => setShowIdentificationDrawer(true)}
-                                >
-                                    <CardContent className="p-4 flex items-center gap-4">
-                                        <div className="bg-primary/10 p-3 rounded-xl">
-                                            <Search className="h-6 w-6 text-primary" />
-                                        </div>
-                                        <div className="flex-1 text-left">
-                                            <p className="text-xs font-medium text-muted-foreground uppercase">Toque para buscar</p>
-                                            <p className="text-lg font-semibold text-primary">00.000.000/0000-00</p>
-                                        </div>
-                                        <ChevronDown className="h-5 w-5 text-muted-foreground opacity-50" />
-                                    </CardContent>
-                                </Card>
+
+                                <div className="w-full space-y-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                        <Input
+                                            placeholder="00.000.000/0000-00"
+                                            className="pl-12 h-14 text-lg rounded-2xl shadow-sm border-primary/20 bg-card"
+                                            value={profile.cnpj || ''}
+                                            onChange={(e) => {
+                                                // Simple mask logic or use helper
+                                                let val = e.target.value.replace(/\D/g, '');
+                                                if (val.length > 14) val = val.slice(0, 14);
+                                                val = val.replace(/^(\d{2})(\d)/, '$1.$2');
+                                                val = val.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                                                val = val.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                                                val = val.replace(/(\d{4})(\d)/, '$1-$2');
+                                                updateProfile('cnpj', val);
+                                            }}
+                                        />
+                                    </div>
+                                    <Button
+                                        size="lg"
+                                        className="w-full h-14 rounded-2xl text-lg font-semibold shadow-lg shadow-primary/20"
+                                        onClick={handleCnpjSearch}
+                                        disabled={!profile.cnpj || profile.cnpj.length < 14}
+                                    >
+                                        Consultar CNPJ
+                                    </Button>
+                                </div>
                             )}
 
                             {!loadingCnpj && (
@@ -361,10 +375,10 @@ export function MobileTaxWizard({
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </main>
+            </main >
 
             {/* Drawer de Identificação (Hero Search Result) */}
-            <Drawer open={showIdentificationDrawer} onOpenChange={setShowIdentificationDrawer}>
+            < Drawer open={showIdentificationDrawer} onOpenChange={setShowIdentificationDrawer} >
                 <DrawerContent className="pb-8">
                     <DrawerHeader className="text-center">
                         <DrawerTitle className="text-2xl">{profile.razao_social || 'Empresa Encontrada'}</DrawerTitle>
@@ -395,7 +409,7 @@ export function MobileTaxWizard({
                         </div>
                     </div>
                 </DrawerContent>
-            </Drawer>
-        </div>
+            </Drawer >
+        </div >
     );
 }
