@@ -3,7 +3,7 @@ import { InterviewStep } from "./InterviewStep";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Mic, Keyboard, Upload, Play, Check } from "lucide-react";
+import { Mic, Keyboard, Upload, Play, Check, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { TaxProfile } from "@/types/tax-planning";
@@ -73,7 +73,12 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
     const [activeTab, setActiveTab] = useState<"voice" | "type" | "import">("voice");
     const [manualInput, setManualInput] = useState("");
     const [isAiProcessing, setIsAiProcessing] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState<{ value: any, text: string } | null>(null);
+    const [aiQuestion, setAiQuestion] = useState<string | null>(null);
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
 
     const currentStep = STEPS[currentStepIndex];
 
@@ -102,11 +107,26 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
                 const { data, error } = await supabase.functions.invoke('tax-planner-extract', {
                     body: { text: `O valor para ${currentStep.question} é ${text}`, json_data: {} }
                 });
-                if (!error && data?.profile) {
-                    // Extract generic mapping logic here would be complex, simplifying for now
-                    // Assuming the AI returns a partially filled profile, we'd need to map it.
-                    // For this specific purpose, let's trust the number parser mostly or handle specific fields
-                    // This is a placeholder for the "Engine" logic.
+                if (!error && data) {
+                    // Update profile with extracted data
+                    if (data.profile) {
+                        Object.entries(data.profile).forEach(([key, value]) => {
+                            if (value !== null && value !== undefined) {
+                                onUpdateProfile(key, value);
+                            }
+                        });
+                    }
+
+                    if (data.next_question) {
+                        setAiQuestion(data.next_question);
+                        setManualInput(""); // Clear input
+                        toast({ title: "Nova pergunta da IA" });
+                    } else {
+                        // Success via text, maybe confirm first?
+                        // For flow simplicity, if next_question is null, we assume done or proceed.
+                        setAiQuestion(null);
+                        onComplete();
+                    }
                 }
             }
 
@@ -131,6 +151,44 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
         }
     };
 
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            chunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                handleAudioStop(audioBlob);
+                stream.getTracks().forEach((track) => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            toast({
+                title: "Acesso ao microfone negado",
+                description: "Verifique as permissões do seu navegador para usar a voz.",
+                variant: "destructive"
+            });
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    };
+
     const handleAudioStop = async (blob: Blob) => {
         // Reuse logic from PlanejamentoTributario but simplified
         // Send to Whisper -> Text -> ProcessTextToValue
@@ -147,26 +205,34 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
             });
 
             if (!error && data) {
-                // In a real scenario, we'd pluck the specific field value
-                // For now let's assume the AI updates the profile and we just confirm.
-                // This is tricky without a specific single-field extraction endpoint.
-                // Let's use the returned profile to effectively "diff" or just take the explicit field.
-                // Since tax-planner-extract returns a full profile, we might need to be careful.
-
-                // Simplification: We'll assume the text extraction worked and mapped to a field.
-                // Or we just show a "Entendi: R$ X" based on what the AI parsed.
-
-                // If the AI returns a populated profile, find our field.
-                const keys = currentStep.field.split('.');
-                let val = data.profile;
-                for (const key of keys) {
-                    val = val ? val[key] : undefined;
+                // Update profile with whatever the AI extracted
+                if (data.profile) {
+                    // Update full profile using the helper or one-by-one
+                    // Since we don't have a bulk update, we might need to rely on the parent or do it manually.
+                    // Ideally updateProfile handles key/value.
+                    // But here we might have multiple fields.
+                    // For now, let's just use the setProfile from props if available? 
+                    // Wait, we only have updateProfile (single field).
+                    // We should probably expose setProfile or iterate.
+                    // Let's iterate over non-null keys in data.profile
+                    Object.entries(data.profile).forEach(([key, value]) => {
+                        if (value !== null && value !== undefined) {
+                            onUpdateProfile(key, value);
+                        }
+                    });
                 }
 
-                if (val !== undefined) {
-                    setShowConfirmation({ value: val, text: "via Voz" });
+                // Handle Adaptive Flow
+                if (data.next_question) {
+                    setAiQuestion(data.next_question);
+                    // Clear confirmation logic, we are continuing the interview
+                    setShowConfirmation(null);
+                    toast({ title: "Nova pergunta da IA", description: "Perfis atualizado." });
                 } else {
-                    toast({ title: "Não consegui identificar o valor.", variant: "destructive" });
+                    // No more questions, we can finish or show a summary
+                    setAiQuestion(null);
+                    toast({ title: "Entrevista concluída!", description: "Gerando análise..." });
+                    onComplete(); // Go to next phase
                 }
             }
         } catch (e) {
@@ -181,8 +247,8 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
         <div className="flex flex-col h-full justify-between">
             <div className="flex-1 flex flex-col justify-center">
                 <InterviewStep
-                    question={currentStep.question}
-                    description={currentStep.description}
+                    question={aiQuestion || currentStep.question}
+                    description={aiQuestion ? "A IA precisa deste dado para continuar." : currentStep.description}
                 >
                     {showConfirmation ? (
                         <motion.div
@@ -229,6 +295,13 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
                         </div>
                     )}
                 </InterviewStep>
+                {aiQuestion && (
+                    <div className="px-6 pb-2 text-center">
+                        <Button variant="ghost" size="sm" onClick={() => onComplete()} className="text-muted-foreground text-xs">
+                            Pular para Análise <ArrowRight className="h-3 w-3 ml-1" />
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <div className="pb-6 px-4">
@@ -250,19 +323,26 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
 
                     <TabsContent value="voice" className="mt-0">
                         <div className="flex justify-center">
-                            {/* Simulated Hold-to-Talk or Toggle Button */}
                             <div className="relative">
-                                {/* We can use the existing AudioRecorder but custom styled? 
-                             Or build a custom trigger that uses the AudioRecorder logic internally.
-                             For now, let's use a big button that simulates the interaction.
-                         */}
+                                {isRecording && (
+                                    <motion.div
+                                        initial={{ scale: 1, opacity: 0.5 }}
+                                        animate={{ scale: 1.5, opacity: 0 }}
+                                        transition={{ repeat: Infinity, duration: 1.5 }}
+                                        className="absolute inset-0 bg-primary rounded-full"
+                                    />
+                                )}
                                 <Button
                                     size="lg"
-                                    className="h-20 w-20 rounded-full shadow-xl bg-primary hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+                                    onClick={isRecording ? stopRecording : startRecording}
+                                    className={`h-20 w-20 rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
+                                        }`}
                                 >
-                                    <Mic className="h-8 w-8 text-white" />
+                                    {isRecording ? <div className="h-6 w-6 bg-white rounded-sm" /> : <Mic className="h-8 w-8 text-white" />}
                                 </Button>
-                                <p className="text-center text-xs text-muted-foreground mt-3">Toque para gravar</p>
+                                <p className="text-center text-xs text-muted-foreground mt-3 uppercase font-semibold tracking-wider">
+                                    {isRecording ? "Toque para parar" : "Toque para falar"}
+                                </p>
                             </div>
                         </div>
                     </TabsContent>

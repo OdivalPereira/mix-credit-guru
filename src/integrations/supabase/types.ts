@@ -47,99 +47,113 @@ export type Database = {
         }
         Relationships: []
       }
-      contratos: {
+      audit_logs: {
         Row: {
-          conversoes: Json | null
+          calculated_tax: number | null
           created_at: string
-          fornecedor_id: string
-          freight_breaks: Json | null
+          details: Json | null
           id: string
-          preco_base: number
-          price_breaks: Json | null
-          produto_id: string
-          unidade: Database["public"]["Enums"]["unit_type"]
-          updated_at: string
-          user_id: string
-          yield_config: Json | null
+          ncm: string | null
+          request_id: string
+          user_id: string | null
         }
         Insert: {
-          conversoes?: Json | null
+          calculated_tax?: number | null
           created_at?: string
-          fornecedor_id: string
-          freight_breaks?: Json | null
+          details?: Json | null
           id?: string
-          preco_base: number
-          price_breaks?: Json | null
-          produto_id: string
-          unidade: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id: string
-          yield_config?: Json | null
+          ncm?: string | null
+          request_id?: string
+          user_id?: string | null
         }
         Update: {
-          conversoes?: Json | null
+          calculated_tax?: number | null
           created_at?: string
-          fornecedor_id?: string
-          freight_breaks?: Json | null
+          details?: Json | null
           id?: string
-          preco_base?: number
-          price_breaks?: Json | null
-          produto_id?: string
-          unidade?: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id?: string
-          yield_config?: Json | null
+          ncm?: string | null
+          request_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
-      cotacao_fornecedores: {
+      contratos: {
         Row: {
-          cadeia: Json | null
-          cbs: number
-          cotacao_id: string
-          created_at: string
-          flags_item: Json | null
-          frete: number
-          ibs: number
+          ativo: boolean | null
+          condicao_pagamento: string | null
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          fornecedor_id: string | null
           id: string
-          is_aliquota: number
-          is_refeicao_pronta: boolean | null
-          nome: string
-          preco: number
-          regime: Database["public"]["Enums"]["supplier_regime"]
-          tipo: Database["public"]["Enums"]["supplier_tipo"]
+          moeda: string | null
+          numero: string
+          observacoes: string | null
+          updated_at: string | null
+          valor_total: number | null
         }
         Insert: {
-          cadeia?: Json | null
-          cbs?: number
-          cotacao_id: string
-          created_at?: string
-          flags_item?: Json | null
-          frete?: number
-          ibs?: number
+          ativo?: boolean | null
+          condicao_pagamento?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          fornecedor_id?: string | null
           id?: string
-          is_aliquota?: number
-          is_refeicao_pronta?: boolean | null
-          nome: string
-          preco: number
-          regime: Database["public"]["Enums"]["supplier_regime"]
-          tipo: Database["public"]["Enums"]["supplier_tipo"]
+          moeda?: string | null
+          numero: string
+          observacoes?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
         }
         Update: {
-          cadeia?: Json | null
-          cbs?: number
-          cotacao_id?: string
-          created_at?: string
-          flags_item?: Json | null
-          frete?: number
-          ibs?: number
+          ativo?: boolean | null
+          condicao_pagamento?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          fornecedor_id?: string | null
           id?: string
-          is_aliquota?: number
-          is_refeicao_pronta?: boolean | null
-          nome?: string
-          preco?: number
-          regime?: Database["public"]["Enums"]["supplier_regime"]
-          tipo?: Database["public"]["Enums"]["supplier_tipo"]
+          moeda?: string | null
+          numero?: string
+          observacoes?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotacao_fornecedores: {
+        Row: {
+          cotacao_id: string | null
+          created_at: string | null
+          fornecedor_id: string | null
+          id: string
+          responded_at: string | null
+          status: string | null
+        }
+        Insert: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          responded_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          responded_at?: string | null
+          status?: string | null
         }
         Relationships: [
           {
@@ -149,249 +163,8 @@ export type Database = {
             referencedRelation: "cotacoes"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      cotacoes: {
-        Row: {
-          created_at: string
-          data_cotacao: string
-          destino: Database["public"]["Enums"]["destinacao_tipo"]
-          id: string
-          municipio: string | null
-          nome: string
-          produto: string
-          regime: Database["public"]["Enums"]["supplier_regime"]
-          scenario: string
-          uf: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          data_cotacao: string
-          destino: Database["public"]["Enums"]["destinacao_tipo"]
-          id?: string
-          municipio?: string | null
-          nome: string
-          produto: string
-          regime: Database["public"]["Enums"]["supplier_regime"]
-          scenario?: string
-          uf: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          data_cotacao?: string
-          destino?: Database["public"]["Enums"]["destinacao_tipo"]
-          id?: string
-          municipio?: string | null
-          nome?: string
-          produto?: string
-          regime?: Database["public"]["Enums"]["supplier_regime"]
-          scenario?: string
-          uf?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      fornecedores: {
-        Row: {
-          ativo: boolean
-          cnpj: string | null
-          contato_email: string | null
-          contato_nome: string | null
-          contato_telefone: string | null
-          conversoes: Json | null
-          created_at: string
-          freight_breaks: Json | null
-          id: string
-          municipio: string | null
-          nome: string
-          price_breaks: Json | null
-          regime: Database["public"]["Enums"]["supplier_regime"]
-          tipo: Database["public"]["Enums"]["supplier_tipo"]
-          uf: string
-          updated_at: string
-          user_id: string
-          yield_config: Json | null
-        }
-        Insert: {
-          ativo?: boolean
-          cnpj?: string | null
-          contato_email?: string | null
-          contato_nome?: string | null
-          contato_telefone?: string | null
-          conversoes?: Json | null
-          created_at?: string
-          freight_breaks?: Json | null
-          id?: string
-          municipio?: string | null
-          nome: string
-          price_breaks?: Json | null
-          regime: Database["public"]["Enums"]["supplier_regime"]
-          tipo: Database["public"]["Enums"]["supplier_tipo"]
-          uf: string
-          updated_at?: string
-          user_id: string
-          yield_config?: Json | null
-        }
-        Update: {
-          ativo?: boolean
-          cnpj?: string | null
-          contato_email?: string | null
-          contato_nome?: string | null
-          contato_telefone?: string | null
-          conversoes?: Json | null
-          created_at?: string
-          freight_breaks?: Json | null
-          id?: string
-          municipio?: string | null
-          nome?: string
-          price_breaks?: Json | null
-          regime?: Database["public"]["Enums"]["supplier_regime"]
-          tipo?: Database["public"]["Enums"]["supplier_tipo"]
-          uf?: string
-          updated_at?: string
-          user_id?: string
-          yield_config?: Json | null
-        }
-        Relationships: []
-      }
-      ncm_rules: {
-        Row: {
-          aliquota_cbs: number
-          aliquota_ibs: number
-          aliquota_is: number
-          created_at: string
-          date_end: string | null
-          date_start: string
-          explanation_md: string | null
-          id: string
-          ncm: string
-          scenario: string
-          uf: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          aliquota_cbs?: number
-          aliquota_ibs?: number
-          aliquota_is?: number
-          created_at?: string
-          date_end?: string | null
-          date_start: string
-          explanation_md?: string | null
-          id?: string
-          ncm: string
-          scenario?: string
-          uf: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          aliquota_cbs?: number
-          aliquota_ibs?: number
-          aliquota_is?: number
-          created_at?: string
-          date_end?: string | null
-          date_start?: string
-          explanation_md?: string | null
-          id?: string
-          ncm?: string
-          scenario?: string
-          uf?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      ofertas_fornecedor: {
-        Row: {
-          ativa: boolean
-          cadeia: Json | null
-          cbs: number
-          conversoes: Json | null
-          created_at: string
-          explanation: string | null
-          flags_item: Json | null
-          fornecedor_id: string
-          freight_breaks: Json | null
-          frete: number
-          ibs: number
-          id: string
-          is_aliquota: number
-          is_refeicao_pronta: boolean | null
-          pedido_minimo: number | null
-          prazo_entrega_dias: number | null
-          prazo_pagamento_dias: number | null
-          preco: number
-          price_breaks: Json | null
-          produto_descricao: string | null
-          produto_id: string
-          unidade_negociada: string | null
-          updated_at: string
-          user_id: string
-          yield_config: Json | null
-        }
-        Insert: {
-          ativa?: boolean
-          cadeia?: Json | null
-          cbs?: number
-          conversoes?: Json | null
-          created_at?: string
-          explanation?: string | null
-          flags_item?: Json | null
-          fornecedor_id: string
-          freight_breaks?: Json | null
-          frete?: number
-          ibs?: number
-          id?: string
-          is_aliquota?: number
-          is_refeicao_pronta?: boolean | null
-          pedido_minimo?: number | null
-          prazo_entrega_dias?: number | null
-          prazo_pagamento_dias?: number | null
-          preco?: number
-          price_breaks?: Json | null
-          produto_descricao?: string | null
-          produto_id: string
-          unidade_negociada?: string | null
-          updated_at?: string
-          user_id: string
-          yield_config?: Json | null
-        }
-        Update: {
-          ativa?: boolean
-          cadeia?: Json | null
-          cbs?: number
-          conversoes?: Json | null
-          created_at?: string
-          explanation?: string | null
-          flags_item?: Json | null
-          fornecedor_id?: string
-          freight_breaks?: Json | null
-          frete?: number
-          ibs?: number
-          id?: string
-          is_aliquota?: number
-          is_refeicao_pronta?: boolean | null
-          pedido_minimo?: number | null
-          prazo_entrega_dias?: number | null
-          prazo_pagamento_dias?: number | null
-          preco?: number
-          price_breaks?: Json | null
-          produto_descricao?: string | null
-          produto_id?: string
-          unidade_negociada?: string | null
-          updated_at?: string
-          user_id?: string
-          yield_config?: Json | null
-        }
-        Relationships: [
           {
-            foreignKeyName: "ofertas_fornecedor_fornecedor_id_fkey"
+            foreignKeyName: "cotacao_fornecedores_fornecedor_id_fkey"
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
@@ -399,237 +172,519 @@ export type Database = {
           },
         ]
       }
-      produtos: {
+      cotacoes: {
         Row: {
-          created_at: string
-          descricao: string
-          flag_cesta: boolean
-          flag_is: boolean
-          flag_reducao: boolean
-          flag_refeicao: boolean
+          created_at: string | null
+          created_by: string | null
+          data_abertura: string | null
+          data_fechamento: string | null
+          descricao: string | null
           id: string
-          ncm: string
-          unidade_padrao: Database["public"]["Enums"]["unit_type"]
-          updated_at: string
-          user_id: string
+          status: string | null
+          titulo: string
         }
         Insert: {
-          created_at?: string
-          descricao: string
-          flag_cesta?: boolean
-          flag_is?: boolean
-          flag_reducao?: boolean
-          flag_refeicao?: boolean
+          created_at?: string | null
+          created_by?: string | null
+          data_abertura?: string | null
+          data_fechamento?: string | null
+          descricao?: string | null
           id?: string
-          ncm: string
-          unidade_padrao?: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id: string
+          status?: string | null
+          titulo: string
         }
         Update: {
-          created_at?: string
-          descricao?: string
-          flag_cesta?: boolean
-          flag_is?: boolean
-          flag_reducao?: boolean
-          flag_refeicao?: boolean
+          created_at?: string | null
+          created_by?: string | null
+          data_abertura?: string | null
+          data_fechamento?: string | null
+          descricao?: string | null
+          id?: string
+          status?: string | null
+          titulo?: string
+        }
+        Relationships: []
+      }
+      fornecedores: {
+        Row: {
+          categoria: string | null
+          city: string | null
+          cnpj: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          is_active: boolean | null
+          last_purchase_date: string | null
+          name: string
+          notes: string | null
+          payment_terms: string | null
+          postal_code: string | null
+          rating: number | null
+          state: string | null
+          street: string | null
+          supplier_type:
+          | Database["public"]["Enums"]["supplier_tipo"]
+          | null
+          tax_regime:
+          | Database["public"]["Enums"]["supplier_regime"]
+          | null
+          total_purchases_value: number | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          city?: string | null
+          cnpj: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_purchase_date?: string | null
+          name: string
+          notes?: string | null
+          payment_terms?: string | null
+          postal_code?: string | null
+          rating?: number | null
+          state?: string | null
+          street?: string | null
+          supplier_type?:
+          | Database["public"]["Enums"]["supplier_tipo"]
+          | null
+          tax_regime?:
+          | Database["public"]["Enums"]["supplier_regime"]
+          | null
+          total_purchases_value?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          city?: string | null
+          cnpj?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_purchase_date?: string | null
+          name?: string
+          notes?: string | null
+          payment_terms?: string | null
+          postal_code?: string | null
+          rating?: number | null
+          state?: string | null
+          street?: string | null
+          supplier_type?:
+          | Database["public"]["Enums"]["supplier_tipo"]
+          | null
+          tax_regime?:
+          | Database["public"]["Enums"]["supplier_regime"]
+          | null
+          total_purchases_value?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      ncm_rules: {
+        Row: {
+          active: boolean | null
+          aliquota_icms: number | null
+          aliquota_ipi: number | null
+          aliquota_pis_cofins: number | null
+          created_at: string | null
+          cst_pis_cofins: string | null
+          descricao: string | null
+          id: string
+          ncm: string
+          tipo_mercadoria: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          aliquota_icms?: number | null
+          aliquota_ipi?: number | null
+          aliquota_pis_cofins?: number | null
+          created_at?: string | null
+          cst_pis_cofins?: string | null
+          descricao?: string | null
+          id?: string
+          ncm: string
+          tipo_mercadoria?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          aliquota_icms?: number | null
+          aliquota_ipi?: number | null
+          aliquota_pis_cofins?: number | null
+          created_at?: string | null
+          cst_pis_cofins?: string | null
+          descricao?: string | null
           id?: string
           ncm?: string
-          unidade_padrao?: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id?: string
+          tipo_mercadoria?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ofertas_fornecedor: {
+        Row: {
+          cotacao_id: string | null
+          created_at: string | null
+          fornecedor_id: string | null
+          id: string
+          observacoes: string | null
+          preco_unitario: number | null
+          produto_id: string | null
+          quantidade: number | null
+          status: string | null
+        }
+        Insert: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          observacoes?: string | null
+          preco_unitario?: number | null
+          produto_id?: string | null
+          quantidade?: number | null
+          status?: string | null
+        }
+        Update: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          observacoes?: string | null
+          preco_unitario?: number | null
+          produto_id?: string | null
+          quantidade?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ofertas_fornecedor_cotacao_id_fkey"
+            columns: ["cotacao_id"]
+            isOneToOne: false
+            referencedRelation: "cotacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_fornecedor_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_fornecedor_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          code: string
+          cost_price: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          last_purchase_date: string | null
+          last_purchase_price: number | null
+          min_stock: number | null
+          name: string
+          ncm: string | null
+          sale_price: number | null
+          stock_quantity: number | null
+          unit: Database["public"]["Enums"]["unit_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          code: string
+          cost_price?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_purchase_date?: string | null
+          last_purchase_price?: number | null
+          min_stock?: number | null
+          name: string
+          ncm?: string | null
+          sale_price?: number | null
+          stock_quantity?: number | null
+          unit?: Database["public"]["Enums"]["unit_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          code?: string
+          cost_price?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_purchase_date?: string | null
+          last_purchase_price?: number | null
+          min_stock?: number | null
+          name?: string
+          ncm?: string | null
+          sale_price?: number | null
+          stock_quantity?: number | null
+          unit?: Database["public"]["Enums"]["unit_type"]
+          updated_at?: string | null
         }
         Relationships: []
       }
       profiles: {
         Row: {
           avatar_url: string | null
-          company: string | null
           created_at: string
           full_name: string | null
           id: string
-          phone: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
-          company?: string | null
           created_at?: string
           full_name?: string | null
           id: string
-          phone?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
-          company?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
-          phone?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
       receitas: {
         Row: {
-          codigo: string
-          created_at: string
+          categoria: string | null
+          created_at: string | null
+          data: string
           descricao: string
           id: string
-          updated_at: string
-          user_id: string
+          status: string | null
+          tipo: string | null
+          user_id: string | null
+          valor: number
         }
         Insert: {
-          codigo: string
-          created_at?: string
+          categoria?: string | null
+          created_at?: string | null
+          data: string
           descricao: string
           id?: string
-          updated_at?: string
-          user_id: string
+          status?: string | null
+          tipo?: string | null
+          user_id?: string | null
+          valor: number
         }
         Update: {
-          codigo?: string
-          created_at?: string
+          categoria?: string | null
+          created_at?: string | null
+          data?: string
           descricao?: string
           id?: string
-          updated_at?: string
-          user_id?: string
+          status?: string | null
+          tipo?: string | null
+          user_id?: string | null
+          valor?: number
         }
         Relationships: []
       }
       regras_ncm: {
         Row: {
-          aliquota_cbs: number
-          aliquota_ibs: number
-          aliquota_is: number
-          created_at: string
-          descricao: string
+          active: boolean | null
+          aliquota_icms: number | null
+          aliquota_ipi: number | null
+          aliquota_pis_cofins: number | null
+          created_at: string | null
+          cst_pis_cofins: string | null
+          descricao: string | null
           id: string
           ncm: string
-          overrides_uf: Json | null
-          prioridade: number | null
-          receita_codigo: string
-          receita_descricao: string
-          updated_at: string
-          user_id: string
-          vigencia_fim: string | null
-          vigencia_inicio: string | null
+          tipo_mercadoria: string | null
+          updated_at: string | null
         }
         Insert: {
-          aliquota_cbs?: number
-          aliquota_ibs?: number
-          aliquota_is?: number
-          created_at?: string
-          descricao: string
+          active?: boolean | null
+          aliquota_icms?: number | null
+          aliquota_ipi?: number | null
+          aliquota_pis_cofins?: number | null
+          created_at?: string | null
+          cst_pis_cofins?: string | null
+          descricao?: string | null
           id?: string
           ncm: string
-          overrides_uf?: Json | null
-          prioridade?: number | null
-          receita_codigo: string
-          receita_descricao: string
-          updated_at?: string
-          user_id: string
-          vigencia_fim?: string | null
-          vigencia_inicio?: string | null
+          tipo_mercadoria?: string | null
+          updated_at?: string | null
         }
         Update: {
-          aliquota_cbs?: number
-          aliquota_ibs?: number
-          aliquota_is?: number
-          created_at?: string
-          descricao?: string
+          active?: boolean | null
+          aliquota_icms?: number | null
+          aliquota_ipi?: number | null
+          aliquota_pis_cofins?: number | null
+          created_at?: string | null
+          cst_pis_cofins?: string | null
+          descricao?: string | null
           id?: string
-          ncm?: string
-          overrides_uf?: Json | null
-          prioridade?: number | null
-          receita_codigo?: string
-          receita_descricao?: string
-          updated_at?: string
-          user_id?: string
-          vigencia_fim?: string | null
-          vigencia_inicio?: string | null
+          ncm: string
+          tipo_mercadoria?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tax_simulations: {
+        Row: {
+          created_at: string
+          id: string
+          is_mobile: boolean | null
+          profile: Json
+          results: Json
+          scenario_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_mobile?: boolean | null
+          profile: Json
+          results: Json
+          scenario_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_mobile?: boolean | null
+          profile?: Json
+          results?: Json
+          scenario_name?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
       unidades_conversao: {
         Row: {
-          created_at: string
-          de: Database["public"]["Enums"]["unit_type"]
+          created_at: string | null
           fator: number
+          from_unit: Database["public"]["Enums"]["unit_type"]
           id: string
-          para: Database["public"]["Enums"]["unit_type"]
-          updated_at: string
-          user_id: string
+          produto_id: string | null
+          to_unit: Database["public"]["Enums"]["unit_type"]
         }
         Insert: {
-          created_at?: string
-          de: Database["public"]["Enums"]["unit_type"]
+          created_at?: string | null
           fator: number
+          from_unit: Database["public"]["Enums"]["unit_type"]
           id?: string
-          para: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id: string
+          produto_id?: string | null
+          to_unit: Database["public"]["Enums"]["unit_type"]
         }
         Update: {
-          created_at?: string
-          de?: Database["public"]["Enums"]["unit_type"]
+          created_at?: string | null
           fator?: number
+          from_unit?: Database["public"]["Enums"]["unit_type"]
           id?: string
-          para?: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id?: string
+          produto_id?: string | null
+          to_unit?: Database["public"]["Enums"]["unit_type"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "unidades_conversao_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unidades_yield: {
         Row: {
-          created_at: string
-          entrada: Database["public"]["Enums"]["unit_type"]
+          created_at: string | null
           id: string
-          rendimento: number
-          saida: Database["public"]["Enums"]["unit_type"]
-          updated_at: string
-          user_id: string
+          ingrediente_id: string | null
+          output_unit: Database["public"]["Enums"]["unit_type"]
+          produto_final_id: string | null
+          yield_percentage: number
         }
         Insert: {
-          created_at?: string
-          entrada: Database["public"]["Enums"]["unit_type"]
+          created_at?: string | null
           id?: string
-          rendimento: number
-          saida: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id: string
+          ingrediente_id?: string | null
+          output_unit: Database["public"]["Enums"]["unit_type"]
+          produto_final_id?: string | null
+          yield_percentage: number
         }
         Update: {
-          created_at?: string
-          entrada?: Database["public"]["Enums"]["unit_type"]
+          created_at?: string | null
           id?: string
-          rendimento?: number
-          saida?: Database["public"]["Enums"]["unit_type"]
-          updated_at?: string
-          user_id?: string
+          ingrediente_id?: string | null
+          output_unit: Database["public"]["Enums"]["unit_type"]
+          produto_final_id?: string | null
+          yield_percentage?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "unidades_yield_ingrediente_id_fkey"
+            columns: ["ingrediente_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_yield_produto_final_id_fkey"
+            columns: ["produto_final_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -638,45 +693,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       activity_type:
-        | "produto_criado"
-        | "produto_atualizado"
-        | "produto_excluido"
-        | "fornecedor_criado"
-        | "fornecedor_atualizado"
-        | "fornecedor_excluido"
-        | "contrato_criado"
-        | "contrato_atualizado"
-        | "contrato_excluido"
-        | "cotacao_criada"
-        | "cotacao_atualizada"
-        | "cotacao_excluida"
-        | "regra_criada"
-        | "regra_atualizada"
-        | "regra_excluida"
-        | "login"
-        | "logout"
-        | "perfil_atualizado"
-        | "demo_carregado"
-        | "configuracao_alterada"
+      | "produto_criado"
+      | "produto_atualizado"
+      | "produto_excluido"
+      | "fornecedor_criado"
+      | "fornecedor_atualizado"
+      | "fornecedor_excluido"
+      | "contrato_criado"
+      | "contrato_atualizado"
+      | "contrato_excluido"
+      | "cotacao_criada"
+      | "cotacao_atualizada"
+      | "cotacao_excluida"
+      | "regra_criada"
+      | "regra_atualizada"
+      | "regra_excluida"
+      | "login"
+      | "logout"
+      | "perfil_atualizado"
+      | "demo_carregado"
+      | "configuracao_alterada"
       app_role: "admin" | "moderator" | "user"
       destinacao_tipo: "A" | "B" | "C" | "D" | "E"
       supplier_regime: "normal" | "simples" | "presumido"
       supplier_tipo:
-        | "industria"
-        | "distribuidor"
-        | "produtor"
-        | "atacado"
-        | "varejo"
+      | "industria"
+      | "distribuidor"
+      | "produtor"
+      | "atacado"
+      | "varejo"
       unit_type: "un" | "kg" | "g" | "l" | "ml" | "ton"
     }
     CompositeTypes: {
@@ -685,159 +734,101 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  PublicTableNameOrOptions extends
+  | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+  ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+    Database[PublicTableNameOrOptions["schema"]]["Views"])
+  : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+    Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+  ? R
+  : never
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+    PublicSchema["Views"])
+  ? (PublicSchema["Tables"] &
+    PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+  PublicTableNameOrOptions extends
+  | keyof PublicSchema["Tables"]
+  | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+  ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+    Insert: infer I
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  ? I
+  : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+  PublicTableNameOrOptions extends
+  | keyof PublicSchema["Tables"]
+  | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+  ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+    Update: infer U
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
+  ? U
+  : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  PublicEnumNameOrOptions extends
+  | keyof PublicSchema["Enums"]
+  | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  : never = never,
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+  ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof PublicSchema["CompositeTypes"]
+  | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+  ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      activity_type: [
-        "produto_criado",
-        "produto_atualizado",
-        "produto_excluido",
-        "fornecedor_criado",
-        "fornecedor_atualizado",
-        "fornecedor_excluido",
-        "contrato_criado",
-        "contrato_atualizado",
-        "contrato_excluido",
-        "cotacao_criada",
-        "cotacao_atualizada",
-        "cotacao_excluida",
-        "regra_criada",
-        "regra_atualizada",
-        "regra_excluida",
-        "login",
-        "logout",
-        "perfil_atualizado",
-        "demo_carregado",
-        "configuracao_alterada",
-      ],
-      app_role: ["admin", "moderator", "user"],
-      destinacao_tipo: ["A", "B", "C", "D", "E"],
-      supplier_regime: ["normal", "simples", "presumido"],
-      supplier_tipo: [
-        "industria",
-        "distribuidor",
-        "produtor",
-        "atacado",
-        "varejo",
-      ],
-      unit_type: ["un", "kg", "g", "l", "ml", "ton"],
-    },
-  },
-} as const
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+  ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never

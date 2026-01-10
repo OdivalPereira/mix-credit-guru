@@ -26,7 +26,7 @@ import {
     Loader2, X, Info, BarChart3, Target, Lightbulb,
     Home, Zap, Receipt, Truck, Wrench, Package,
     Wallet, CreditCard, Scale, AlertTriangle, FileDown, ScrollText, Map as MapIcon,
-    Store, Percent, Search
+    Store, Percent, Search, History as HistoryIcon
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
@@ -41,6 +41,7 @@ import { AudioRecorder } from "@/components/AudioRecorder";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileTaxWizard } from "@/components/mobile/MobileTaxWizard";
+import { HistoryDrawer } from "@/components/tax/HistoryDrawer";
 
 import type {
     TaxProfile, TaxComparisonResult, TaxScenarioResult,
@@ -157,6 +158,7 @@ export default function PlanejamentoTributario() {
     // Wizard state
     const [currentStep, setCurrentStep] = useState<WizardStep>('input');
     const [inputTab, setInputTab] = useState<'manual' | 'texto' | 'arquivo'>('manual');
+    const [historyOpen, setHistoryOpen] = useState(false);
 
     // Input state
     const [descricaoTexto, setDescricaoTexto] = useState('');
@@ -312,9 +314,26 @@ export default function PlanejamentoTributario() {
     const updateProfile = useCallback((field: string, value: any) => {
         setProfile(prev => {
             const keys = field.split('.');
+
+            // If updating an object directly (not using dot notation)
             if (keys.length === 1) {
+                const currentValue = (prev as any)[field];
+
+                // If the new value is an object, deep merge it
+                if (value && typeof value === 'object' && !Array.isArray(value) &&
+                    currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue)) {
+                    return {
+                        ...prev,
+                        [field]: {
+                            ...currentValue,
+                            ...value
+                        }
+                    };
+                }
+
                 return { ...prev, [field]: value };
             } else if (keys.length === 2) {
+                // Standard dot notation update
                 return {
                     ...prev,
                     [keys[0]]: {
@@ -345,6 +364,36 @@ export default function PlanejamentoTributario() {
         if (!profile.cnae_principal) return null;
         return getCnaeInfo(profile.cnae_principal);
     }, [profile.cnae_principal]);
+
+    // ============================================================================
+    // PERSISTENCE (LOCAL STORAGE)
+    // ============================================================================
+
+    useEffect(() => {
+        const savedProfile = localStorage.getItem('tax_profile_draft');
+        if (savedProfile) {
+            try {
+                const parsed = JSON.parse(savedProfile);
+                setProfile(prev => ({ ...prev, ...parsed }));
+                if (parsed.cnpj) {
+                    setCurrentStep('input'); // Resume at input
+                }
+            } catch (e) {
+                console.error('Erro ao carregar rascunho:', e);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const debouncedSave = setTimeout(() => {
+            localStorage.setItem('tax_profile_draft', JSON.stringify(profile));
+        }, 1000);
+        return () => clearTimeout(debouncedSave);
+    }, [profile]);
+
+    // ============================================================================
+    // STATE MANAGEMENT
+    // ============================================================================
 
     // ============================================================================
     // FILE HANDLING
@@ -656,6 +705,36 @@ export default function PlanejamentoTributario() {
 
 
     // ============================================================================
+    // HISTORY & PERSISTENCE
+    // ============================================================================
+
+    const saveSimulation = async (
+        profileToSave: TaxProfile,
+        resultsToSave: TaxComparisonResult,
+        scenarioName: string = 'Simulação Auto'
+    ) => {
+        try {
+            const { error } = await supabase
+                .from('tax_simulations')
+                .insert({
+                    profile: profileToSave as any, // jsonb casting
+                    results: resultsToSave as any, // jsonb casting
+                    scenario_name: scenarioName,
+                    is_mobile: isMobile
+                });
+
+            if (error) {
+                console.error('Erro Supabase:', error);
+                throw error;
+            }
+            console.log('Simulação salva no histórico.');
+        } catch (err) {
+            console.error('Erro ao salvar simulação:', err);
+            // Non-blocking error
+        }
+    };
+
+    // ============================================================================
     // CALCULATION
     // ============================================================================
 
@@ -686,16 +765,69 @@ export default function PlanejamentoTributario() {
                 description: `Melhor regime atual: ${resultado.melhor_atual.toUpperCase()}`
             });
 
-            // Chamada de IA Avançada para Insights Estratégicos (Background)
-            setIsAnalyzingStrategically(true);
-            const { data, error } = await supabase.functions.invoke('tax-planner-strategic-analysis', {
-                body: { profile: profileFinal, results: resultado }
-            });
-
-            if (!error && data && Array.isArray(data)) {
-                // Mesclar insights locais com os da IA (IA primeiro para destaque)
-                setStrategicInsights([...data, ...resultado.insights]);
+            // Salvar no histórico (Non-blocking)
+            if (profileFinal.razao_social) { // Avoid saving empty ones
+                saveSimulation(profileFinal, resultado, `${profileFinal.razao_social} - ${new Date().toLocaleString()}`);
             }
+
+            // Chamada de IA Avançada para Insights Estratégicos (Streaming)
+            setIsAnalyzingStrategically(true);
+
+            try {
+                const { data: sessionData } = await supabase.auth.getSession();
+                const token = sessionData.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tax-planner-strategic-analysis`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                    },
+                    body: JSON.stringify({ profile: profileFinal, results: resultado })
+                });
+
+                if (!response.ok || !response.body) throw new Error('Network response was not ok');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let insightsAccumulated: any[] = [...resultado.insights]; // Start with local insights
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    buffer += chunk;
+
+                    // Try to extract complete JSON objects from the partial array buffer
+                    // Regex looks for Pattern: { "tipo": ... }
+                    // We assume the model outputs a standard array "[ { ... }, { ... } ]"
+                    const matches = buffer.match(/\{[^{}]+\}/g);
+
+                    if (matches) {
+                        const newInsights = matches.map(jsonStr => {
+                            try {
+                                return JSON.parse(jsonStr);
+                            } catch (e) {
+                                return null;
+                            }
+                        }).filter(item => item !== null && item.tipo && item.titulo);
+
+                        // Merge unique insights to avoid dupes if buffer has overlap (regex search is global on buffer)
+                        // Actually, simple approach: just update state with ALL valid found so far + local
+                        // Better: Only add NEW ones.
+                        // But regex on full buffer finds all.
+                        const combined = [...resultado.insights, ...newInsights];
+                        setStrategicInsights(combined);
+                    }
+                }
+            } catch (streamError) {
+                console.error("Streaming error:", streamError);
+                // Fallback or just stop
+            }
+
         } catch (error) {
             console.error('Erro ao calcular:', error);
             toast({
@@ -823,27 +955,61 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
         }
     }, [reportContent, profile.razao_social]);
 
+    const handleLoadSimulation = (loadedProfile: TaxProfile, loadedResults: TaxComparisonResult) => {
+        setProfile(loadedProfile);
+        setResults(loadedResults);
+        setStrategicInsights(loadedResults.insights);
+        setCurrentStep('dashboard'); // Jump to results
+
+        // Se tiver results no JSON mas não tiver insights, talvez precise recalcular?
+        // Por enquanto assumimos que o salvo está completo.
+    };
+
     // ============================================================================
     // RENDER
     // ============================================================================
 
     if (isMobile) {
         return (
-            <MobileTaxWizard
-                profile={profile}
-                setProfile={setProfile}
-                updateProfile={updateProfile}
-                onSearchCnpj={handleConsultarCNPJ}
-                onCalculate={handleCalculate}
-                loadingCnpj={loadingCnpj}
-                isProcessing={isProcessing}
-            />
+            <>
+                <HistoryDrawer
+                    open={historyOpen}
+                    onOpenChange={setHistoryOpen}
+                    onSelectSimulation={handleLoadSimulation}
+                />
+                <MobileTaxWizard
+                    profile={profile}
+                    setProfile={setProfile}
+                    updateProfile={updateProfile}
+                    onSearchCnpj={handleConsultarCNPJ}
+                    onCalculate={handleCalculate}
+                    loadingCnpj={loadingCnpj}
+                    isProcessing={isProcessing}
+                    results={results}
+                    strategicInsights={strategicInsights}
+                    isAnalyzingStrategically={isAnalyzingStrategically}
+                    onReset={() => {
+                        setCurrentStep('input');
+                        setProfile(INITIAL_PROFILE);
+                        setResults(null);
+                        setAiAnalysis(null);
+                        localStorage.removeItem('tax_profile_draft');
+                    }}
+                    onOpenHistory={() => setHistoryOpen(true)}
+                />
+            </>
         );
     }
 
     return (
 
         <div className="space-y-6 pb-8">
+            <HistoryDrawer
+                open={historyOpen}
+                onOpenChange={setHistoryOpen}
+                onSelectSimulation={handleLoadSimulation}
+            />
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -852,9 +1018,15 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                         Consultoria inteligente com análise de não-cumulatividade
                     </p>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                    v2.1 - Multi-Modal
-                </Badge>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+                        <HistoryIcon className="h-4 w-4 mr-2" />
+                        Histórico
+                    </Button>
+                    <Badge variant="outline" className="text-xs h-9">
+                        v2.1 - Multi-Modal
+                    </Badge>
+                </div>
             </div>
 
             {/* Progress */}

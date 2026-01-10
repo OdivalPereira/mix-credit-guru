@@ -61,6 +61,8 @@ Você deve extrair e normalizar os dados para este formato JSON:
     
     "lucro_liquido": number
   },
+  "next_question": "string | null", // Pergunta curta e natural se faltar dados críticos. Null se o perfil estiver bom o suficiente.
+  "missing_fields": ["lista", "de", "campos", "faltantes"],
   "metadata": {
     "origem": "audio" | "pdf" | "texto" | "json_importado",
     "confianca": "alta" | "media" | "baixa",
@@ -74,6 +76,14 @@ Você pode receber "DADOS PRÉ-PROCESSADOS (JSON)" que representam o estado atua
 2. **Não Zerar**: Não zere campos que já estavam preenchidos, a menos que o usuário peça explicitamente (ex: "Excluir despesas financeiras").
 3. **Resolver Conflitos**: Se a nova entrada contradiz o JSON, a nova entrada tem prioridade (o usuário está corrigindo).
 
+## LÓGICA DE ENTREVISTA ADAPTATIVA (Next Question)
+Seu objetivo é preencher o perfil minimamente para uma comparação tributária.
+1. **Campos Críticos**: 'faturamento_mensal' (ou anual), 'regime_atual'. Se faltar um desses, PERGUNTE.
+2. **Campos Secundários Importantes**: 'folha_pagamento', 'cmv' (ou 'servicos_pj'). Se faltar, PERGUNTE.
+3. **Prioridade**: Pergunte UM dado por vez, o mais crítico.
+4. **Estilo da Pergunta**: Curta, direta, conversacional. Ex: "Qual é o faturamento médio mensal?" ou "A empresa tem funcionários? Qual o custo da folha?".
+5. **Decisão de Parada**: Se tiver Faturamento, Regime e pelo menos uma despesa relevante (Folha ou Insumos), defina "next_question": null. NÃO tente preencher tudo se o usuário não tiver.
+
 ## REGRAS DE EXTRAÇÃO
 1. **Diferenciação Mensal/Anual**: 
    - Campos de despesa no JSON DEVEM ser MENSALIZADOS. Se encontrar valores anuais (DRE), divida por 12.
@@ -86,7 +96,6 @@ Você pode receber "DADOS PRÉ-PROCESSADOS (JSON)" que representam o estado atua
 
 ## FORMATO DE RESPOSTA
 Apenas o JSON, sem markdown.`;
-
 
 
 // ============================================================================

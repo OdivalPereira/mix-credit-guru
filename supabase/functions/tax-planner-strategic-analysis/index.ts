@@ -97,18 +97,35 @@ Cada insight DEVE ter:
 
 Responda APENAS o JSON (array de insights).`;
 
-        const result = await model.generateContent([
+        const { stream } = await model.generateContentStream([
             { text: SYSTEM_PROMPT },
             { text: prompt }
         ]);
 
-        return new Response(result.response.text(), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        // Transform Gemini Stream to Web Standard Stream
+        const readable = new ReadableStream({
+            async start(controller) {
+                const encoder = new TextEncoder();
+                for await (const chunk of stream) {
+                    const text = chunk.text();
+                    controller.enqueue(encoder.encode(text));
+                }
+                controller.close();
+            }
+        });
+
+        return new Response(readable, {
+            headers: {
+                ...corsHeaders,
+                'Content-Type': 'text/event-stream',
+                'Connection': 'keep-alive',
+                'Cache-Control': 'no-cache'
+            }
         });
 
     } catch (error) {
         console.error('Error:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
