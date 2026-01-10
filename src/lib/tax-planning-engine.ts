@@ -321,15 +321,16 @@ export function calcularSimplesNacional(perfil: TaxProfile): TaxScenarioResult {
 // ============================================================================
 
 export function calcularLucroPresumido(perfil: TaxProfile): TaxScenarioResult {
-  const limiteLP = 78000000;
+  const limiteLP = taxRules.lucro_presumido.limite_faturamento_anual || 78000000;
   const faturamentoAnual = perfil.faturamento_anual || perfil.faturamento_mensal * 12;
 
+  // 1. Verificação de Elegibilidade
   if (faturamentoAnual > limiteLP) {
     return {
       nome: 'Lucro Presumido',
       codigo: 'presumido',
       elegivel: false,
-      motivo_inelegibilidade: `Faturamento excede limite de R$ 78 milhões`,
+      motivo_inelegibilidade: `Faturamento (R$ ${faturamentoAnual.toLocaleString('pt-BR')}) excede limite de R$ 78 milhões`,
       imposto_bruto_anual: 0,
       creditos_aproveitados: 0,
       imposto_liquido_anual: 0,
@@ -341,69 +342,100 @@ export function calcularLucroPresumido(perfil: TaxProfile): TaxScenarioResult {
     };
   }
 
-  // Determinar percentuais de presunção
-  const isServico = isServicoAltoPresuncao(perfil.cnae_principal);
-  const presuncaoIRPJ = isServico ? 0.32 : 0.08;
-  const presuncaoCSLL = isServico ? 0.32 : 0.12;
+  const cnaeInfo = getCnaeInfo(perfil.cnae_principal);
 
-  // Base de cálculo
+  // 2. Determinação das Alíquotas de Presunção
+  let presuncaoIRPJ = 0.32;
+  let presuncaoCSLL = 0.32;
+
+  if (cnaeInfo?.lucro_presumido) {
+    presuncaoIRPJ = cnaeInfo.lucro_presumido.presuncao_irpj;
+    presuncaoCSLL = cnaeInfo.lucro_presumido.presuncao_csll;
+  } else {
+    // Fallback baseado no setor ou primeiro dígito
+    const isService = isServicoAltoPresuncao(perfil.cnae_principal);
+    presuncaoIRPJ = isService ? 0.32 : 0.08;
+    presuncaoCSLL = isService ? 0.32 : 0.12;
+  }
+
+  // 3. Cálculo de IRPJ e CSLL
   const baseIRPJ = faturamentoAnual * presuncaoIRPJ;
   const baseCSLL = faturamentoAnual * presuncaoCSLL;
 
-  // IRPJ: 15% + 10% adicional sobre excedente de R$ 240k/ano
-  const irpjNormal = baseIRPJ * 0.15;
-  const irpjAdicional = baseIRPJ > 240000 ? (baseIRPJ - 240000) * 0.10 : 0;
+  const aliqIRPJ = taxRules.lucro_presumido.aliquotas.irpj;
+  const irpjNormal = baseIRPJ * aliqIRPJ.normal;
+
+  // Adicional de IRPJ: Aplicável sobre a parcela do lucro presumido que exceder R$ 20k/mês (R$ 60k/trimestre)
+  // Como estamos projetando anualizado, usamos R$ 240k/ano.
+  const irpjAdicional = baseIRPJ > (aliqIRPJ.base_adicional_anual || 240000)
+    ? (baseIRPJ - (aliqIRPJ.base_adicional_anual || 240000)) * aliqIRPJ.adicional
+    : 0;
   const irpjTotal = irpjNormal + irpjAdicional;
 
-  // CSLL: 9%
-  const csll = baseCSLL * 0.09;
+  const csll = baseCSLL * taxRules.lucro_presumido.aliquotas.csll;
 
-  // PIS/COFINS Cumulativo: 0.65% + 3% = 3.65%
-  const pisCofins = faturamentoAnual * 0.0365;
+  // 4. PIS e COFINS (Regime Cumulativo)
+  const aliqPis = taxRules.lucro_presumido.aliquotas.pis.aliquota || 0.0065;
+  const aliqCofins = taxRules.lucro_presumido.aliquotas.cofins.aliquota || 0.03;
+  const pis = faturamentoAnual * aliqPis;
+  const cofins = faturamentoAnual * aliqCofins;
+  const vConsumoFederal = pis + cofins;
 
-  // ISS (serviços): média 5%
-  const iss = isServico ? faturamentoAnual * 0.05 : 0;
+  // 5. ISS e ICMS
+  const isServico = presuncaoIRPJ >= 0.16; // Aproximação: transporte passageiro ou serviço
+  const iss = isServico ? faturamentoAnual * (taxRules.iss.aliquota_padrao || 0.05) : 0;
 
-  // ICMS: Diferente de PIS/COFINS, no Lucro Presumido o ICMS é geralmente NÃO-CUMULATIVO
-  // Débito estimado (média 18%) e crédito sobre entradas (CMV)
-  const icmsDebito = !isServico ? faturamentoAnual * 0.18 : 0;
-  const icmsCredito = !isServico ? (perfil.despesas_com_credito.cmv * 12) * 0.12 : 0; // Crédito médio sobre compras
+  const icmsDebito = !isServico ? faturamentoAnual * (taxRules.icms.aliquota_interna_media || 0.18) : 0;
+  const icmsCredito = !isServico ? (perfil.despesas_com_credito.cmv * 12) * (taxRules.icms.credito_estimado || 0.12) : 0;
   const icmsLiquido = Math.max(0, icmsDebito - icmsCredito);
 
-  // Total
-  const impostoBruto = irpjTotal + csll + pisCofins + iss + icmsDebito;
-  const impostoLiquido = irpjTotal + csll + pisCofins + iss + icmsLiquido;
+  // 6. INSS Patronal (CPP) - Fora do DAS no Lucro Presumido
+  const folhaAnual = (perfil.despesas_sem_credito.folha_pagamento + perfil.despesas_sem_credito.pro_labore) * 12;
+  const inssConfig = taxRules.outros_tributos.inss_patronal;
+  const aliqRat = inssConfig.rat?.grau_2 || 0.02; // Grau de risco médio (2%)
+  const aliqTerceiros = (inssConfig.terceiros?.salario_educacao || 0.025)
+    + (inssConfig.terceiros?.incra || 0.002)
+    + (inssConfig.terceiros?.sesi_senai || 0.015)
+    + (inssConfig.terceiros?.outras || 0.016); // Total terceiros ~5.8%
+  const aliqCppTotal = (inssConfig.aliquota_padrao || 0.20) + aliqRat + aliqTerceiros;
+
+  const cppTotal = folhaAnual * aliqCppTotal;
+
+  // Totais
+  const impostoBruto = irpjTotal + csll + vConsumoFederal + icmsDebito + iss + cppTotal;
+  const impostoLiquido = irpjTotal + csll + vConsumoFederal + icmsLiquido + iss + cppTotal;
 
   return {
     nome: 'Lucro Presumido',
     codigo: 'presumido',
     elegivel: true,
     imposto_bruto_anual: impostoBruto,
-    creditos_aproveitados: icmsCredito, // Agora mostra créditos de ICMS
+    creditos_aproveitados: icmsCredito,
     imposto_liquido_anual: impostoLiquido,
-    carga_efetiva_percentual: (impostoLiquido / faturamentoAnual) * 100,
+    carga_efetiva_percentual: faturamentoAnual > 0 ? (impostoLiquido / faturamentoAnual) * 100 : 0,
     detalhes: {
-      consumo: pisCofins + icmsLiquido,
+      consumo: vConsumoFederal + icmsLiquido,
       irpj: irpjTotal,
       csll: csll,
-      iss_icms: iss + icmsLiquido
+      iss_icms: iss + icmsLiquido,
+      cpp: cppTotal
     },
     pros: [
-      'Simplicidade de apuração federal',
-      'Previsibilidade da carga tributária',
-      !isServico ? `Aproveitamento de R$ ${icmsCredito.toLocaleString('pt-BR')} em créditos de ICMS` : '',
-      !isServico ? 'Presunção de 8% favorável para comércio/indústria' : ''
+      'Alíquotas de PIS/COFINS reduzidas (3.65% total)',
+      'Simplicidade na apuração sem necessidade de controle rigoroso de créditos federais',
+      !isServico ? `Crédito de ICMS de R$ ${icmsCredito.toLocaleString('pt-BR')} (Regime Não-Cumulativo)` : 'Isento de IPI em diversas atividades de serviços',
+      presuncaoIRPJ < 0.32 ? 'Presunção de lucro reduzida (8% a 16%) para o setor' : ''
     ].filter(Boolean),
     contras: [
-      'SEM CRÉDITO de PIS/COFINS (regime cumulativo)',
-      'Paga imposto mesmo com prejuízo real',
-      isServico ? 'Presunção de 32% desfavorável para serviços' : '',
-      'Aluguel e energia NÃO geram crédito de PIS/COFINS neste regime'
+      'Impossibilidade de creditamento de PIS/COFINS sobre insumos, aluguel e energia',
+      'INSS Patronal (CPP) integral de ~28% sobre a folha (Sem desoneração)',
+      'Tributação sobre margem presumida mesmo se a empresa tiver prejuízo real',
+      presuncaoIRPJ === 0.32 ? 'Alta carga tributária para serviços (32% de presunção)' : ''
     ].filter(Boolean),
     observacoes: [
-      `Presunção IRPJ: ${(presuncaoIRPJ * 100).toFixed(0)}%`,
-      `ICMS Não-Cumulativo habilitado para este cálculo`,
-      `PIS/COFINS Cumulativo: 3.65% s/ faturamento`
+      `Base Presumida: IRPJ ${(presuncaoIRPJ * 100).toFixed(1)}% | CSLL ${(presuncaoCSLL * 100).toFixed(1)}%`,
+      `PIS/COFINS Cumulativo: ${(aliqPis * 100).toFixed(2)}% e ${(aliqCofins * 100).toFixed(2)}%`,
+      `CPP (INSS Patronal) de R$ ${cppTotal.toLocaleString('pt-BR')} inclusa no cálculo`
     ]
   };
 }
