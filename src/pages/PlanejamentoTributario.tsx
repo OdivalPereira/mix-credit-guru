@@ -39,6 +39,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileTaxWizard } from "@/components/mobile/MobileTaxWizard";
 
 import type {
     TaxProfile, TaxComparisonResult, TaxScenarioResult,
@@ -150,6 +152,8 @@ const DEMO_AI_PROFILE: Partial<TaxProfile> = {
 
 export default function PlanejamentoTributario() {
     const { isDemo } = useAuth();
+    const isMobile = useIsMobile();
+
     // Wizard state
     const [currentStep, setCurrentStep] = useState<WizardStep>('input');
     const [inputTab, setInputTab] = useState<'manual' | 'texto' | 'arquivo'>('manual');
@@ -823,7 +827,22 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
     // RENDER
     // ============================================================================
 
+    if (isMobile) {
+        return (
+            <MobileTaxWizard
+                profile={profile}
+                setProfile={setProfile}
+                updateProfile={updateProfile}
+                onSearchCnpj={handleConsultarCNPJ}
+                onCalculate={handleCalculate}
+                loadingCnpj={loadingCnpj}
+                isProcessing={isProcessing}
+            />
+        );
+    }
+
     return (
+
         <div className="space-y-6 pb-8">
             {/* Header */}
             <div className="flex items-center justify-between">
