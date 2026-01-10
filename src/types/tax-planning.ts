@@ -58,7 +58,7 @@ export interface TaxProfile {
   // === IDENTIFICAÇÃO ===
   razao_social?: string;
   cnpj?: string;
-  cnae_principal: string;
+  cnae_principal?: string;
   cnaes_secundarios?: string[];
   uf?: string;
   municipio?: string;

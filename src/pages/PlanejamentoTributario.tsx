@@ -889,24 +889,26 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {/* CNPJ (Busca) */}
-                                    <div className="space-y-2">
-                                        <Label>CNPJ</Label>
-                                        <div className="flex gap-2">
+                                    <div className="flex gap-2 items-end">
+                                        <div className="flex-1 space-y-2">
+                                            <Label>CNPJ</Label>
                                             <Input
                                                 placeholder="00.000.000/0000-00"
                                                 value={profile.cnpj || ''}
                                                 maxLength={18}
                                                 onChange={(e) => updateProfile('cnpj', formatCNPJ(e.target.value))}
-                                            />
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={handleConsultarCNPJ}
                                                 disabled={loadingCnpj}
-                                            >
-                                                {loadingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                                            </Button>
+                                            />
                                         </div>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={handleConsultarCNPJ}
+                                            disabled={loadingCnpj || !profile.cnpj || profile.cnpj.length < 14}
+                                            title="Consultar Dados"
+                                        >
+                                            {loadingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                        </Button>
                                     </div>
 
                                     {/* Razão Social */}
@@ -920,7 +922,7 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>CNAE Principal *</Label>
+                                        <Label>CNAE Principal</Label>
                                         <Input
                                             placeholder="0000-0/00"
                                             value={profile.cnae_principal}
