@@ -1,8 +1,9 @@
 /**
- * Tax Planner Strategic Analysis Edge Function
+ * Tax Planner Strategic Analysis Edge Function (CÉREBRO)
  * 
- * Análise Estratégica Profunda com Gemini 1.5 Pro.
- * Fornece insights que vão além das regras básicas, focando em estratégia de negócio e riscos.
+ * Análise Estratégica Profunda com Gemini 2.5 Pro.
+ * Retorna JSON estruturado de oportunidades, riscos e cenários.
+ * NÃO gera texto final, apenas DADOS e INTELIGÊNCIA.
  * 
  * Endpoint: POST /functions/v1/tax-planner-strategic-analysis
  */
@@ -16,41 +17,34 @@ const corsHeaders = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const SYSTEM_PROMPT = `Você é um Estrategista Tributário de Elite (Ex-Big4).
-Sua missão é extrair insights ESTRATÉGICOS de um perfil de empresa e seus resultados de cálculo tributário.
+const SYSTEM_PROMPT = `Você é um Estrategista Tributário de Elite (Ex-Big4) - "O CÉREBRO".
+Sua missão é estritamente ANALÍTICA. Você não conversa com o usuário final.
+Você gera INTELIGÊNCIA ESTRUTURADA (JSON) para que um "Escriba" possa redigir o relatório depois.
 
-## NUANCES IMPORTANTES (SISTEMA ATUAL):
-1. **Lucro Presumido & ICMS**: Considere que o ICMS é não-cumulativo (gera crédito sobre CMV), enquanto PIS/COFINS são cumulativos (sem crédito).
-2. **Simples Nacional Híbrido**: Acima de R$ 3,6M de faturamento anual (sublimite), a empresa entra em regime híbrido: ICMS/ISS são calculados por fora e podem gerar créditos/débitos reais.
-3. **PIS/COFINS Não-Cumulativo**: Apenas no Lucro Real.
+## CONTEXTO DE ANÁLISE:
+1. **Regimes Atuais**: Compare Simples, Presumido e Real com profundidade (margens, créditos, folha).
+2. **Reforma Tributária**: Avalie impacto do IBS/CBS, créditos financeiros e não-cumulatividade plena.
+3. **Cadeia de Valor**: Analise o peso dos fornecedores (Simples vs Normal) na geração de créditos.
 
-## IMPACTO DA REFORMA (IBS/CBS):
-- Todos os regimes (Real, Presumido, Simples abaixo/acima do sublimite) serão impactados pela não-cumulatividade plena do IBS/CBS.
-- O crédito financeiro amplo é o "divisor de águas".
+## FORMATO DE SAÍDA (OBRIGATÓRIO JSON VÁLIDO):
 
-## O QUE BUSCAMOS:
-1. **Riscos Ocultos**: O faturamento está próximo de limites? A folha está muito baixa para o setor?
-2. **Eficiência na Cadeia**: Como a proporção de fornecedores do Simples afeta a competitividade?
-3. **Planejamento Real vs Presumido**: Qual o gatilho de lucro que tornaria o Real imbatível?
-4. **Impacto da Reforma**: Além dos números, qual a mudança cultural necessária (ex: trocar fornecedores PF por PJ)?
-
-## FORMATO DE SAÍDA (JSON):
-Deve retornar uma lista de insights no formato:
+Retorne um ARRAY de objetos "Insight":
 [
   {
     "tipo": "positivo" | "negativo" | "alerta" | "neutro",
-    "titulo": "string curta",
-    "descricao": "string explicativa",
+    "titulo": "string curta e técnica",
+    "descricao": "Explicação detalhada da causa raiz e consequência",
     "impacto_financeiro": number | null,
-    "acao_sugerida": "string direta"
+    "acao_sugerida": "Ação prática imediata"
   }
 ]
 
-## REGRAS:
-- Seja agudo e executivo. 
-- Evite obviedades que o motor de cálculo já cobre.
-- Foque em GESTÃO e ESTRATÉGIA.
-- Responda APENAS o JSON.`;
+## REGRAS DE OURO:
+- NÃO escreva markdown, introduções ou "Aqui está a análise".
+- APENAS O JSON PURO.
+- Seja pessimista com riscos (compliance) e otimista com oportunidades REAIS (créditos lícitos).
+- Gere entre 5 e 7 insights estratégicos.
+`;
 
 Deno.serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
@@ -63,70 +57,74 @@ Deno.serve(async (req: Request) => {
 
         const { profile, results } = await req.json();
 
+        console.log('Análise estratégica (Cérebro) para:', profile?.razao_social || 'Sem Nome');
+
         const genAI = new GoogleGenerativeAI(apiKey);
+        // Mantemos Gemini 2.5 Pro para alta capacidade de raciocínio
         const model = genAI.getGenerativeModel({
             model: 'gemini-2.5-pro',
-            generationConfig: { responseMimeType: 'application/json' }
+            generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.2 // Baixa temperatura para precisão analítica
+            }
         });
 
-        const prompt = `Analise estrategicamente este cenário de PLANEJAMENTO TRIBUTÁRIO:
+        const prompt = `Analise este cenário e retorne os insights em JSON:
 
 ## DADOS DA EMPRESA
 ${JSON.stringify(profile, null, 2)}
 
-## RESULTADOS DOS CALCULOS COMPARATIVOS
+## RESULTADOS DO MOTOR DE CÁLCULO
 ${JSON.stringify(results, null, 2)}
 
-## SOLICITACAO
-Gere EXATAMENTE entre 5 e 7 insights estratégicos de alto impacto, cobrindo obrigatoriamente:
-
-1. **Comparação de Regimes**: Qual o melhor regime atual e por quê? Quanto pode economizar?
-2. **Impacto da Reforma Tributária**: A empresa ganha ou perde com o IVA Dual (IBS/CBS)?
-3. **Cadeia de Fornecedores**: Impacto do mix de fornecedores do Simples Nacional
-4. **Folha de Pagamento**: A folha é alta ou baixa? Impacto no Fator R e na Reforma?
-5. **Oportunidades Imediatas**: O que fazer AGORA para otimizar?
-6. **Riscos e Pontos de Atenção**: Limites de faturamento, compliance, saldos legados
-7. **Estratégia de Transição 2026-2033**: Timeline de ações
-
-Cada insight DEVE ter:
-- tipo: "positivo" | "negativo" | "alerta" | "neutro"
-- titulo: frase curta e impactante
-- descricao: 1-2 frases explicativas com NUMEROS REAIS do contexto
-- impacto_financeiro: valor numérico em R$ (ou null se não aplicável)
-- acao_sugerida: ação concreta e direta
+Gere entre 5 e 7 insights estratégicos cobrindo:
+1. Comparação de Regimes (melhor regime atual)
+2. Impacto da Reforma Tributária (ganha ou perde?)
+3. Cadeia de Fornecedores (impacto do Simples Nacional)
+4. Folha de Pagamento (Fator R, custo trabalhista)
+5. Oportunidades Imediatas
+6. Riscos e Pontos de Atenção
+7. Timeline de Transição 2026-2033
 
 Responda APENAS o JSON (array de insights).`;
 
-        const { stream } = await model.generateContentStream([
+        const result = await model.generateContent([
             { text: SYSTEM_PROMPT },
             { text: prompt }
         ]);
 
-        // Transform Gemini Stream to Web Standard Stream
-        const readable = new ReadableStream({
-            async start(controller) {
-                const encoder = new TextEncoder();
-                for await (const chunk of stream) {
-                    const text = chunk.text();
-                    controller.enqueue(encoder.encode(text));
+        const responseText = result.response.text();
+
+        // Validação do JSON
+        let insights;
+        try {
+            insights = JSON.parse(responseText);
+        } catch (e) {
+            console.error("Erro ao fazer parse do JSON do Gemini:", responseText);
+            throw new Error("Falha na estruturação da análise estratégica (JSON Inválido).");
+        }
+
+        return new Response(
+            JSON.stringify({
+                success: true,
+                insights: insights,
+                metadata: {
+                    modelo: 'gemini-2.5-pro',
+                    role: 'brain',
+                    timestamp: new Date().toISOString(),
+                    tokens: result.response.usageMetadata?.totalTokenCount || 0
                 }
-                controller.close();
-            }
-        });
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
 
-        return new Response(readable, {
-            headers: {
-                ...corsHeaders,
-                'Content-Type': 'text/event-stream',
-                'Connection': 'keep-alive',
-                'Cache-Control': 'no-cache'
-            }
-        });
-
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error:', error);
-        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-            status: 500,
+        return new Response(JSON.stringify({
+            success: false,
+            error: error.message || 'Erro desconhecido na análise estratégica'
+        }), {
+            status: 200, // Retornamos 200 com success:false para o frontend tratar
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }

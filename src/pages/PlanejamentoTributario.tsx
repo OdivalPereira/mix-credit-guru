@@ -773,62 +773,48 @@ export default function PlanejamentoTributario() {
                 saveSimulation(profileFinal, resultado, `${profileFinal.razao_social} - ${new Date().toLocaleString()}`);
             }
 
-            // Chamada de IA Avançada para Insights Estratégicos (Streaming)
+            // Chamada de IA Avançada para Insights Estratégicos (Modelo "Brain" - JSON)
             setIsAnalyzingStrategically(true);
 
             try {
                 const { data: sessionData } = await supabase.auth.getSession();
-                const token = sessionData.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+                const sessionToken = sessionData.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+                // Agora retorna JSON direto (sem streaming)
                 const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tax-planner-strategic-analysis`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${sessionToken}`,
                         'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
                     },
                     body: JSON.stringify({ profile: profileFinal, results: resultado })
                 });
 
-                if (!response.ok || !response.body) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('Falha na conexão com IA Estratégica');
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = "";
-                let insightsAccumulated: any[] = [...resultado.insights]; // Start with local insights
+                const data = await response.json();
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+                if (data.success && Array.isArray(data.insights)) {
+                    // Combinar insights locais com os da IA
+                    const combinedInsights = [
+                        ...resultado.insights.filter(i => i.tipo === 'positivo' || i.tipo === 'negativo'), // Mantém os numéricos mais fortes
+                        ...data.insights
+                    ];
 
-                    const chunk = decoder.decode(value, { stream: true });
-                    buffer += chunk;
+                    // Remove duplicatas por título aproximado ou tipo
+                    const uniqueInsights = combinedInsights.filter((v, i, a) => a.findIndex(t => t.titulo === v.titulo) === i);
 
-                    // Try to extract complete JSON objects from the partial array buffer
-                    // Regex looks for Pattern: { "tipo": ... }
-                    // We assume the model outputs a standard array "[ { ... }, { ... } ]"
-                    const matches = buffer.match(/\{[^{}]+\}/g);
-
-                    if (matches) {
-                        const newInsights = matches.map(jsonStr => {
-                            try {
-                                return JSON.parse(jsonStr);
-                            } catch (e) {
-                                return null;
-                            }
-                        }).filter(item => item !== null && item.tipo && item.titulo);
-
-                        // Merge unique insights to avoid dupes if buffer has overlap (regex search is global on buffer)
-                        // Actually, simple approach: just update state with ALL valid found so far + local
-                        // Better: Only add NEW ones.
-                        // But regex on full buffer finds all.
-                        const combined = [...resultado.insights, ...newInsights];
-                        setStrategicInsights(combined);
-                    }
+                    setStrategicInsights(uniqueInsights);
+                } else {
+                    console.warn('IA não retornou insights válidos:', data);
                 }
-            } catch (streamError) {
-                console.error("Streaming error:", streamError);
-                // Fallback or just stop
+
+            } catch (error) {
+                console.error("Erro ao buscar insights estratégicos:", error);
+                // Não falha o fluxo, mantém os insights locais
+            } finally {
+                setIsAnalyzingStrategically(false);
             }
 
         } catch (error) {
@@ -869,8 +855,8 @@ export default function PlanejamentoTributario() {
 
     const handleGenerateReport = useCallback(async () => {
         if (!results) return;
-        await generateReport(profile, results, isDemo);
-    }, [generateReport, profile, results, isDemo]);
+        await generateReport(profile, results, isDemo, cnaeInfo);
+    }, [generateReport, profile, results, isDemo, cnaeInfo]);
 
     const handleExportPDF = useCallback(async () => {
         await downloadPDF(profile.razao_social);
