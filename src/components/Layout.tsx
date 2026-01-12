@@ -15,6 +15,7 @@ import {
   FlaskConical,
   X,
   Target,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -40,6 +41,7 @@ const navigation = [
   { name: "Cotação", href: "/cotacao", icon: Calculator },
   { name: "Análise", href: "/analise", icon: BarChart3 },
   { name: "Planejamento", href: "/planejamento", icon: Target },
+  { name: "Simulador NFe", href: "/simulador-nfe", icon: FileSpreadsheet },
   { name: "Histórico", href: "/historico", icon: History },
   { name: "Configurações", href: "/config", icon: Settings },
 ];

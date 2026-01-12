@@ -37,6 +37,7 @@ const Relatorios = lazy(() => import("./pages/Relatorios"));
 const UnidadesConversoes = lazy(() => import("./pages/UnidadesConversoes"));
 const Historico = lazy(() => import("./pages/Historico"));
 const ImportarDocumentos = lazy(() => import("./pages/ImportarDocumentos"));
+const SimuladorNFe = lazy(() => import("./pages/SimuladorNFe"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,6 +102,7 @@ const App = () => (
                       <Route path="unidades-conversoes" element={<UnidadesConversoes />} />
                       <Route path="historico" element={<Historico />} />
                       <Route path="importar-documentos" element={<ImportarDocumentos />} />
+                      <Route path="simulador-nfe" element={<SimuladorNFe />} />
                     </Route>
                   </Routes>
                 </Suspense>
