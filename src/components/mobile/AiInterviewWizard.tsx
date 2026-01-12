@@ -43,11 +43,24 @@ const STEPS: StepConfig[] = [
         type: "currency"
     },
     {
-        id: "custos_fixos",
-        field: "despesas_com_credito.aluguel", // Simplification: we might need to distribute or ask separate
-        question: "Quanto você gasta com Aluguel e Energia?",
-        description: "Some aluguel, luz, água e internet.",
-        suggestions: ["+ Aluguel", "+ Energia", "+ Internet"],
+        id: "aluguel",
+        field: "despesas_com_credito.aluguel",
+        question: "Qual o valor mensal do Aluguel?",
+        description: "Despesa com locação do imóvel da empresa.",
+        type: "currency"
+    },
+    {
+        id: "energia",
+        field: "despesas_com_credito.energia",
+        question: "Qual o gasto médio com Energia Elétrica?",
+        description: "Importante para créditos de PIS/COFINS.",
+        type: "currency"
+    },
+    {
+        id: "telecom",
+        field: "despesas_com_credito.telecom",
+        question: "Qual o gasto com Telefone e Internet?",
+        description: "Faturas de telecomunicações.",
         type: "currency"
     },
     {
@@ -112,7 +125,7 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
                     if (data.profile) {
                         Object.entries(data.profile).forEach(([key, value]) => {
                             if (value !== null && value !== undefined) {
-                                onUpdateProfile(key, value);
+                                onUpdateProfile(key, value as string | number | boolean);
                             }
                         });
                     }
@@ -190,13 +203,9 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
     };
 
     const handleAudioStop = async (blob: Blob) => {
-        // Reuse logic from PlanejamentoTributario but simplified
-        // Send to Whisper -> Text -> ProcessTextToValue
-        // For now, mocking the transcribing part or using the existing function if it handles audio
-        // The existing function handles audio file uploads.
         const formData = new FormData();
         formData.append('file', blob, 'audio.webm');
-        formData.append('text', `Campo: ${currentStep.field}`); // Context hint
+        formData.append('text', `Campo: ${currentStep.field} - Pergunta: ${currentStep.question}`); // Context hint
 
         setIsAiProcessing(true);
         try {
@@ -205,34 +214,39 @@ export function AiInterviewWizard({ profile, onUpdateProfile, onComplete, isProc
             });
 
             if (!error && data) {
-                // Update profile with whatever the AI extracted
+                // If the AI returns a specific value for the current field, we show confirmation
+                let extractedValue = null;
+
+                // Check if profile was returned and contains the current field
                 if (data.profile) {
-                    // Update full profile using the helper or one-by-one
-                    // Since we don't have a bulk update, we might need to rely on the parent or do it manually.
-                    // Ideally updateProfile handles key/value.
-                    // But here we might have multiple fields.
-                    // For now, let's just use the setProfile from props if available? 
-                    // Wait, we only have updateProfile (single field).
-                    // We should probably expose setProfile or iterate.
-                    // Let's iterate over non-null keys in data.profile
+                    // Iterate to find the matching field logic or just grab any numeric
+                    // For simplicity in this Wizard step, we look for the field we asked about
+                    const val = data.profile[currentStep.field];
+                    if (val !== undefined && val !== null) {
+                        extractedValue = val;
+                    }
+
+                    // Also update other fields found passively
                     Object.entries(data.profile).forEach(([key, value]) => {
                         if (value !== null && value !== undefined) {
-                            onUpdateProfile(key, value);
+                            onUpdateProfile(key, value as string | number | boolean);
                         }
                     });
                 }
 
-                // Handle Adaptive Flow
-                if (data.next_question) {
-                    setAiQuestion(data.next_question);
-                    // Clear confirmation logic, we are continuing the interview
-                    setShowConfirmation(null);
-                    toast({ title: "Nova pergunta da IA", description: "Perfis atualizado." });
+                if (extractedValue !== null) {
+                    setShowConfirmation({ value: Number(extractedValue), text: "Áudio processado" });
+                } else if (data.text) {
+                    // If it returned text but no profile structure, try to parse
+                    const cleanText = data.text.replace(/[^0-9,.]/g, '').replace(',', '.');
+                    const num = parseFloat(cleanText);
+                    if (!isNaN(num)) {
+                        setShowConfirmation({ value: num, text: data.text });
+                    } else {
+                        toast({ title: "Não entendi o valor no áudio.", description: "Tente novamente ou digite.", variant: "destructive" });
+                    }
                 } else {
-                    // No more questions, we can finish or show a summary
-                    setAiQuestion(null);
-                    toast({ title: "Entrevista concluída!", description: "Gerando análise..." });
-                    onComplete(); // Go to next phase
+                    toast({ title: "Não foi possível extrair um valor.", variant: "destructive" });
                 }
             }
         } catch (e) {

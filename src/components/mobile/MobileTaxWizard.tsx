@@ -256,8 +256,8 @@ export function MobileTaxWizard({
                                     </div>
                                 )}
 
-                                <div className="mt-8 border-t border-dashed border-muted-foreground/20 pt-8">
-                                    <p className="text-center text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4">Ou selecione manualmente</p>
+                                <div className="mt-8 border-t border-white/5 pt-6">
+                                    <p className="text-center text-sm font-medium text-muted-foreground/80 mb-4">Selecione o regime tributário atual</p>
                                     <div className="flex gap-2 justify-center flex-wrap">
                                         <Badge variant="outline" className="px-3 py-1.5 cursor-pointer hover:bg-primary/5 active:bg-primary/10 transition-colors" onClick={() => confirmIdentification('simples')}>Simples Nacional</Badge>
                                         <Badge variant="outline" className="px-3 py-1.5 cursor-pointer hover:bg-primary/5 active:bg-primary/10 transition-colors" onClick={() => confirmIdentification('presumido')}>Lucro Presumido</Badge>
@@ -282,6 +282,9 @@ export function MobileTaxWizard({
                                     onComplete={() => {
                                         onCalculate();
                                         setWizardPhase('results');
+                                        setTimeout(() => {
+                                            onCalculate();
+                                        }, 500);
                                     }}
                                 />
                             </motion.div>
