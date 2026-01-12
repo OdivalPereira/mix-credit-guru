@@ -67,6 +67,7 @@ import {
     CNPJData,
     BalanceteData
 } from "@/lib/parsers";
+import { useTaxReport } from "@/hooks/useTaxReport";
 
 // ============================================================================
 // TYPES
@@ -176,8 +177,8 @@ export default function PlanejamentoTributario() {
     const [isAnalyzingStrategically, setIsAnalyzingStrategically] = useState(false);
 
     // Report state
-    const [reportContent, setReportContent] = useState<string | null>(null);
-    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    // Unified Report Hook
+    const { isGenerating: isGeneratingReport, reportContent, setReportContent, generateReport, downloadPDF } = useTaxReport();
 
     // Carregar dados do localStorage (vindos do módulo de importação de documentos)
     useEffect(() => {
@@ -864,98 +865,17 @@ export default function PlanejamentoTributario() {
     // REPORT GENERATION
     // ============================================================================
 
+    // Hook used from component top level declaration
+
     const handleGenerateReport = useCallback(async () => {
-        if (!results) {
-            toast({ title: "Execute a análise primeiro", variant: "destructive" });
-            return;
-        }
-
-        setIsGeneratingReport(true);
-        try {
-            let report;
-
-            if (isDemo) {
-                await new Promise(resolve => setTimeout(resolve, 2500));
-                report = `
-# Relatório Consultivo Tributário (DEMO)
-
-Baseado nos dados da empresa **${profile.razao_social}**, realizamos uma análise profunda da carga tributária atual e o impacto da Reforma Tributária (PEC 45/19).
-
-## 1. Melhor Regime Atual
-Considerando o faturamento anual de ${formatCurrency(profile.faturamento_anual)}, o regime **${results.melhor_atual.toUpperCase()}** apresenta a menor carga efetiva.
-
-## 2. Impacto da Reforma Tributária
-A transição para o IBS e CBS trará uma simplificação significativa. O aproveitamento de créditos será de aproximadamente ${formatCurrency(results.cenarios.reforma_plena.creditos_aproveitados)} por ano.
-
-## 3. Recomendações
-- Iniciar mapeamento de fornecedores que geram crédito integral.
-- Preparar sistemas para convivência entre modelos em 2027.
-                `.trim();
-            } else {
-                const { data, error } = await supabase.functions.invoke('tax-planner-report', {
-                    body: {
-                        profile,
-                        comparison_results: results
-                    }
-                });
-
-                if (error) throw error;
-                if (!data?.success) throw new Error(data?.error || 'Erro ao gerar relatório');
-                report = data.report;
-            }
-
-            setReportContent(report);
-            toast({ title: "Relatório gerado com sucesso!" });
-
-        } catch (error) {
-            toast({
-                title: "Erro ao gerar relatório",
-                description: error instanceof Error ? error.message : "Erro desconhecido",
-                variant: "destructive"
-            });
-        } finally {
-            setIsGeneratingReport(false);
-        }
-    }, [profile, results, isDemo]);
+        if (!results) return;
+        await generateReport(profile, results, isDemo);
+    }, [generateReport, profile, results, isDemo]);
 
     const handleExportPDF = useCallback(async () => {
-        if (!reportContent) {
-            toast({
-                title: "Gere o relatório primeiro",
-                description: "Clique em 'Relatório IA' antes de exportar.",
-                variant: "destructive"
-            });
-            return;
-        }
+        await downloadPDF(profile.razao_social);
+    }, [downloadPDF, profile.razao_social]);
 
-        try {
-            toast({ title: "Gerando PDF...", description: "Aguarde um momento." });
-
-            // Create styled container for PDF
-            const pdfContainer = createPDFContainer(
-                reportContent,
-                profile.razao_social || 'Empresa'
-            );
-            document.body.appendChild(pdfContainer);
-
-            // Export to PDF
-            await exportToPDF(pdfContainer, {
-                filename: `relatorio-tributario-${profile.razao_social?.replace(/\s+/g, '-').toLowerCase() || 'empresa'}`,
-                title: 'Relatório Consultivo Tributário'
-            });
-
-            // Clean up
-            document.body.removeChild(pdfContainer);
-
-            toast({ title: "PDF exportado com sucesso!" });
-        } catch (error) {
-            toast({
-                title: "Erro ao exportar PDF",
-                description: error instanceof Error ? error.message : 'Erro desconhecido',
-                variant: "destructive"
-            });
-        }
-    }, [reportContent, profile.razao_social]);
 
     const handleLoadSimulation = (loadedProfile: TaxProfile, loadedResults: TaxComparisonResult) => {
         setProfile(loadedProfile);
@@ -1921,7 +1841,7 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                         <div className="flex gap-2">
                             <Button
                                 variant="outline"
-                                onClick={handleGenerateReport}
+                                onClick={() => generateReport(profile, results!, isDemo)}
                                 disabled={isGeneratingReport}
                             >
                                 {isGeneratingReport ? (
@@ -1932,7 +1852,7 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                             </Button>
                             <Button
                                 variant="outline"
-                                onClick={handleExportPDF}
+                                onClick={() => downloadPDF(profile.razao_social)}
                                 disabled={!reportContent}
                             >
                                 <FileDown className="mr-2 h-4 w-4" />

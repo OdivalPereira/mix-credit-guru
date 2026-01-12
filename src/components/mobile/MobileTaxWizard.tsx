@@ -14,7 +14,8 @@ import { toast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Target, Lightbulb, RotateCcw, Home, FolderOpen, Calculator, BarChart3, Settings, History as HistoryIcon } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, Lightbulb, RotateCcw, Home, FolderOpen, Calculator, BarChart3, Settings, History as HistoryIcon, FileDown, Loader2 } from "lucide-react";
+import { useTaxReport } from "@/hooks/useTaxReport";
 
 // ============================================================================
 // ERROR BOUNDARY
@@ -113,6 +114,15 @@ export function MobileTaxWizard({
     const [activeInsightIndex, setActiveInsightIndex] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
+    const { isGenerating, generateReport, downloadPDF, reportContent } = useTaxReport();
+
+    const handleExport = async () => {
+        if (!reportContent) {
+            await generateReport(profile, results!, false);
+        } else {
+            downloadPDF(profile.razao_social);
+        }
+    };
 
     // Navigation items mirroring Layout.tsx
     const navigationItems = [
@@ -330,7 +340,7 @@ export function MobileTaxWizard({
                                                 <div className="grid grid-cols-2 gap-3 mt-4">
                                                     <div className="bg-background/50 rounded-lg p-3 border border-muted/50">
                                                         <p className="text-[10px] text-muted-foreground uppercase mb-1">Carga Atual</p>
-                                                        <p className="font-semibold text-sm">{results.carga_efetiva_percentual?.toFixed(1)}%</p>
+                                                        <p className="font-semibold text-sm">{results.cenarios[results.melhor_atual]?.carga_efetiva_percentual.toFixed(1)}%</p>
                                                     </div>
                                                     <div className="bg-background/50 rounded-lg p-3 border border-muted/50">
                                                         <p className="text-[10px] text-muted-foreground uppercase mb-1">Pós-Reforma</p>
@@ -459,8 +469,8 @@ export function MobileTaxWizard({
 
                 {/* STICKY FOOTER */}
                 {/* Shows mainly in Search or Results phase. In Interview, the component handles its own navigation but we could override here if needed. */}
-                {/* Currently AiInterviewWizard occupies the full height in 'interview' phase so we might hide this footer or overlay. 
-                    Actually, it's better to hide this footer in 'interview' phase to avoid double footers, 
+                {/* Currently AiInterviewWizard occupies the full height in 'interview' phase so we might hide this footer or overlay.
+                    Actually, it's better to hide this footer in 'interview' phase to avoid double footers,
                     OR better yet, let AiInterviewWizard use this space. For now, let's keep it for Search/Results actions. */}
 
                 {wizardPhase !== 'interview' && (
@@ -484,8 +494,14 @@ export function MobileTaxWizard({
                                     Reiniciar
                                 </Button>
                                 {/* Future: 'Salvar PDF' or 'Compartilhar' */}
-                                <Button size="lg" className="flex-1 h-12 rounded-xl" onClick={() => toast({ title: "Em breve", description: "Exportação PDF mobile em desenvolvimento." })}>
-                                    Baixar Relatório
+                                <Button
+                                    size="lg"
+                                    className="flex-1 h-12 rounded-xl"
+                                    onClick={handleExport}
+                                    disabled={isGenerating}
+                                >
+                                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                                    {isGenerating ? "Gerando..." : reportContent ? "Baixar PDF" : "Gerar Relatório"}
                                 </Button>
                             </div>
                         )}

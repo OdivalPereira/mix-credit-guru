@@ -167,10 +167,10 @@ ${cnae_info ? `
 ` : ''}
 `;
 
-        // Usar Gemini 2.0 Flash (Mais rápido e melhor contexto - Otimizado)
+        // Usar Gemini 2.5 Pro (Atualizado conforme solicitado - High Reasoning)
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-pro',
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 8192,
@@ -189,7 +189,7 @@ ${cnae_info ? `
                 success: true,
                 report: reportContent,
                 metadata: {
-                    modelo: 'gemini-1.5-pro',
+                    modelo: 'gemini-2.5-pro',
                     timestamp: new Date().toISOString(),
                     tokens: result.response.usageMetadata?.totalTokenCount || 0
                 }
