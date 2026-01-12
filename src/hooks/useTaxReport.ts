@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { exportToPDF } from '@/lib/pdf-export';
 import { TaxProfile, TaxComparisonResult } from '@/types/tax-planning';
@@ -17,7 +17,6 @@ export function useTaxReport(): UseTaxReportReturn {
     const [isGenerating, setIsGenerating] = useState(false);
     const [loadingStage, setLoadingStage] = useState<'idle' | 'analyzing' | 'writing' | 'error' | 'done'>('idle');
     const [reportContent, setReportContent] = useState<string | null>(null);
-    const supabase = useSupabaseClient();
     const { toast } = useToast();
 
     const formatCurrency = (val: number) =>
