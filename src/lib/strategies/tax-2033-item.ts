@@ -100,6 +100,7 @@ export interface ClassificacaoProduto {
     reducao_reforma: number; // 0 = padrão, 0.6 = 60% redução, 1 = isento
     icms_substituicao: boolean;
     anexo_simples_sugerido: 'I' | 'II' | 'III' | 'IV' | 'V';
+    sugestao_economia?: string;
     motivo?: string;
 }
 
@@ -107,7 +108,9 @@ export interface TaxResultItem {
     id: string;
     descricao: string;
     ncm: string;
-    valorProduto: number;
+    valorCompra: number;
+    margemLucro: number;
+    valorVenda: number;
     classificacao?: ClassificacaoProduto;
     regimes: {
         simples: {
@@ -262,25 +265,31 @@ export function calcularImpostosItem(
     id: string,
     descricao: string,
     ncm: string,
-    valorItem: number,
+    valorCompra: number,
     faturamentoAnual: number,
+    margemLucro: number = 50, // 50% padrão
     classificacao?: ClassificacaoProduto,
     isServico: boolean = false
 ): TaxResultItem {
     const anexo = classificacao?.anexo_simples_sugerido || 'I';
     const reducaoReforma = classificacao?.reducao_reforma || 0;
 
+    // Cálculo do Preço de Venda
+    const valorVenda = valorCompra * (1 + (margemLucro / 100));
+
     return {
         id,
         descricao,
         ncm,
-        valorProduto: valorItem,
+        valorCompra,
+        margemLucro,
+        valorVenda,
         classificacao,
         regimes: {
-            simples: calcularImpostoSimplesItem(valorItem, faturamentoAnual, anexo),
-            presumido: calcularImpostoPresumidoItem(valorItem, isServico),
-            real: calcularImpostoRealItem(valorItem, isServico),
-            reforma2033: calcularImpostoReformaItem(valorItem, reducaoReforma)
+            simples: calcularImpostoSimplesItem(valorVenda, faturamentoAnual, anexo),
+            presumido: calcularImpostoPresumidoItem(valorVenda, isServico),
+            real: calcularImpostoRealItem(valorVenda, isServico),
+            reforma2033: calcularImpostoReformaItem(valorVenda, reducaoReforma)
         }
     };
 }
@@ -291,8 +300,8 @@ export function calcularImpostosItem(
 export function calcularTotaisRegime(
     itens: TaxResultItem[],
     regime: RegimeTributario
-): { valorTotal: number; impostoTotal: number; cargaEfetiva: number } {
-    const valorTotal = itens.reduce((acc, item) => acc + item.valorProduto, 0);
+): { valorTotalVenda: number; impostoTotal: number; cargaEfetiva: number } {
+    const valorTotalVenda = itens.reduce((acc, item) => acc + item.valorVenda, 0);
 
     const impostoTotal = itens.reduce((acc, item) => {
         switch (regime) {
@@ -309,7 +318,7 @@ export function calcularTotaisRegime(
         }
     }, 0);
 
-    const cargaEfetiva = valorTotal > 0 ? (impostoTotal / valorTotal) * 100 : 0;
+    const cargaEfetiva = valorTotalVenda > 0 ? (impostoTotal / valorTotalVenda) * 100 : 0;
 
-    return { valorTotal, impostoTotal, cargaEfetiva };
+    return { valorTotalVenda, impostoTotal, cargaEfetiva };
 }

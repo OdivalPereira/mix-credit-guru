@@ -33,10 +33,8 @@ const FAIXAS_FATURAMENTO = [
 ];
 
 const REGIMES_OPTIONS: { label: string; value: RegimeTributario; description: string }[] = [
-    { label: 'Simples Nacional', value: 'simples', description: 'Guia única (DAS)' },
-    { label: 'Lucro Presumido', value: 'presumido', description: 'PIS/COFINS cumulativo' },
-    { label: 'Lucro Real', value: 'real', description: 'PIS/COFINS não-cumulativo' },
-    { label: 'Reforma 2033', value: 'reforma2033', description: 'IBS + CBS' },
+    { label: 'Simples Nacional', value: 'simples', description: 'Regime simplificado (DAS)' },
+    { label: 'Regime Geral (Presumido/Real)', value: 'reforma2033', description: 'Padrão IBS + CBS (2033)' },
 ];
 
 export default function SimuladorNFe() {
@@ -45,6 +43,7 @@ export default function SimuladorNFe() {
     const [regimeSelecionado, setRegimeSelecionado] = useState<RegimeTributario>('simples');
     const [faturamentoAnual, setFaturamentoAnual] = useState<number>(360000);
     const [anexoSimples, setAnexoSimples] = useState<keyof typeof SIMPLES_ALIQUOTAS>('I');
+    const [margemLucro, setMargemLucro] = useState<number>(50);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -61,13 +60,14 @@ export default function SimuladorNFe() {
 
             // Mapeia produtos usando o parser existente
             const novosItens: ItemAnalise[] = result.data.produtos.map((prod: NFeProduto) => {
-                const valorTotal = prod.vUnCom * prod.qCom;
+                const valorCompra = prod.vUnCom * prod.qCom;
                 const itemCalculado = calcularImpostosItem(
                     prod.cProd,
                     prod.xProd,
                     prod.NCM,
-                    valorTotal,
+                    valorCompra,
                     faturamentoAnual,
+                    margemLucro,
                     undefined, // Classificação será preenchida pela IA
                     false
                 );
@@ -118,8 +118,9 @@ export default function SimuladorNFe() {
                         item.id,
                         item.descricao,
                         item.ncm,
-                        item.valorProduto,
+                        item.valorCompra,
                         faturamentoAnual,
+                        margemLucro,
                         classificacao,
                         false
                     );
@@ -159,8 +160,9 @@ export default function SimuladorNFe() {
                     item.id,
                     item.descricao,
                     item.ncm,
-                    item.valorProduto,
+                    item.valorCompra,
                     faturamentoAnual,
+                    margemLucro,
                     classificacaoAjustada,
                     false
                 ),
@@ -168,7 +170,7 @@ export default function SimuladorNFe() {
                 classificacao: item.classificacao
             };
         });
-    }, [itens, faturamentoAnual, anexoSimples]);
+    }, [itens, faturamentoAnual, anexoSimples, margemLucro]);
 
     const totais = useMemo(() =>
         calcularTotaisRegime(itensRecalculados, regimeSelecionado),
@@ -303,55 +305,24 @@ export default function SimuladorNFe() {
                     </CardContent>
                 </Card>
 
-                {regimeSelecionado === 'simples' && (
-                    <>
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4" />
-                                    Faturamento Anual
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Select value={String(faturamentoAnual)} onValueChange={(v) => setFaturamentoAnual(Number(v))}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {FAIXAS_FATURAMENTO.map(faixa => (
-                                            <SelectItem key={faixa.value} value={String(faixa.value)}>
-                                                {faixa.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    <FileText className="h-4 w-4" />
-                                    Anexo Simples
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Select value={anexoSimples} onValueChange={(v) => setAnexoSimples(v as keyof typeof SIMPLES_ALIQUOTAS)}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Object.entries(SIMPLES_ALIQUOTAS).map(([anexo, data]) => (
-                                            <SelectItem key={anexo} value={anexo}>
-                                                Anexo {anexo} - {data.descricao}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Margem de Lucro (%)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                value={margemLucro}
+                                onChange={(e) => setMargemLucro(Number(e.target.value))}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Cards de Resumo */}
@@ -360,12 +331,12 @@ export default function SimuladorNFe() {
                     <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                Valor Total dos Produtos
+                                Valor Total de Venda
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                                R$ {totais.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                R$ {totais.valorTotalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
                         </CardContent>
                     </Card>
@@ -398,6 +369,30 @@ export default function SimuladorNFe() {
                 </div>
             )}
 
+            {/* Análise de Inteligência */}
+            {itens.some(i => i.status === 'analisado' && i.classificacao?.sugestao_economia) && (
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 animate-fade-in mb-4">
+                    <div className="flex items-start gap-3">
+                        <Sparkles className="h-5 w-5 text-emerald-600 mt-0.5" />
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">
+                                Oportunidades Identificadas pela IA
+                            </h3>
+                            <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
+                                Encontramos estratégias para otimizar sua carga tributária.
+                            </p>
+                            <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                                onClick={() => window.open('https://wa.me/5511999999999?text=Gostaria%20de%20saber%20mais%20sobre%20as%20economias%20tributarias%20do%20Simulador', '_blank')}
+                            >
+                                Falar com Especialista
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Tabela de Itens */}
             <Card>
                 <CardHeader className="pb-2">
@@ -425,8 +420,10 @@ export default function SimuladorNFe() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="min-w-[200px]">Produto</TableHead>
-                                    <TableHead className="w-[100px]">NCM</TableHead>
-                                    <TableHead className="text-right w-[120px]">Valor</TableHead>
+                                    <TableHead className="w-[80px]">NCM</TableHead>
+                                    <TableHead className="text-right w-[100px]">Vl. Compra</TableHead>
+                                    <TableHead className="text-center w-[80px]">Margem</TableHead>
+                                    <TableHead className="text-right w-[100px]">Vl. Venda</TableHead>
                                     <TableHead className="w-[150px]">
                                         <div className="flex items-center gap-1">
                                             Classificação
@@ -439,21 +436,20 @@ export default function SimuladorNFe() {
                                                         <div className="text-xs max-w-[250px] space-y-1">
                                                             <p className="font-semibold">Classificação Tributária</p>
                                                             <p>Identifica setor, benefícios fiscais e alíquotas aplicáveis.</p>
-                                                            <p>No Simples Nacional, sugere o Anexo.</p>
                                                         </div>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         </div>
                                     </TableHead>
-                                    <TableHead className="text-right w-[100px]">Alíquota</TableHead>
-                                    <TableHead className="text-right w-[120px]">Imposto</TableHead>
+                                    <TableHead className="text-right w-[90px]">Alíquota</TableHead>
+                                    <TableHead className="text-right w-[110px]">Imposto</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {itens.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-40">
+                                        <TableCell colSpan={8} className="text-center h-40">
                                             <div className="flex flex-col items-center gap-3 text-muted-foreground">
                                                 <FileText className="h-10 w-10 opacity-20" />
                                                 <div>
@@ -468,19 +464,26 @@ export default function SimuladorNFe() {
                                         <TableRow key={item.id} className="hover:bg-muted/50">
                                             <TableCell>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-sm truncate max-w-[250px]" title={item.descricao}>
+                                                    <span className="font-medium text-sm truncate max-w-[200px]" title={item.descricao}>
                                                         {item.descricao}
                                                     </span>
-                                                    {item.classificacao?.motivo && (
-                                                        <span className="text-xs text-muted-foreground truncate max-w-[250px]" title={item.classificacao.motivo}>
-                                                            {item.classificacao.motivo}
+                                                    {item.classificacao?.sugestao_economia && (
+                                                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-0.5 truncate max-w-[200px]" title={item.classificacao.sugestao_economia}>
+                                                            <Sparkles className="h-3 w-3" />
+                                                            {item.classificacao.sugestao_economia}
                                                         </span>
                                                     )}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="font-mono text-xs">{item.ncm}</TableCell>
-                                            <TableCell className="text-right font-medium">
-                                                R$ {item.valorProduto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            <TableCell className="text-right text-muted-foreground text-xs">
+                                                {item.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </TableCell>
+                                            <TableCell className="text-center text-xs text-muted-foreground">
+                                                {item.margemLucro}%
+                                            </TableCell>
+                                            <TableCell className="text-right font-medium text-sm">
+                                                {item.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                             </TableCell>
                                             <TableCell>
                                                 {getClassificacaoBadge(itens.find(i => i.id === item.id)!)}
