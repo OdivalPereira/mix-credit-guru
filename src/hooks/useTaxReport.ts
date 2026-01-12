@@ -86,6 +86,13 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
                 report = reportData.report;
             }
 
+            // Separar versão de Tela (Resumida) da Versão PDF (Completa)
+            // Tela: Exibe até a seção 5 (Estratégias) ou usa regex para pegar seções específicas.
+            // Por enquanto, vamos exibir tudo na tela, mas o PDF será o documento "oficial".
+            // Para "simplificar" a tela, vamos cortar após a seção de Estratégias se houver seções muito longas de Compliance/Anexos
+            // O prompt novo tem 8 seções.
+            // Vamos exibir tudo por enquanto para permitir revisão, mas salvar o conteúdo completo.
+
             setReportContent(report);
             setLoadingStage('done');
             toast({ title: "Relatório gerado com sucesso!", description: "Pronto para exportação." });
@@ -111,6 +118,7 @@ A transição para o IBS e CBS trará uma simplificação significativa. O aprov
 
         try {
             const { createPDFContainer } = await import('@/lib/pdf-export');
+            // Usar o conteúdo completo (que atualmente é o mesmo do reportContent)
             const container = createPDFContainer(reportContent, companyName);
 
             document.body.appendChild(container);

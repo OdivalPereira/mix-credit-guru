@@ -847,6 +847,19 @@ export default function PlanejamentoTributario() {
         return gerarDadosTimeline(profile);
     }, [profile]);
 
+    // Relatório Preview (Tela): Corta após a seção 5 para simplificar
+    const previewContent = useMemo(() => {
+        if (!reportContent) return null;
+
+        // Tenta encontrar o início da seção 6 para cortar
+        const cutIndex = reportContent.indexOf('### 6. Riscos & Compliance');
+        if (cutIndex !== -1) {
+            return reportContent.substring(0, cutIndex) +
+                "\n\n---\n\n**...Para visualizar a Análise de Riscos, Compliance e o Plano de Ação detalhado, exporte o PDF completo.**";
+        }
+        return reportContent;
+    }, [reportContent]);
+
     // ============================================================================
     // REPORT GENERATION
     // ============================================================================
@@ -1811,7 +1824,7 @@ export default function PlanejamentoTributario() {
                                 <div
                                     className="prose prose-sm dark:prose-invert max-w-none overflow-auto max-h-[600px] report-preview"
                                     dangerouslySetInnerHTML={{
-                                        __html: convertMarkdownToHTML(reportContent)
+                                        __html: convertMarkdownToHTML(previewContent || '')
                                     }}
                                 />
                             </CardContent>
