@@ -27,6 +27,7 @@ import {
   ShoppingCart,
   Package,
   Trash2,
+  FileCode,
 } from "lucide-react";
 import { useCatalogoStore } from "@/store/useCatalogoStore";
 import { useCotacaoStore } from "@/store/useCotacaoStore";
@@ -34,6 +35,7 @@ import { useActivityLogStore } from "@/store/useActivityLogStore";
 import type { Produto, ProdutoComponente, Unit } from "@/types/domain";
 import { generateId } from "@/lib/utils";
 import { UNIT_OPTIONS, UNIT_LABELS } from "@/data/lookups";
+import { toast } from "@/hooks/use-toast";
 
 const EMPTY_COMPONENT_VALUE = "__component_empty__";
 
@@ -43,6 +45,7 @@ const EMPTY_COMPONENT_VALUE = "__component_empty__";
  */
 export default function Catalogo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const xmlFileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -52,6 +55,7 @@ export default function Catalogo() {
     updateProduto,
     removeProduto,
     importarCSV,
+    importarXML,
     exportarCSV,
   } = useCatalogoStore();
   const setContexto = useCotacaoStore((s) => s.setContexto);
@@ -83,6 +87,29 @@ export default function Catalogo() {
     const text = await file.text();
     importarCSV(text);
     e.target.value = "";
+  };
+
+  const handleImportXML = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const result = importarXML(text);
+    e.target.value = "";
+
+    if (result.success) {
+      toast({
+        title: "Importação concluída!",
+        description: `${result.count} produto(s) importado(s) da NF-e.`,
+      });
+    } else {
+      toast({
+        title: "Erro na importação",
+        description: result.error || "Não foi possível processar o XML.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExport = () => {
@@ -213,6 +240,17 @@ export default function Catalogo() {
             className="hidden"
             onChange={handleImport}
           />
+          <input
+            ref={xmlFileInputRef}
+            type="file"
+            accept=".xml"
+            className="hidden"
+            onChange={handleImportXML}
+          />
+          <Button variant="outline" onClick={() => xmlFileInputRef.current?.click()}>
+            <FileCode className="mr-2 h-4 w-4" />
+            Importar XML
+          </Button>
           <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
             <Upload className="mr-2 h-4 w-4" />
             Importar CSV
@@ -248,8 +286,8 @@ export default function Catalogo() {
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((product) => {
-        const unidadePadrao = (product.unidadePadrao ?? "un") as Unit;
-        const unidadeLabel = UNIT_LABELS[unidadePadrao];
+          const unidadePadrao = (product.unidadePadrao ?? "un") as Unit;
+          const unidadeLabel = UNIT_LABELS[unidadePadrao];
           const isActive = product.ativo !== false;
 
           return (

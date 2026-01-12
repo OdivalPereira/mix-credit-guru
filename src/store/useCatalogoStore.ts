@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { Produto } from "@/types/domain";
 import { readProdutosCSV, writeProdutosCSV } from "@/lib/csv";
 import { generateId } from "@/lib/utils";
+import { parseNFeXML, nfeProdutosToCatalogo } from "@/lib/parsers/nfe-parser";
 
 /**
  * @description Zustand store para gerenciar o catálogo de produtos.
@@ -12,6 +13,7 @@ import { generateId } from "@/lib/utils";
  * @property {(id: string) => void} removeProduto - Remove um produto do catálogo.
  * @property {(csv: string) => void} importarCSV - Importa produtos de uma string CSV.
  * @property {() => string} exportarCSV - Exporta os produtos para uma string CSV.
+ * @property {(xml: string) => { success: boolean; count: number; error?: string }} importarXML - Importa produtos de um XML de NF-e.
  */
 interface CatalogoStore {
   produtos: Produto[];
@@ -20,6 +22,7 @@ interface CatalogoStore {
   removeProduto: (id: string) => void;
   importarCSV: (csv: string) => void;
   exportarCSV: () => string;
+  importarXML: (xml: string) => { success: boolean; count: number; error?: string };
   loadDemoData: () => void;
   limpar: () => void;
 }
@@ -43,12 +46,12 @@ export const useCatalogoStore = create<CatalogoStore>()(
           produtos: state.produtos.map((p) =>
             p.id === id
               ? {
-                  ...p,
-                  ...data,
-                  flags: { ...p.flags, ...(data.flags ?? {}) },
-                  componentes:
-                    data.componentes !== undefined ? data.componentes : p.componentes ?? [],
-                }
+                ...p,
+                ...data,
+                flags: { ...p.flags, ...(data.flags ?? {}) },
+                componentes:
+                  data.componentes !== undefined ? data.componentes : p.componentes ?? [],
+              }
               : p,
           ),
         })),
@@ -84,6 +87,39 @@ export const useCatalogoStore = create<CatalogoStore>()(
         });
       },
       exportarCSV: () => writeProdutosCSV(get().produtos),
+      importarXML: (xml: string) => {
+        const result = parseNFeXML(xml);
+        if (!result.success || !result.data) {
+          console.error("[catalogo] Erro ao parsear XML:", result.error);
+          return { success: false, count: 0, error: result.error };
+        }
+
+        const produtosNfe = nfeProdutosToCatalogo(result.data.produtos);
+        if (produtosNfe.length === 0) {
+          return { success: false, count: 0, error: "Nenhum produto encontrado no XML" };
+        }
+
+        set((state) => {
+          const byNcm = new Map(state.produtos.map((produto) => [produto.ncm, produto]));
+          for (const produto of produtosNfe) {
+            const current = byNcm.get(produto.ncm);
+            if (current) {
+              // Merge: atualiza dados mas mantém ID existente
+              byNcm.set(produto.ncm, {
+                ...current,
+                ...produto,
+                id: current.id,
+                componentes: current.componentes ?? [],
+              });
+            } else {
+              byNcm.set(produto.ncm, produto);
+            }
+          }
+          return { produtos: Array.from(byNcm.values()) };
+        });
+
+        return { success: true, count: produtosNfe.length };
+      },
       loadDemoData: () => {
         import("@/data/demoData").then(({ demoProdutos }) => {
           set({ produtos: demoProdutos });
