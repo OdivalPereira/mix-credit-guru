@@ -65,7 +65,8 @@ Retorne APENAS um JSON array válido:
       "reducao_reforma": 0.00|0.60|1.00,
       "icms_substituicao": true/false,
       "anexo_simples_sugerido": "I"|"II"|"III"|"IV"|"V",
-      "sugestao_economia": "Dica curta e estratégica (ex: 'Verificar créditos de entrada', 'Ajustar margem por perfil do cliente'). Não prometer isenção."
+      "unidade_venda_sugerida": "UN|CX|KG|LT|ML|PC...",
+      "sugestao_economia": "Insight estratégico (ex: 'Verificar créditos de entrada', 'Otimização de preço por volume')."
     },
     "motivo": "Explicação curta da classificação"
   }
