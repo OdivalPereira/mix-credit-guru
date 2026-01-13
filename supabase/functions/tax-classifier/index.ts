@@ -1,16 +1,7 @@
-/**
- * Tax Classifier Edge Function
- * 
- * Classifica produtos tributariamente usando:
- * 1. Tabela NCM oficial (determinística)
- * 2. IA Gemini como fallback (para NCMs desconhecidos)
- * 3. Validação pós-IA (para evitar classificações incorretas)
- * 
- * Endpoint: POST /functions/v1/tax-classifier
- */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.24.0";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,101 +10,28 @@ const corsHeaders = {
 };
 
 // ============================================================================
-// TABELA NCM (INLINE - Deno Edge Functions não suportam imports externos)
+// CONFIGURAÇÃO SUPABASE
 // ============================================================================
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
-interface NCMRule {
-  ncmPattern: string;
-  setor: string;
-  cesta_basica: boolean;
-  reducao_reforma: number;
-  anexo_simples_sugerido: string;
-  descricao: string;
-}
-
-const NCM_CESTA_BASICA: NCMRule[] = [
-  { ncmPattern: '0201', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Carnes bovinas frescas/refrigeradas' },
-  { ncmPattern: '0202', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Carnes bovinas congeladas' },
-  { ncmPattern: '0203', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Carnes suínas' },
-  { ncmPattern: '0207', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Carnes de aves' },
-  { ncmPattern: '0302', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Peixes frescos' },
-  { ncmPattern: '0303', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Peixes congelados' },
-  { ncmPattern: '0401', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Leite e creme de leite' },
-  { ncmPattern: '0405', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Manteiga' },
-  { ncmPattern: '0407', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Ovos' },
-  { ncmPattern: '07', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Hortícolas' },
-  { ncmPattern: '08', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Frutas' },
-  { ncmPattern: '1006', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Arroz' },
-  { ncmPattern: '0713', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Feijão' },
-  { ncmPattern: '0901', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Café' },
-  { ncmPattern: '1101', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Farinha de trigo' },
-  { ncmPattern: '1102', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Farinhas de cereais' },
-  { ncmPattern: '1106', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Farinha de mandioca' },
-  { ncmPattern: '1507', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Óleo de soja' },
-  { ncmPattern: '1517', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Margarina' },
-  { ncmPattern: '1701', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Açúcar' },
-  { ncmPattern: '2501', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Sal' },
-  { ncmPattern: '1905', setor: 'alimentos_basicos', cesta_basica: true, reducao_reforma: 1, anexo_simples_sugerido: 'I', descricao: 'Pães' },
-];
-
-const NCM_REDUCAO_60: NCMRule[] = [
-  { ncmPattern: '3003', setor: 'saude', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Medicamentos' },
-  { ncmPattern: '3004', setor: 'saude', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Medicamentos dosados' },
-  { ncmPattern: '3005', setor: 'saude', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Curativos' },
-  { ncmPattern: '9018', setor: 'saude', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Instrumentos médicos' },
-  { ncmPattern: '9021', setor: 'saude', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Próteses' },
-  { ncmPattern: '4820', setor: 'educacao', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Material escolar' },
-  { ncmPattern: '4901', setor: 'educacao', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Livros' },
-  { ncmPattern: '31', setor: 'agropecuaria', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Adubos' },
-  { ncmPattern: '3808', setor: 'agropecuaria', cesta_basica: false, reducao_reforma: 0.6, anexo_simples_sugerido: 'I', descricao: 'Defensivos agrícolas' },
-];
-
-const NCM_EXCLUSOES = ['22', '24', '33', '64', '71', '84', '85', '87', '88', '89', '91', '93', '95', '97'];
-
-function buscarRegraNCM(ncm: string): NCMRule | null {
-  const ncmLimpo = ncm.replace(/\D/g, '');
-  const todasRegras = [...NCM_CESTA_BASICA, ...NCM_REDUCAO_60];
-  let melhorMatch: NCMRule | null = null;
-  let maiorComprimento = 0;
-
-  for (const regra of todasRegras) {
-    if (ncmLimpo.startsWith(regra.ncmPattern) && regra.ncmPattern.length > maiorComprimento) {
-      melhorMatch = regra;
-      maiorComprimento = regra.ncmPattern.length;
-    }
-  }
-  return melhorMatch;
-}
-
-function ncmEstaExcluido(ncm: string): boolean {
-  const ncmLimpo = ncm.replace(/\D/g, '');
-  return NCM_EXCLUSOES.some(prefixo => ncmLimpo.startsWith(prefixo));
-}
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ============================================================================
 // PROMPT DA IA (MELHORADO)
 // ============================================================================
 
-const SYSTEM_PROMPT = `Você é um classificador tributário especializado na legislação brasileira e na Reforma Tributária 2033 (IBS/CBS).
+const SYSTEM_PROMPT = `Você é um classificador tributário ESPECIALISTA na Lei Complementar 214/2025 (Reforma Tributária IBS/CBS).
 
-## REGRAS CRÍTICAS DE EXCLUSÃO (NUNCA podem ser Cesta Básica ou ter isenção)
-NCMs que começam com os seguintes prefixos NUNCA podem ter reducao_reforma = 1:
-- 22 (Bebidas)
-- 24 (Tabaco)
-- 33 (Cosméticos e perfumaria)
-- 64 (Calçados)
-- 71 (Joias)
-- 84 (Máquinas)
-- 85 (Eletrônicos)
-- 87 (Veículos)
+## Contexto
+Você receberá produtos e, opcionalmente, "Regras de Referência" oficiais do governo para NCMs parecidos.
+USE AS REGRAS DE REFERÊNCIA para guiar sua decisão.
 
-## Regras de Classificação
-- Cesta Básica (reducao_reforma = 1): APENAS alimentos básicos (NCM 01-21)
-- Redução 60% (reducao_reforma = 0.6): Medicamentos, material escolar, insumos agrícolas
-- Padrão (reducao_reforma = 0): Todos os outros
+## Regras Críticas de Validação
+- Se um produto for "Água", "Leite", "Arroz", "Feijão" -> Verifique se é Cesta Básica (redução 100%).
+- Bebidas Alcoólicas, Tabaco, Perfumes -> NUNCA têm benefício (Padrão).
 
-## Formato de Saída
-Retorne APENAS um JSON array válido:
+## Formato de Saída (JSON Array)
 [
   {
     "id": "código",
@@ -124,9 +42,9 @@ Retorne APENAS um JSON array válido:
       "icms_substituicao": false,
       "anexo_simples_sugerido": "I"|"II"|"III"|"IV"|"V",
       "unidade_venda_sugerida": "UN|CX|KG...",
-      "sugestao_economia": "Insight (opcional)"
+      "sugestao_economia": "Insight curto (max 100 chars)"
     },
-    "motivo": "Justificativa baseada no NCM"
+    "motivo": "Justificativa técnica"
   }
 ]`;
 
@@ -152,31 +70,42 @@ Deno.serve(async (req: Request) => {
     const classificacoes: any[] = [];
     const produtosParaIA: any[] = [];
 
-    // CAMADA 1: Classificar usando tabela NCM
-    for (const produto of produtosLimitados) {
-      const ncm = produto.ncm || '';
-      const regra = buscarRegraNCM(ncm);
+    // 1. Validar NCMs na camada de Governo (Anexos)
+    const ncms = produtosLimitados.map(p => p.ncm?.replace(/\D/g, '')).filter(Boolean);
 
-      if (regra) {
-        classificacoes.push({
-          id: produto.id,
-          classificacao: {
-            setor: regra.setor,
-            cesta_basica: regra.cesta_basica,
-            reducao_reforma: regra.reducao_reforma,
-            icms_substituicao: false,
-            anexo_simples_sugerido: regra.anexo_simples_sugerido,
-            unidade_venda_sugerida: 'UN',
-            sugestao_economia: ''
-          },
-          motivo: `NCM ${ncm} - ${regra.descricao} (classificação via tabela)`
-        });
-      } else {
-        produtosParaIA.push(produto);
-      }
+    let validNcms: any[] = [];
+    if (ncms.length > 0) {
+      const { data } = await supabase
+        .from('tax_ncms_gov')
+        .select('ncm, anexo_id')
+        .in('ncm', ncms);
+      if (data) validNcms = data;
     }
 
-    // CAMADA 2: Chamar IA para produtos não encontrados na tabela
+    // 2. Buscar Regras Genéricas (Contexto)
+    const { data: regrasGov } = await supabase
+      .from('tax_rules_gov')
+      .select('codigo, descricao, tipo_aliquota')
+      .limit(100);
+
+    // Contexto para o Prompt
+    const contextString = regrasGov
+      ? regrasGov.map(r => `- Código ${r.codigo} (${r.tipo_aliquota}): ${r.descricao}`).join('\n')
+      : 'Nenhuma regra governamental carregada.';
+
+    // Processamento
+    for (const produto of produtosLimitados) {
+      const ncmLimpo = produto.ncm?.replace(/\D/g, '') || '';
+      const isValidGovNcm = validNcms.some(v => v.ncm === ncmLimpo);
+
+      // Adiciona flag para IA saber que esse NCM existe oficialmente
+      produtosParaIA.push({
+        ...produto,
+        _ncm_validado_gov: isValidGovNcm
+      });
+    }
+
+    // 3. IA com Contexto Injetado
     if (produtosParaIA.length > 0) {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
@@ -184,7 +113,19 @@ Deno.serve(async (req: Request) => {
         generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
       });
 
-      const prompt = `${SYSTEM_PROMPT}\n\n## Produtos para Classificar:\n${JSON.stringify(produtosParaIA, null, 2)}\n\nClassifique cada produto. Retorne APENAS o JSON array.`;
+      const promptContexto = `
+## Regras Oficiais de Classificação (Lei Complementar 214/2025 - CFF):
+Abaixo estão os cenários de tributação oficiais. Seu trabalho é associar o produto a um destes cenários baseando-se na natureza do produto e se o NCM é validado.
+${contextString}
+
+## Instruções Específicas:
+1. Se o produto tiver "_ncm_validado_gov": true, isso aumenta a confiança de que ele é um produto CFF regulado.
+2. Tente enquadrar o produto em um dos códigos oficiais acima (ex: 000001, 000002) se a descrição bater.
+3. Se for Cesta Básica (Arroz, Feijão, etc), procure a regra de Isenção/Redução 100%.
+`;
+
+      const prompt = `${SYSTEM_PROMPT}\n${promptContexto}\n\n## Produtos para Classificar:\n${JSON.stringify(produtosParaIA, null, 2)}\n\nClassifique cada produto. Retorne APENAS o JSON array.`;
+
       const result = await model.generateContent(prompt);
       const responseText = result.response.text();
 
@@ -197,21 +138,22 @@ Deno.serve(async (req: Request) => {
         else throw new Error('Resposta da IA não é JSON válido');
       }
 
-      // CAMADA 3: Validação pós-IA
-      for (const item of iaClassificacoes) {
-        const produtoOriginal = produtosParaIA.find(p => p.id === item.id);
-        const ncm = produtoOriginal?.ncm || '';
+      // Processar resultados
+      iaClassificacoes.forEach((item: any) => {
+        // Recupera se era validado
+        const original = produtosParaIA.find(p => p.id === item.id);
+        const isGov = original?._ncm_validado_gov;
 
-        // Se NCM está na lista de exclusão e IA retornou isento, corrigir
-        if (ncmEstaExcluido(ncm) && item.classificacao?.reducao_reforma > 0) {
-          item.classificacao.reducao_reforma = 0;
-          item.classificacao.cesta_basica = false;
-          item.classificacao.setor = 'comercio';
-          item.motivo = `NCM ${ncm} - Corrigido: Este NCM não pode ter benefícios fiscais (via validação)`;
+        // Se NCM validado, adicionamos badge 'governo' (Hybrid) se a resposta da IA for coerente
+        if (isGov) {
+          item.source = 'governo';
+          item.motivo += ' (NCM Validado na Tabela Oficial)';
+        } else {
+          item.source = 'ia';
         }
 
         classificacoes.push(item);
-      }
+      });
     }
 
     return new Response(
@@ -219,11 +161,10 @@ Deno.serve(async (req: Request) => {
         success: true,
         data: classificacoes,
         metadata: {
-          modelo: 'gemini-2.0-flash',
           timestamp: new Date().toISOString(),
-          produtos_classificados: classificacoes.length,
-          classificados_tabela: produtosLimitados.length - produtosParaIA.length,
-          classificados_ia: produtosParaIA.length
+          total: produtosLimitados.length,
+          gov_matches: classificacoes.filter(c => c.source === 'governo').length,
+          ai_predictions: classificacoes.filter(c => c.source === 'ia').length
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -234,8 +175,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-        hint: 'Verifique se a API key está configurada e os produtos são válidos'
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

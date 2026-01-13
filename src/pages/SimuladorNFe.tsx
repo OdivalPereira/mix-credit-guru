@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 
 interface ItemAnalise extends TaxResultItem {
     status: 'pendente' | 'analisado';
+    source?: 'governo' | 'ia';
 }
 
 const FAIXAS_FATURAMENTO = [
@@ -110,9 +111,8 @@ export default function SimuladorNFe() {
                 throw new Error(data.error || 'Erro na classificação');
             }
 
-            // Atualiza itens com classificação e recalcula
             setItens(prev => prev.map(item => {
-                const classificacaoIA = data.data.find((d: { id: string; classificacao: ClassificacaoProduto; motivo: string }) => d.id === item.id);
+                const classificacaoIA = data.data.find((d: { id: string; classificacao: ClassificacaoProduto; motivo: string; source?: 'governo' | 'ia' }) => d.id === item.id);
                 if (classificacaoIA) {
                     const classificacao: ClassificacaoProduto = classificacaoIA.classificacao;
                     const itemRecalculado = calcularImpostosItem(
@@ -128,7 +128,8 @@ export default function SimuladorNFe() {
                     );
                     return {
                         ...itemRecalculado,
-                        status: 'analisado' as const
+                        status: 'analisado' as const,
+                        source: classificacaoIA.source
                     };
                 }
                 return { ...item, status: 'analisado' as const };
@@ -213,6 +214,18 @@ export default function SimuladorNFe() {
 
     const getClassificacaoBadge = (item: TaxResultItem, status: string) => {
         if (status !== 'analisado' || !item.classificacao) return <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter bg-muted/30 px-1.5 py-0.5 rounded italic">Pendente IA</span>;
+
+        // Se for fonte GOVERNO
+        if ((item as ItemAnalise).source === 'governo') {
+            return (
+                <div className="flex gap-1 items-center">
+                    <Badge variant="outline" className="text-[10px] border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-bold uppercase tracking-tight py-0 px-1.5 gap-1">
+                        Gov <span className="text-[8px] opacity-70">✓</span>
+                    </Badge>
+                    <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground/80">{item.classificacao.setor}</span>
+                </div>
+            );
+        }
 
         if (regimeSelecionado === 'reforma2033') {
             const classificacao = item.regimes.reforma2033.classificacao || 'Padrão';
@@ -614,8 +627,8 @@ export default function SimuladorNFe() {
                                                         {getClassificacaoBadge(item, originalItem?.status || 'pendente')}
                                                         {item.classificacao?.sugestao_economia && (
                                                             <span className={`text-[10px] leading-tight italic line-clamp-3 max-w-[150px] font-medium mt-1 block ${item.classificacao.sugestao_economia.includes('✅') ? 'text-emerald-600 dark:text-emerald-400' :
-                                                                    item.classificacao.sugestao_economia.includes('💡') ? 'text-blue-600 dark:text-blue-400' :
-                                                                        'text-amber-600 dark:text-amber-400'
+                                                                item.classificacao.sugestao_economia.includes('💡') ? 'text-blue-600 dark:text-blue-400' :
+                                                                    'text-amber-600 dark:text-amber-400'
                                                                 }`} title={item.classificacao.sugestao_economia}>
                                                                 {item.classificacao.sugestao_economia}
                                                             </span>
