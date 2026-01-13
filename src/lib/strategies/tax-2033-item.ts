@@ -102,6 +102,8 @@ export interface ClassificacaoProduto {
     anexo_simples_sugerido: 'I' | 'II' | 'III' | 'IV' | 'V';
     sugestao_economia?: string;
     unidade_venda_sugerida?: string;
+    unit_type?: string;
+    conversion_factor?: number;
     motivo?: string;
 }
 
@@ -115,6 +117,16 @@ export interface TaxResultItem {
     valorVenda: number;
     valorVendaUnitario: number;
     classificacao?: ClassificacaoProduto;
+    custoLiquido: number;
+    creditosEntrada: {
+        icms: number;
+        pis: number;
+        cofins: number;
+        ibs: number;
+        cbs: number;
+        total: number;
+    };
+    baseCalculoVenda: number;
     regimes: {
         simples: {
             anexo: string;
@@ -137,7 +149,7 @@ export interface TaxResultItem {
             reducao: number;
             aliquotaEfetiva: number;
             debito: number;
-            credito: number;
+            credito: number; // Crédito da compra
             impostoLiquido: number;
             imposto: number; // Mantido para compatibilidade, igual ao impostoLiquido
             classificacao: string;
@@ -340,9 +352,28 @@ export function calcularImpostosItem(
     const anexo = itemClassificacao.anexo_simples_sugerido || 'I';
     const reducaoReforma = itemClassificacao.reducao_reforma || 0;
 
-    // Cálculo do Preço de Venda
-    const valorVenda = valorCompra * (1 + (margemLucro / 100));
-    const valorVendaUnitario = quantidade > 0 ? valorVenda / quantidade : valorVenda;
+    // 1. Identificar Créditos (Entrada) - Usando Reforma 2033 como referência para o Custo Líquido Real
+    const aliquotaReformaEfetiva = ALIQUOTA_IBS_CBS_PADRAO * (1 - reducaoReforma);
+
+    // Simplificando: o custo líquido é baseado no que se recupera na Reforma (visão futura)
+    const creditoIbs = valorCompra * (aliquotaReformaEfetiva * (17 / 25.5));
+    const creditoCbs = valorCompra * (aliquotaReformaEfetiva * (8.5 / 25.5));
+    const totalCreditos = creditoIbs + creditoCbs;
+
+    // 2. Cálculo do Custo Líquido
+    const custoLiquido = valorCompra - totalCreditos;
+    const custoLiquidoUnitario = quantidade > 0 ? custoLiquido / quantidade : custoLiquido;
+
+    // 3. Aplicação da Margem (Markup sobre Venda)
+    // Base de Preço = Custo Líquido / (1 - Margem%)
+    const marginFactor = 1 - (margemLucro / 100);
+    const baseCalculoVenda = marginFactor > 0 ? custoLiquido / marginFactor : custoLiquido;
+
+    // 4. Gross-Up de Impostos (Saída)
+    // Para simplificar, o Preço Final será calculado por regime na UI se necessário, 
+    // mas aqui geramos o valor de venda "alvo" baseado na Reforma 2033
+    const impostoVendaReforma = baseCalculoVenda * aliquotaReformaEfetiva;
+    const valorVendaSugerido = baseCalculoVenda + impostoVendaReforma;
 
     return {
         id,
@@ -351,14 +382,24 @@ export function calcularImpostosItem(
         quantidade,
         valorCompra,
         margemLucro,
-        valorVenda,
-        valorVendaUnitario,
+        custoLiquido,
+        baseCalculoVenda,
+        creditosEntrada: {
+            icms: 0, // Poderia ser calculado via regime específico se necessário
+            pis: 0,
+            cofins: 0,
+            ibs: creditoIbs,
+            cbs: creditoCbs,
+            total: totalCreditos
+        },
+        valorVenda: valorVendaSugerido,
+        valorVendaUnitario: quantidade > 0 ? valorVendaSugerido / quantidade : valorVendaSugerido,
         classificacao: itemClassificacao,
         regimes: {
-            simples: calcularImpostoSimplesItem(valorVenda, faturamentoAnual, anexo),
-            presumido: calcularImpostoPresumidoItem(valorVenda, isServico),
-            real: calcularImpostoRealItem(valorVenda, isServico),
-            reforma2033: calcularImpostoReformaItem(valorCompra, valorVenda, reducaoReforma)
+            simples: calcularImpostoSimplesItem(valorVendaSugerido, faturamentoAnual, anexo),
+            presumido: calcularImpostoPresumidoItem(valorVendaSugerido, isServico),
+            real: calcularImpostoRealItem(valorVendaSugerido, isServico),
+            reforma2033: calcularImpostoReformaItem(valorCompra, valorVendaSugerido, reducaoReforma)
         }
     };
 }

@@ -42,11 +42,19 @@ USE AS REGRAS DE REFERÊNCIA para guiar sua decisão.
       "icms_substituicao": false,
       "anexo_simples_sugerido": "I"|"II"|"III"|"IV"|"V",
       "unidade_venda_sugerida": "UN|CX|KG...",
+      "unit_type": "UN|CX|KG|FD|LT",
+      "conversion_factor": 1,
       "sugestao_economia": "Insight curto (max 100 chars)"
     },
     "motivo": "Justificativa técnica"
   }
-]`;
+]
+
+## Gestão de Unidades
+- Identifique se o produto é vendido em fardos, caixas ou unidades coletivas (ex: "CX 12", "FD 6", "PACK 4", "12x1L").
+- Se encontrar um padrão, defina "unit_type" (ex: "CX") e "conversion_factor" (ex: 12). 
+- Se for uma unidade simples, "unit_type" é "UN" e "conversion_factor" é 1.
+`;
 
 // ============================================================================
 // HANDLER PRINCIPAL

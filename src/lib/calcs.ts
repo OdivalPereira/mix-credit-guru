@@ -2,6 +2,13 @@ import type { Supplier, MixResultadoItem, AliquotasConfig } from "@/types/domain
 import { computeCredit } from "./credit";
 import { computeRates } from "./rates";
 import { memoize } from "./memoize";
+import {
+  ClassificacaoProduto,
+  RegimeTributario,
+  PRESUMIDO_ALIQUOTAS,
+  REAL_ALIQUOTAS,
+  ALIQUOTA_IBS_CBS_PADRAO
+} from "./strategies/tax-2033-item";
 
 /**
  * @description Arredonda um número para um número especificado de casas decimais.
@@ -123,4 +130,75 @@ export const rankSuppliers = memoize(rankSuppliersInternal, {
   getKey: (suppliers, ctx) => JSON.stringify({ suppliers, ctx }),
   maxSize: 20,
 });
+
+/**
+ * @description Calcula os créditos tributários na entrada (compra) de um produto.
+ */
+export function calculateTaxCredits(
+  purchaseValue: number,
+  regime: RegimeTributario,
+  classificacao?: ClassificacaoProduto
+): { icms: number; pis: number; cofins: number; ibs: number; cbs: number; total: number } {
+  let icms = 0;
+  let pis = 0;
+  let cofins = 0;
+  let ibs = 0;
+  let cbs = 0;
+
+  const reducao = classificacao?.reducao_reforma ?? 0;
+  const isMonofasico = classificacao?.setor === 'combustiveis' || classificacao?.setor === 'bebidas'; // Exemplo simplificado
+
+  if (regime === 'reforma2033') {
+    const aliquotaEfetiva = ALIQUOTA_IBS_CBS_PADRAO * (1 - reducao);
+    // IBS é aprox 2/3 e CBS 1/3 do total de 25.5% (IBS 17 + CBS 8.5)
+    ibs = purchaseValue * (aliquotaEfetiva * (17 / 25.5));
+    cbs = purchaseValue * (aliquotaEfetiva * (8.5 / 25.5));
+  } else if (regime === 'real') {
+    icms = purchaseValue * REAL_ALIQUOTAS.icms_medio;
+    if (!isMonofasico) {
+      pis = purchaseValue * REAL_ALIQUOTAS.pis;
+      cofins = purchaseValue * REAL_ALIQUOTAS.cofins;
+    }
+  } else if (regime === 'presumido') {
+    icms = purchaseValue * PRESUMIDO_ALIQUOTAS.icms_medio;
+    // No presumido geralmente não há crédito de PIS/COFINS (regime cumulativo)
+  }
+
+  return {
+    icms: round(icms),
+    pis: round(pis),
+    cofins: round(cofins),
+    ibs: round(ibs),
+    cbs: round(cbs),
+    total: round(icms + pis + cofins + ibs + cbs)
+  };
+}
+
+/**
+ * @description Calcula o preço de venda sugerido a partir de uma margem alvo sobre o custo líquido.
+ */
+export function calculatePriceFromMargin(
+  netCost: number,
+  targetMargin: number,
+  regime: RegimeTributario,
+  taxRules: {
+    aliquotaVenda: number; // Somatória das alíquotas de saída (IBS+CBS ou Simples Efetiva)
+  }
+): { basePrice: number; taxes: number; finalPrice: number } {
+  // Base de Preço = Custo Líquido / (1 - Margem%)
+  const marginFactor = 1 - (targetMargin / 100);
+  const basePrice = marginFactor > 0 ? netCost / marginFactor : netCost;
+
+  // Impostos de Venda = Base de Preço * Alíquota
+  const taxes = basePrice * taxRules.aliquotaVenda;
+
+  // Preço Final = Base de Preço + Impostos
+  const finalPrice = basePrice + taxes;
+
+  return {
+    basePrice: round(basePrice),
+    taxes: round(taxes),
+    finalPrice: round(finalPrice)
+  };
+}
 

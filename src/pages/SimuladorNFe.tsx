@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { parseNFeXML, NFeProduto } from '@/lib/parsers/nfe-parser';
 import {
     calcularImpostosItem,
@@ -16,8 +16,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Upload, Loader2, FileText, Calculator, Sparkles, TrendingUp, Receipt, Info, Trash2, HelpCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Upload, Loader2, FileText, Calculator, Sparkles, TrendingUp, Receipt, Info, Trash2, HelpCircle, Package2, CheckCircle2, AlertCircle, PlusCircle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { TaxClassificationService } from '@/services/TaxClassificationService';
+import { Input } from '@/components/ui/input';
+import { useDebounce } from '@/hooks/use-debounce';
+
 
 interface ItemAnalise extends TaxResultItem {
     status: 'pendente' | 'analisado';
@@ -40,11 +45,54 @@ const REGIMES_OPTIONS: { label: string; value: RegimeTributario; description: st
 
 export default function SimuladorNFe() {
     const [itens, setItens] = useState<ItemAnalise[]>([]);
+    // Estados para entrada manual
+    const [manualDescricao, setManualDescricao] = useState('');
+    const [manualNcm, setManualNcm] = useState('');
+    const [manualValor, setManualValor] = useState<number>(0);
+    const [isSearchingManual, setIsSearchingManual] = useState(false);
+    const [manualPreview, setManualPreview] = useState<ClassificacaoProduto | null>(null);
+    const debouncedManualDesc = useDebounce(manualDescricao, 800);
     const [loading, setLoading] = useState(false);
     const [regimeSelecionado, setRegimeSelecionado] = useState<RegimeTributario>('simples');
     const [faturamentoAnual, setFaturamentoAnual] = useState<number>(360000);
     const [anexoSimples, setAnexoSimples] = useState<keyof typeof SIMPLES_ALIQUOTAS>('I');
+    // Novas estados para conversão de unidade
+    const [pendingConversion, setPendingConversion] = useState<ItemAnalise | null>(null);
+    const [showConversionDialog, setShowConversionDialog] = useState(false);
     const [margemLucro, setMargemLucro] = useState<number>(50);
+
+    useEffect(() => {
+        const searchCache = async () => {
+            if (debouncedManualDesc.length < 5) {
+                setManualPreview(null);
+                return;
+            }
+
+            setIsSearchingManual(true);
+            try {
+                const ncmLimpo = manualNcm?.replace(/\D/g, '');
+
+                // Busca Textual (Full Text Search 'lite' com ilike)
+                const { data } = await supabase
+                    .from('silver_tax_layer')
+                    .select('classificacao')
+                    .ilike('descricao', `%${debouncedManualDesc}%`)
+                    .maybeSingle();
+
+                if (data) {
+                    setManualPreview(data.classificacao as unknown as ClassificacaoProduto);
+                } else {
+                    setManualPreview(null);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setIsSearchingManual(false);
+            }
+        };
+
+        searchCache();
+    }, [debouncedManualDesc, manualNcm]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -93,55 +141,171 @@ export default function SimuladorNFe() {
         setLoading(true);
 
         try {
-            // Prepara payload reduzido
             const payloadProdutos = itens.map(i => ({
                 id: i.id,
                 descricao: i.descricao,
                 ncm: i.ncm
             }));
 
-            // Chama a Edge Function
-            const { data, error } = await supabase.functions.invoke('tax-classifier', {
-                body: { produtos: payloadProdutos, regrasExternas: [] }
+            // Usando o novo serviço com Silver Layer First
+            const results = await TaxClassificationService.classifyProducts(payloadProdutos);
+
+            setItens(prev => {
+                const updated = prev.map(item => {
+                    const resultIA = results.find(r => r.id === item.id);
+                    if (resultIA) {
+                        const itemRecalculado = calcularImpostosItem(
+                            item.id,
+                            item.descricao,
+                            item.ncm,
+                            item.valorCompra,
+                            faturamentoAnual,
+                            item.margemLucro,
+                            item.quantidade,
+                            resultIA.classificacao,
+                            false
+                        );
+
+                        // Se houver fator de conversão > 1 e ainda não foi confirmado/processado
+                        if (resultIA.classificacao.conversion_factor && resultIA.classificacao.conversion_factor > 1 && !item.classificacao?.conversion_factor) {
+                            // Marcaremos para abrir o dialog depois do loop ou apenas no primeiro encontrado
+                        }
+
+                        return {
+                            ...itemRecalculado,
+                            status: 'analisado' as const,
+                            source: resultIA.source
+                        };
+                    }
+                    return { ...item, status: 'analisado' as const };
+                });
+
+                // Trigger dialog para o primeiro item com conversão pendente
+                const itemWithConversion = updated.find(i =>
+                    i.classificacao?.conversion_factor &&
+                    i.classificacao.conversion_factor > 1
+                );
+                if (itemWithConversion) {
+                    setPendingConversion(itemWithConversion as ItemAnalise);
+                    setShowConversionDialog(true);
+                }
+
+                return updated;
             });
 
-            if (error) throw error;
-
-            if (!data.success) {
-                throw new Error(data.error || 'Erro na classificação');
-            }
-
-            setItens(prev => prev.map(item => {
-                const classificacaoIA = data.data.find((d: { id: string; classificacao: ClassificacaoProduto; motivo: string; source?: 'governo' | 'ia' }) => d.id === item.id);
-                if (classificacaoIA) {
-                    const classificacao: ClassificacaoProduto = classificacaoIA.classificacao;
-                    const itemRecalculado = calcularImpostosItem(
-                        item.id,
-                        item.descricao,
-                        item.ncm,
-                        item.valorCompra,
-                        faturamentoAnual,
-                        margemLucro,
-                        item.quantidade,
-                        classificacao,
-                        false
-                    );
-                    return {
-                        ...itemRecalculado,
-                        status: 'analisado' as const,
-                        source: classificacaoIA.source
-                    };
-                }
-                return { ...item, status: 'analisado' as const };
-            }));
-
-            toast.success('Classificação tributária concluída!');
+            toast.success('Classificação tributária concluída (via Silver Layer/IA)!');
 
         } catch (error) {
             console.error(error);
-            toast.error('Erro na análise com IA: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+            toast.error('Erro na análise: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleMarginChange = (id: string, newMargin: number) => {
+        setItens(prev => prev.map(item => {
+            if (item.id === id) {
+                return calcularImpostosItem(
+                    item.id,
+                    item.descricao,
+                    item.ncm,
+                    item.valorCompra,
+                    faturamentoAnual,
+                    newMargin,
+                    item.quantidade,
+                    item.classificacao,
+                    false
+                ) as ItemAnalise;
+            }
+            return item;
+        }));
+    };
+
+    const handleConfirmConversion = () => {
+        if (!pendingConversion) return;
+
+        const factor = pendingConversion.classificacao?.conversion_factor || 1;
+        setItens(prev => prev.map(item => {
+            if (item.id === pendingConversion.id) {
+                const novoValorCompra = item.valorCompra / factor;
+                const novaQuantidade = item.quantidade * factor;
+
+                return calcularImpostosItem(
+                    item.id,
+                    item.descricao,
+                    item.ncm,
+                    novoValorCompra,
+                    faturamentoAnual,
+                    item.margemLucro,
+                    novaQuantidade,
+                    { ...item.classificacao!, conversion_factor: 1 }, // Reseta fator após converter
+                    false
+                ) as ItemAnalise;
+            }
+            return item;
+        }));
+
+        setShowConversionDialog(false);
+        setPendingConversion(null);
+        toast.success(`Conversão aplicada: Custo rateado por ${factor} unidades.`);
+    };
+
+    const handleAddManual = async () => {
+        if (!manualDescricao) return;
+
+        const newItemBase = {
+            id: crypto.randomUUID(),
+            descricao: manualDescricao,
+            ncm: manualNcm || '00000000',
+            quantidade: 1,
+            valorCompra: manualValor || 0,
+            margemLucro: margemLucro,
+            status: 'pendente' as const
+        };
+
+        setItens(prev => [...prev, newItemBase as ItemAnalise]);
+
+        // Limpa campos
+        setManualDescricao('');
+        setManualNcm('');
+        setManualValor(0);
+
+        // Dispara análise automática para o novo item
+        toast.info('Analisando produto adicionado...');
+        try {
+            const results = await TaxClassificationService.classifyProducts([{
+                id: newItemBase.id,
+                descricao: newItemBase.descricao,
+                ncm: newItemBase.ncm
+            }]);
+
+            if (results.length > 0) {
+                const res = results[0];
+                setItens(prev => prev.map(item => {
+                    if (item.id === newItemBase.id) {
+                        return {
+                            ...calcularImpostosItem(
+                                item.id,
+                                item.descricao,
+                                item.ncm,
+                                item.valorCompra,
+                                faturamentoAnual,
+                                item.margemLucro,
+                                item.quantidade,
+                                res.classificacao,
+                                false
+                            ),
+                            status: 'analisado' as const,
+                            source: res.source
+                        } as ItemAnalise;
+                    }
+                    return item;
+                }));
+                toast.success('Produto classificado com sucesso!');
+            }
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -165,16 +329,16 @@ export default function SimuladorNFe() {
                     item.ncm,
                     item.valorCompra,
                     faturamentoAnual,
-                    margemLucro,
+                    item.margemLucro,
                     item.quantidade,
                     classificacaoAjustada,
                     false
-                ),
+                ) as ItemAnalise,
                 status: item.status,
-                classificacao: item.classificacao
+                source: item.source
             };
         });
-    }, [itens, faturamentoAnual, anexoSimples, margemLucro]);
+    }, [itens, faturamentoAnual, anexoSimples]);
 
     const totais = useMemo(() =>
         calcularTotaisRegime(itensRecalculados, regimeSelecionado),
@@ -390,12 +554,119 @@ export default function SimuladorNFe() {
                     </CardHeader>
                     <CardContent className="px-4 pb-4">
                         <div className="flex items-center gap-2">
-                            <input
+                            <Input
                                 type="number"
                                 defaultValue={margemLucro}
                                 onBlur={(e) => setMargemLucro(Number(e.target.value) || 50)}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:border-primary/50 transition-colors"
+                                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:border-primary/50 transition-colors"
                             />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* New Card for Manual Product Entry */}
+                <Card className="border-slate-200 shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <PlusCircle className="h-4 w-4 text-blue-500" />
+                            Entrada Manual de Produto
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 pb-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase font-bold text-slate-500">Descrição</Label>
+                            <Input
+                                placeholder="Nome do produto..."
+                                value={manualDescricao}
+                                onChange={(e) => setManualDescricao(e.target.value)}
+                                className="h-9"
+                            />
+                            {manualPreview && (
+                                <div className="text-[9px] font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Classificação encontrada no cache (Silver Layer)
+                                </div>
+                            )}
+                            {isSearchingManual && (
+                                <div className="text-[9px] text-muted-foreground mt-1 flex items-center gap-1 animate-pulse">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    Buscando no cache...
+                                </div>
+                            )}
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase font-bold text-slate-500">NCM (Opcional)</Label>
+                            <Input
+                                placeholder="Ex: 22030000"
+                                value={manualNcm}
+                                onChange={(e) => setManualNcm(e.target.value)}
+                                className="h-9 font-mono"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase font-bold text-slate-500">Custo Total (R$)</Label>
+                            <Input
+                                type="number"
+                                placeholder="0,00"
+                                value={manualValor || ''}
+                                onChange={(e) => setManualValor(Number(e.target.value))}
+                                className="h-9"
+                            />
+                        </div>
+                        <div className="flex items-end">
+                            <Button
+                                onClick={handleAddManual}
+                                className="w-full bg-blue-600 hover:bg-blue-700 h-9 font-bold"
+                                disabled={!manualDescricao}
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Adicionar
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* New Card for XML Import */}
+                <Card className="border-slate-200 shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden border-l-4 border-l-emerald-500">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Upload className="h-4 w-4 text-emerald-500" />
+                            Importar NF-e (XML)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-4">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1 relative group">
+                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all border-emerald-500/20 hover:border-emerald-500/40">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <Upload className="w-8 h-8 mb-2 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                                        <p className="text-xs text-slate-500 font-medium">Solte o arquivo aqui ou clique para selecionar</p>
+                                    </div>
+                                    <input type="file" className="hidden" accept=".xml" onChange={handleFileUpload} />
+                                </label>
+                            </div>
+
+                            <div className="flex items-center">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleAnaliseIA}
+                                    disabled={itens.length === 0 || loading}
+                                    className="h-10 border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-6"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                                    Classificar Tudo com IA
+                                </Button>
+                                {itens.length > 0 && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleClear}
+                                        className="ml-2 text-slate-400 hover:text-destructive transition-colors"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -404,59 +675,60 @@ export default function SimuladorNFe() {
             {/* Cards de Resumo */}
             {/* Cards de Resumo */}
             {itens.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="bg-gradient-to-br from-blue-50/50 to-blue-100/30 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200/60 dark:border-blue-800/50 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Receipt className="h-12 w-12 text-blue-600" />
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 shadow-sm overflow-hidden group">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                                Valor Total de Venda
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                Total Bruto NFe
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-black text-slate-900 dark:text-slate-50">
+                                <span className="text-sm font-medium mr-1 opacity-50">R$</span>
+                                {itens.reduce((acc, i) => acc + i.valorCompra, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/10 border-emerald-200 shadow-sm overflow-hidden group">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                                Créditos Recuperáveis
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-black text-emerald-900 dark:text-emerald-50">
+                                <span className="text-sm font-medium mr-1 opacity-50">R$</span>
+                                {itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                            <p className="text-[9px] text-emerald-600 mt-1 font-bold italic">DINHEIRO DE VOLTA</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200 shadow-sm overflow-hidden group">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                                Faturamento Projetado
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-black text-blue-900 dark:text-blue-50">
-                                <span className="text-sm font-medium mr-1 text-blue-600/70">R$</span>
+                                <span className="text-sm font-medium mr-1 opacity-50">R$</span>
                                 {totais.valorTotalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-red-50/50 to-red-100/30 dark:from-red-950/20 dark:to-red-900/10 border-red-200/60 dark:border-red-800/50 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Calculator className="h-12 w-12 text-red-600" />
-                        </div>
+                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/10 border-purple-200 shadow-sm overflow-hidden group">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
-                                Imposto Estimado ({REGIMES_OPTIONS.find(r => r.value === regimeSelecionado)?.label})
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-black text-red-900 dark:text-red-50">
-                                <span className="text-sm font-medium mr-1 text-red-600/70">R$</span>
-                                {totais.impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </div>
-                            {regimeSelecionado === 'reforma2033' && totais.creditoTotal && (
-                                <p className="text-xs text-muted-foreground mt-1 font-medium">
-                                    Crédito aplicado: <span className="text-green-600 dark:text-green-400">R$ {totais.creditoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                </p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-gradient-to-br from-purple-50/50 to-purple-100/30 dark:from-purple-950/20 dark:to-purple-900/10 border-purple-200/60 dark:border-purple-800/50 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <TrendingUp className="h-12 w-12 text-purple-600" />
-                        </div>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                                Carga Tributária Média
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-purple-600">
+                                Margem Líquida Real
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-black text-purple-900 dark:text-purple-50">
-                                {totais.cargaEfetiva.toFixed(2)}
-                                <span className="text-sm font-medium ml-1 text-purple-600/70">%</span>
+                                <span className="text-sm font-medium mr-1 opacity-50">R$</span>
+                                {(totais.valorTotalVenda - totais.impostoTotal - (itens.reduce((acc, i) => acc + i.valorCompra, 0) - itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
                         </CardContent>
                     </Card>
@@ -551,16 +823,14 @@ export default function SimuladorNFe() {
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow className="hover:bg-transparent">
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 py-4">Produto</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right w-[80px]">Qtd</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right w-[110px]">Venda Total</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/80 text-right w-[130px]">Imposto Total</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right w-[110px]">Venda Unit.</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/80 text-right w-[130px]">Imposto Unit.</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 w-[140px]">
-                                        Insights AI
-                                    </TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right w-[90px]">Efetiva</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 py-4">Produto / Classificação</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right">Qtd</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right">Compra (R$)</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-emerald-600 text-right">Créditos (R$)</TableHead>
+                                    <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300">Custo Líq.</TableHead>
+                                    <TableHead className="text-center font-bold text-slate-700 dark:text-slate-300">Margem (%)</TableHead>
+                                    <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300 w-[100px]">Impostos Venda</TableHead>
+                                    <TableHead className="text-right font-black text-primary">Preço Sugerido</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -597,46 +867,69 @@ export default function SimuladorNFe() {
                                                         <span className="font-bold text-sm text-foreground leading-tight truncate max-w-[200px]" title={item.descricao}>
                                                             {item.descricao}
                                                         </span>
-                                                        <span className="text-[10px] text-muted-foreground font-mono">
-                                                            NCM {item.ncm}
-                                                        </span>
-                                                        {item.classificacao?.unidade_venda_sugerida && (
-                                                            <span className="text-[9px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-wider mt-1 bg-blue-50 dark:bg-blue-950/30 px-1.5 py-0.5 rounded-sm w-fit">
-                                                                Venda Sugerida: {item.classificacao.unidade_venda_sugerida}
+                                                        <div className="flex gap-1 items-center mt-1">
+                                                            <span className="text-[9px] text-muted-foreground font-mono bg-muted px-1 rounded">
+                                                                NCM {item.ncm}
                                                             </span>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-center text-xs font-semibold text-muted-foreground">{item.quantidade}</TableCell>
-                                                <TableCell className="text-right font-bold text-sm">
-                                                    <span className="text-[10px] text-muted-foreground mr-1 font-normal">R$</span>
-                                                    {item.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                </TableCell>
-                                                <TableCell className="text-right font-black text-destructive text-[11px] whitespace-nowrap bg-destructive/5">
-                                                    {impostoTotalStr}
-                                                </TableCell>
-                                                <TableCell className="text-right text-muted-foreground text-xs">
-                                                    <span className="text-[10px] opacity-50 mr-1">R$</span>
-                                                    {item.valorVendaUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                </TableCell>
-                                                <TableCell className="text-right text-destructive font-bold text-[11px] whitespace-nowrap opacity-90 border-r border-destructive/10">
-                                                    {impostoUnitarioStr}
-                                                </TableCell>
-                                                <TableCell className="py-4">
-                                                    <div className="flex flex-col gap-1.5">
-                                                        {getClassificacaoBadge(item, originalItem?.status || 'pendente')}
+                                                            {getClassificacaoBadge(item, originalItem?.status || 'pendente')}
+                                                        </div>
                                                         {item.classificacao?.sugestao_economia && (
-                                                            <span className={`text-[10px] leading-tight italic line-clamp-3 max-w-[150px] font-medium mt-1 block ${item.classificacao.sugestao_economia.includes('✅') ? 'text-emerald-600 dark:text-emerald-400' :
-                                                                item.classificacao.sugestao_economia.includes('💡') ? 'text-blue-600 dark:text-blue-400' :
-                                                                    'text-amber-600 dark:text-amber-400'
-                                                                }`} title={item.classificacao.sugestao_economia}>
+                                                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 leading-tight">
                                                                 {item.classificacao.sugestao_economia}
                                                             </span>
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono font-bold text-xs text-muted-foreground/80 py-4">
-                                                    {getAliquotaItem(item)}
+                                                <TableCell className="text-right text-xs font-semibold text-muted-foreground">{item.quantidade}</TableCell>
+                                                <TableCell className="text-right font-medium text-sm">
+                                                    {item.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </TableCell>
+                                                <TableCell className="text-right font-bold text-emerald-600 text-sm bg-emerald-50/30">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger>
+                                                                {item.creditosEntrada.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[10px] space-y-1">
+                                                                    <p>IBS: R$ {item.creditosEntrada.ibs.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                    <p>CBS: R$ {item.creditosEntrada.cbs.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </TableCell>
+                                                <TableCell className="text-right font-black text-slate-700 dark:text-slate-300 text-sm">
+                                                    {item.custoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </TableCell>
+                                                <TableCell className="text-center p-2">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <Input
+                                                            type="number"
+                                                            value={item.margemLucro}
+                                                            onBlur={(e) => handleMarginChange(item.id, Number(e.target.value))}
+                                                            className="h-8 w-16 text-center text-xs font-bold border-primary/20 focus:border-primary"
+                                                        />
+                                                        <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right text-sm text-slate-600 dark:text-slate-400">
+                                                    R$ {item.regimes.reforma2033.debito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </TableCell>
+                                                <TableCell className="text-right font-black text-primary text-sm bg-primary/5">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger className="text-right w-full">
+                                                                R$ {item.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[10px] space-y-1">
+                                                                    <p>Base p/ Margem: R$ {item.baseCalculoVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                    <p>Imposto Venda: R$ {item.regimes.reforma2033.debito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -647,6 +940,40 @@ export default function SimuladorNFe() {
                     </div>
                 </CardContent>
             </Card>
+            {/* Dialog de Conversão de Unidade */}
+            <Dialog open={showConversionDialog} onOpenChange={setShowConversionDialog}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Package2 className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <DialogTitle className="text-center">Conversão Detectada</DialogTitle>
+                        <DialogDescription className="text-center">
+                            O sistema detectou que o produto <strong>{pendingConversion?.descricao}</strong> é vendido em embalagem coletiva ({pendingConversion?.classificacao?.unit_type} com {pendingConversion?.classificacao?.conversion_factor} unidades).
+                            <br /><br />
+                            Deseja converter o custo para o valor <strong>unitário</strong> para precificação?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 my-4">
+                        <div className="flex justify-between text-sm mb-2">
+                            <span className="text-muted-foreground">Custo Atual (Total):</span>
+                            <span className="font-bold">R$ {pendingConversion?.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-emerald-600 font-black">
+                            <span>Novo Custo Unitário:</span>
+                            <span>R$ {((pendingConversion?.valorCompra || 0) / (pendingConversion?.classificacao?.conversion_factor || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                        <Button variant="outline" onClick={() => setShowConversionDialog(false)} className="flex-1">
+                            Manter Original
+                        </Button>
+                        <Button onClick={handleConfirmConversion} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                            Confirmar Conversão
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
-}
+};
