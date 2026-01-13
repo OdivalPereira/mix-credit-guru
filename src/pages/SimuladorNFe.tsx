@@ -397,7 +397,8 @@ export default function SimuladorNFe() {
             </div>
 
             {/* Cards de Resumo */}
-            {itens.length > 0 && (
+            {/* Cards de Resumo */}
+            {itens.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card className="bg-gradient-to-br from-blue-50/50 to-blue-100/30 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200/60 dark:border-blue-800/50 shadow-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -431,7 +432,7 @@ export default function SimuladorNFe() {
                                 {totais.impostoMinTotal !== undefined && totais.impostoMaxTotal !== undefined ? (
                                     <span className="text-lg">
                                         {totais.impostoMinTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                        <span className="text-xs mx-1 text-red-400">até</span>
+                                        <span className="text-xs mx-1 text-red-400"> até </span>
                                         {totais.impostoMaxTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                     </span>
                                 ) : (
@@ -459,29 +460,29 @@ export default function SimuladorNFe() {
                     </Card>
                 </div>
             ) : (
-            <Card className="border-dashed border-2 py-10">
-                <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="bg-primary/5 p-4 rounded-full">
-                        <FileText className="h-10 w-10 text-primary/40" />
-                    </div>
-                    <div>
-                        <p className="font-semibold text-lg text-foreground">Nenhum dado importado</p>
-                        <p className="text-sm text-muted-foreground max-w-xs mx-auto">Importe o arquivo XML da sua NF-e para iniciar a simulação e análise tributária.</p>
-                    </div>
-                    <Label htmlFor="xml-upload-empty" className="cursor-pointer">
-                        <Button variant="outline" className="pointer-events-none gap-2">
-                            <Upload className="h-4 w-4" /> Selecionar Arquivo
-                        </Button>
-                        <input
-                            type="file"
-                            accept=".xml"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            id="xml-upload-empty"
-                        />
-                    </Label>
-                </CardContent>
-            </Card>
+                <Card className="border-dashed border-2 py-10">
+                    <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="bg-primary/5 p-4 rounded-full">
+                            <FileText className="h-10 w-10 text-primary/40" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-lg text-foreground">Nenhum dado importado</p>
+                            <p className="text-sm text-muted-foreground max-w-xs mx-auto">Importe o arquivo XML da sua NF-e para iniciar a simulação e análise tributária.</p>
+                        </div>
+                        <Label htmlFor="xml-upload-empty" className="cursor-pointer">
+                            <Button variant="outline" className="pointer-events-none gap-2">
+                                <Upload className="h-4 w-4" /> Selecionar Arquivo
+                            </Button>
+                            <input
+                                type="file"
+                                accept=".xml"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                id="xml-upload-empty"
+                            />
+                        </Label>
+                    </CardContent>
+                </Card>
             )}
 
             {/* Análise de Inteligência */}
