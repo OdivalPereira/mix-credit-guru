@@ -184,14 +184,8 @@ export default function SimuladorNFe() {
         const regime = regimeSelecionado;
         const res = item.regimes[regime as keyof typeof item.regimes];
 
-        if (regime === 'simples' && 'impostoMin' in res) {
-            const s = res as any;
-            return `R$ ${s.impostoMin.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} - ${s.impostoMax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        }
-
-        if (regime === 'reforma2033' && 'impostoMaximo' in res) {
-            const r = res as any;
-            return `R$ ${r.imposto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} - ${r.impostoMaximo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        if (regime === 'reforma2033' && 'impostoLiquido' in res) {
+            return `R$ ${(res as any).impostoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         }
 
         return `R$ ${res.imposto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
@@ -201,14 +195,12 @@ export default function SimuladorNFe() {
         const regime = regimeSelecionado;
         const res = item.regimes[regime as keyof typeof item.regimes];
 
-        if (regime === 'simples' && 'aliquotaMin' in res) {
-            const s = res as any;
-            return `${(s.aliquotaMin * 100).toFixed(1)}% - ${(s.aliquotaMax * 100).toFixed(1)}%`;
+        if (regime === 'simples') {
+            return `${((res as any).aliquotaEfetiva * 100).toFixed(1)}%`;
         }
 
-        if (regime === 'reforma2033' && 'aliquotaMaxima' in res) {
-            const r = res as any;
-            return `${(r.aliquotaEsperada * 100).toFixed(1)}% - ${(r.aliquotaMaxima * 100).toFixed(1)}%`;
+        if (regime === 'reforma2033') {
+            return `${((res as any).aliquotaEfetiva * 100).toFixed(1)}%`;
         }
 
         if (regime === 'presumido' || regime === 'real') {
@@ -387,8 +379,8 @@ export default function SimuladorNFe() {
                         <div className="flex items-center gap-2">
                             <input
                                 type="number"
-                                value={margemLucro}
-                                onChange={(e) => setMargemLucro(Number(e.target.value))}
+                                defaultValue={margemLucro}
+                                onBlur={(e) => setMargemLucro(Number(e.target.value) || 50)}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:border-primary/50 transition-colors"
                             />
                         </div>
@@ -429,16 +421,13 @@ export default function SimuladorNFe() {
                         <CardContent>
                             <div className="text-2xl font-black text-red-900 dark:text-red-50">
                                 <span className="text-sm font-medium mr-1 text-red-600/70">R$</span>
-                                {totais.impostoMinTotal !== undefined && totais.impostoMaxTotal !== undefined ? (
-                                    <span className="text-lg">
-                                        {totais.impostoMinTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                        <span className="text-xs mx-1 text-red-400"> até </span>
-                                        {totais.impostoMaxTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </span>
-                                ) : (
-                                    totais.impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                                )}
+                                {totais.impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
+                            {regimeSelecionado === 'reforma2033' && totais.creditoTotal && (
+                                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                                    Crédito aplicado: <span className="text-green-600 dark:text-green-400">R$ {totais.creditoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -579,21 +568,14 @@ export default function SimuladorNFe() {
                                 ) : (
                                     itensRecalculados.map((item) => {
                                         const originalItem = itens.find(i => i.id === item.id);
-                                        const impostoTotalStr = getImpostoItem(item);
+                                        const impostoTotal = regimeSelecionado === 'reforma2033'
+                                            ? item.regimes.reforma2033.impostoLiquido
+                                            : item.regimes[regimeSelecionado as keyof typeof item.regimes].imposto;
 
-                                        // Derivar unitário do total string (que pode ser range)
-                                        let impostoUnitarioStr = impostoTotalStr;
-                                        if (item.quantidade > 1) {
-                                            if (impostoTotalStr.includes('-')) {
-                                                const parts = impostoTotalStr.replace(/R\$ /g, '').split(' - ');
-                                                const min = parseFloat(parts[0].replace(/\./g, '').replace(',', '.'));
-                                                const max = parseFloat(parts[1].replace(/\./g, '').replace(',', '.'));
-                                                impostoUnitarioStr = `R$ ${(min / item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} - ${(max / item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-                                            } else {
-                                                const valor = parseFloat(impostoTotalStr.replace(/R\$ /g, '').replace(/\./g, '').replace(',', '.'));
-                                                impostoUnitarioStr = `R$ ${(valor / item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-                                            }
-                                        }
+                                        const impostoUnitario = item.quantidade > 0 ? impostoTotal / item.quantidade : impostoTotal;
+
+                                        const impostoTotalStr = `R$ ${impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                                        const impostoUnitarioStr = `R$ ${impostoUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
                                         return (
                                             <TableRow key={item.id} className="hover:bg-primary/[0.02] transition-colors border-b last:border-0">

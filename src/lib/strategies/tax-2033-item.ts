@@ -120,11 +120,7 @@ export interface TaxResultItem {
             anexo: string;
             aliquotaNominal: number;
             aliquotaEfetiva: number;
-            aliquotaMin: number; // Nova: Mínima do Anexo
-            aliquotaMax: number; // Nova: Máxima do Anexo
             imposto: number;
-            impostoMin: number; // Novo
-            impostoMax: number; // Novo
         };
         presumido: {
             aliquotaPisCofins: number;
@@ -139,10 +135,11 @@ export interface TaxResultItem {
         reforma2033: {
             aliquotaPadrao: number;
             reducao: number;
-            aliquotaEsperada: number; // Renomeado de aliquotaEfetiva
-            aliquotaMaxima: number;   // Nova: Sempre a padrão (25.5%)
-            imposto: number;          // Valor esperado
-            impostoMaximo: number;    // Novo: Valor na alíquota cheia
+            aliquotaEfetiva: number;
+            debito: number;
+            credito: number;
+            impostoLiquido: number;
+            imposto: number; // Mantido para compatibilidade, igual ao impostoLiquido
             classificacao: string;
         };
     };
@@ -194,11 +191,7 @@ export function calcularImpostoSimplesItem(
     anexo: string;
     aliquotaNominal: number;
     aliquotaEfetiva: number;
-    aliquotaMin: number;
-    aliquotaMax: number;
     imposto: number;
-    impostoMin: number;
-    impostoMax: number;
 } {
     const { aliquotaNominal, aliquotaEfetiva } = calcularAliquotaSimplesEfetiva(faturamentoAnual, anexo);
     const tabela = SIMPLES_ALIQUOTAS[anexo];
@@ -211,11 +204,7 @@ export function calcularImpostoSimplesItem(
         anexo: `Anexo ${anexo} - ${SIMPLES_ALIQUOTAS[anexo].descricao}`,
         aliquotaNominal,
         aliquotaEfetiva,
-        aliquotaMin,
-        aliquotaMax,
-        imposto: valorItem * aliquotaEfetiva,
-        impostoMin: valorItem * aliquotaMin,
-        impostoMax: valorItem * aliquotaMax
+        imposto: valorItem * aliquotaEfetiva
     };
 }
 
@@ -262,19 +251,25 @@ export function calcularImpostoRealItem(
  * Calcula imposto de um item na Reforma 2033 (IBS/CBS)
  */
 export function calcularImpostoReformaItem(
-    valorItem: number,
+    valorCompra: number,
+    valorVenda: number,
     reducaoSetorial: number = 0
 ): {
     aliquotaPadrao: number;
     reducao: number;
-    aliquotaEsperada: number;
-    aliquotaMaxima: number;
+    aliquotaEfetiva: number;
+    debito: number;
+    credito: number;
+    impostoLiquido: number;
     imposto: number;
-    impostoMaximo: number;
     classificacao: string
 } {
-    const aliquotaEsperada = ALIQUOTA_IBS_CBS_PADRAO * (1 - reducaoSetorial);
-    const aliquotaMaxima = ALIQUOTA_IBS_CBS_PADRAO; // Sempre a padrão sem benefício
+    const aliquotaEfetiva = ALIQUOTA_IBS_CBS_PADRAO * (1 - reducaoSetorial);
+
+    // Cálculo de crédito e débito
+    const credito = valorCompra * aliquotaEfetiva;
+    const debito = valorVenda * aliquotaEfetiva;
+    const impostoLiquido = Math.max(0, debito - credito);
 
     let classificacao = 'Padrão';
     if (reducaoSetorial === 1) {
@@ -288,10 +283,11 @@ export function calcularImpostoReformaItem(
     return {
         aliquotaPadrao: ALIQUOTA_IBS_CBS_PADRAO,
         reducao: reducaoSetorial,
-        aliquotaEsperada,
-        aliquotaMaxima,
-        imposto: valorItem * aliquotaEsperada,
-        impostoMaximo: valorItem * aliquotaMaxima,
+        aliquotaEfetiva,
+        debito,
+        credito,
+        impostoLiquido,
+        imposto: impostoLiquido, // Alias para compatibilidade
         classificacao
     };
 }
@@ -331,7 +327,7 @@ export function calcularImpostosItem(
             simples: calcularImpostoSimplesItem(valorVenda, faturamentoAnual, anexo),
             presumido: calcularImpostoPresumidoItem(valorVenda, isServico),
             real: calcularImpostoRealItem(valorVenda, isServico),
-            reforma2033: calcularImpostoReformaItem(valorVenda, reducaoReforma)
+            reforma2033: calcularImpostoReformaItem(valorCompra, valorVenda, reducaoReforma)
         }
     };
 }
@@ -345,29 +341,24 @@ export function calcularTotaisRegime(
 ): {
     valorTotalVenda: number;
     impostoTotal: number;
-    impostoMinTotal?: number;
-    impostoMaxTotal?: number;
+    creditoTotal?: number;
     cargaEfetiva: number
 } {
     const valorTotalVenda = itens.reduce((acc, item) => acc + item.valorVenda, 0);
 
-    let impostoMinTotal = 0;
-    let impostoMaxTotal = 0;
+    let creditoTotal = 0;
 
     const impostoTotal = itens.reduce((acc, item) => {
         switch (regime) {
             case 'simples':
-                impostoMinTotal += item.regimes.simples.impostoMin;
-                impostoMaxTotal += item.regimes.simples.impostoMax;
                 return acc + item.regimes.simples.imposto;
             case 'presumido':
                 return acc + item.regimes.presumido.imposto;
             case 'real':
                 return acc + item.regimes.real.imposto;
             case 'reforma2033':
-                impostoMinTotal += item.regimes.reforma2033.imposto;
-                impostoMaxTotal += item.regimes.reforma2033.impostoMaximo;
-                return acc + item.regimes.reforma2033.imposto;
+                creditoTotal += item.regimes.reforma2033.credito;
+                return acc + item.regimes.reforma2033.impostoLiquido;
             default:
                 return acc;
         }
@@ -378,8 +369,7 @@ export function calcularTotaisRegime(
     return {
         valorTotalVenda,
         impostoTotal,
-        impostoMinTotal: (regime === 'simples' || regime === 'reforma2033') ? impostoMinTotal : undefined,
-        impostoMaxTotal: (regime === 'simples' || regime === 'reforma2033') ? impostoMaxTotal : undefined,
+        creditoTotal: regime === 'reforma2033' ? creditoTotal : undefined,
         cargaEfetiva
     };
 }
