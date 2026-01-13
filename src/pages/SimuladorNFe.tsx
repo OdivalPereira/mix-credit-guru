@@ -613,8 +613,11 @@ export default function SimuladorNFe() {
                                                     <div className="flex flex-col gap-1.5">
                                                         {getClassificacaoBadge(item, originalItem?.status || 'pendente')}
                                                         {item.classificacao?.sugestao_economia && (
-                                                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 leading-tight italic line-clamp-2 max-w-[140px] font-medium" title={item.classificacao.sugestao_economia}>
-                                                                "{item.classificacao.sugestao_economia}"
+                                                            <span className={`text-[10px] leading-tight italic line-clamp-3 max-w-[150px] font-medium mt-1 block ${item.classificacao.sugestao_economia.includes('✅') ? 'text-emerald-600 dark:text-emerald-400' :
+                                                                    item.classificacao.sugestao_economia.includes('💡') ? 'text-blue-600 dark:text-blue-400' :
+                                                                        'text-amber-600 dark:text-amber-400'
+                                                                }`} title={item.classificacao.sugestao_economia}>
+                                                                {item.classificacao.sugestao_economia}
                                                             </span>
                                                         )}
                                                     </div>

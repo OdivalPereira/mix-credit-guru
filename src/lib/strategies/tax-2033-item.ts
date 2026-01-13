@@ -293,6 +293,25 @@ export function calcularImpostoReformaItem(
 }
 
 /**
+ * Gera insight determinístico baseado na classificação tributária
+ */
+export function gerarInsightProduto(classificacao: ClassificacaoProduto): string {
+    if (classificacao.reducao_reforma === 1) {
+        return "✅ Produto isento de IBS/CBS (Cesta Básica ou similar)";
+    }
+    if (classificacao.reducao_reforma >= 0.6) {
+        return "💡 Alíquota reduzida aplicada (0.6 ou superior). Verifique se há créditos adicionais.";
+    }
+    if (classificacao.reducao_reforma > 0) {
+        return `💡 Benefício setorial identificado: ${(classificacao.reducao_reforma * 100).toFixed(0)}% de redução.`;
+    }
+    if (classificacao.cesta_basica && classificacao.reducao_reforma !== 1) {
+        return "⚠️ Atenção: Produto marcado como Cesta Básica mas sem isenção total. Verifique NCM.";
+    }
+    return "⚠️ Alíquota padrão (26.5%). Avalie se o produto se enquadra em algum regime diferenciado.";
+}
+
+/**
  * Calcula impostos de um item em todos os regimes
  */
 export function calcularImpostosItem(
@@ -306,8 +325,20 @@ export function calcularImpostosItem(
     classificacao?: ClassificacaoProduto,
     isServico: boolean = false
 ): TaxResultItem {
-    const anexo = classificacao?.anexo_simples_sugerido || 'I';
-    const reducaoReforma = classificacao?.reducao_reforma || 0;
+    // Validar se temos dados mínimos
+    const itemClassificacao = classificacao ? { ...classificacao } : {
+        setor: 'comercio',
+        cesta_basica: false,
+        reducao_reforma: 0,
+        icms_substituicao: false,
+        anexo_simples_sugerido: 'I'
+    } as ClassificacaoProduto;
+
+    // Gerar insight determinístico se a classificação vier da IA ou fallback
+    itemClassificacao.sugestao_economia = gerarInsightProduto(itemClassificacao);
+
+    const anexo = itemClassificacao.anexo_simples_sugerido || 'I';
+    const reducaoReforma = itemClassificacao.reducao_reforma || 0;
 
     // Cálculo do Preço de Venda
     const valorVenda = valorCompra * (1 + (margemLucro / 100));
@@ -322,7 +353,7 @@ export function calcularImpostosItem(
         margemLucro,
         valorVenda,
         valorVendaUnitario,
-        classificacao,
+        classificacao: itemClassificacao,
         regimes: {
             simples: calcularImpostoSimplesItem(valorVenda, faturamentoAnual, anexo),
             presumido: calcularImpostoPresumidoItem(valorVenda, isServico),
