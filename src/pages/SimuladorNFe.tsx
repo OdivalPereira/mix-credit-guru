@@ -563,310 +563,420 @@ export default function SimuladorNFe() {
                         </div>
                     </CardContent>
                 </Card>
-                {
-                    itens.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 shadow-sm overflow-hidden group">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                        Total Bruto NFe
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-black text-slate-900 dark:text-slate-50">
-                                        <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                        {itens.reduce((acc, i) => acc + i.valorCompra, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </div>
-                                </CardContent>
-                            </Card>
+            </div>
 
-                            <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/10 border-emerald-200 shadow-sm overflow-hidden group">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
-                                        Créditos Recuperáveis
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-black text-emerald-900 dark:text-emerald-50">
-                                        <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                        {itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </div>
-                                    <p className="text-[9px] text-emerald-600 mt-1 font-bold italic">DINHEIRO DE VOLTA</p>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200 shadow-sm overflow-hidden group">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
-                                        Faturamento Projetado
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-black text-blue-900 dark:text-blue-50">
-                                        <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                        {totais.valorTotalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/10 border-purple-200 shadow-sm overflow-hidden group">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-purple-600">
-                                        Margem Líquida Real
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-black text-purple-900 dark:text-purple-50">
-                                        <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                        {(totais.valorTotalVenda - totais.impostoTotal - (itens.reduce((acc, i) => acc + i.valorCompra, 0) - itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    ) : (
-                        <Card className="border-dashed border-2 py-10">
-                            <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="bg-primary/5 p-4 rounded-full">
-                                    <FileText className="h-10 w-10 text-primary/40" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* New Card for Manual Product Entry */}
+                <Card className="border-slate-200 shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-3 pt-3">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <PlusCircle className="h-4 w-4 text-blue-500" />
+                            Entrada Manual
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-12 gap-2 pb-4 px-4">
+                        <div className="col-span-12 md:col-span-5 space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-slate-500">Descrição</Label>
+                            <Input
+                                placeholder="Ex: Cerveja Heineken..."
+                                value={manualDescricao}
+                                onChange={(e) => setManualDescricao(e.target.value)}
+                                className="h-8 text-xs"
+                            />
+                            {manualPreview && (
+                                <div className="text-[9px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Item já classificado
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-lg text-foreground">Nenhum dado importado</p>
-                                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">Importe o arquivo XML da sua NF-e para iniciar a simulação e análise tributária.</p>
+                            )}
+                            {isSearchingManual && (
+                                <div className="text-[9px] text-muted-foreground flex items-center gap-1 animate-pulse">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    Buscando...
                                 </div>
-                                <Label htmlFor="xml-upload-empty" className="cursor-pointer">
-                                    <Button variant="outline" className="pointer-events-none gap-2">
-                                        <Upload className="h-4 w-4" /> Selecionar Arquivo
-                                    </Button>
-                                    <input
-                                        type="file"
-                                        accept=".xml"
-                                        onChange={handleFileUpload}
-                                        className="hidden"
-                                        id="xml-upload-empty"
-                                    />
-                                </Label>
-                            </CardContent>
-                        </Card>
-                    )
-                }
-
-                {/* Análise de Inteligência */}
-                {
-                    itens.some(i => i.status === 'analisado' && i.classificacao?.sugestao_economia) && (
-                        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 animate-fade-in mb-4">
-                            <div className="flex items-start gap-3">
-                                <Sparkles className="h-5 w-5 text-emerald-600 mt-0.5" />
-                                <div className="flex-1">
-                                    <h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">
-                                        Oportunidades Identificadas pela IA
-                                    </h3>
-                                    <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
-                                        Encontramos estratégias para otimizar sua carga tributária.
-                                    </p>
-                                    <Button
-                                        size="sm"
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
-                                        onClick={() => window.open('https://wa.me/5511999999999?text=Gostaria%20de%20saber%20mais%20sobre%20as%20economias%20tributarias%20do%20Simulador', '_blank')}
-                                    >
-                                        Falar com Especialista
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                }
-
-                {/* Tabela de Itens */}
-                <Card className="border-primary/10 shadow-lg overflow-hidden relative">
-                    {loading && (
-                        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-4 animate-in fade-in transition-all">
-                            <div className="relative">
-                                <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-                                <Sparkles className="absolute inset-0 m-auto h-6 w-6 text-primary animate-pulse" />
-                            </div>
-                            <div className="text-center">
-                                <p className="font-bold text-lg text-primary">IA Classificando Itens...</p>
-                                <p className="text-sm text-muted-foreground">Isso pode levar alguns segundos dependendo da NFe</p>
-                            </div>
-                        </div>
-                    )}
-                    <CardHeader className="pb-4 border-b bg-muted/50">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <FileText className="h-5 w-5 text-primary" />
-                                    Itens da Nota Fiscal
-                                </CardTitle>
-                                <CardDescription>
-                                    {itens.length > 0
-                                        ? `${itens.length} itens detectados • Use a IA para classificar tributos`
-                                        : 'Aguardando importação de arquivo XML'
-                                    }
-                                </CardDescription>
-                            </div>
-                            {itens.some(i => i.status === 'analisado') && (
-                                <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 gap-1.5 py-1">
-                                    <Sparkles className="h-3 w-3" /> IA Ativa
-                                </Badge>
                             )}
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader className="bg-muted/30">
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 py-4">Produto / Classificação</TableHead>
-                                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right">Qtd</TableHead>
-                                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right">Compra (R$)</TableHead>
-                                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-emerald-600 text-right">Créditos (R$)</TableHead>
-                                        <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300">Custo Líq.</TableHead>
-                                        <TableHead className="text-center font-bold text-slate-700 dark:text-slate-300">Margem (%)</TableHead>
-                                        <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300 w-[100px]">Impostos Venda</TableHead>
-                                        <TableHead className="text-right font-black text-primary">Preço Sugerido</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {itens.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={8} className="text-center py-20 bg-muted/5">
-                                                <div className="flex flex-col items-center gap-4 text-muted-foreground">
-                                                    <div className="bg-muted p-4 rounded-full opacity-20">
-                                                        <FileText className="h-12 w-12" />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <p className="font-bold text-lg text-foreground/70">Nenhum produto carregado</p>
-                                                        <p className="text-sm max-w-xs mx-auto">Faça upload de uma NFe (XML) para começar a simulação e análise tributária.</p>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        itensRecalculados.map((item) => {
-                                            const originalItem = itens.find(i => i.id === item.id);
-                                            const impostoTotal = regimeSelecionado === 'reforma2033'
-                                                ? item.regimes.reforma2033.impostoLiquido
-                                                : item.regimes[regimeSelecionado as keyof typeof item.regimes].imposto;
-
-                                            const impostoUnitario = item.quantidade > 0 ? impostoTotal / item.quantidade : impostoTotal;
-
-                                            const impostoTotalStr = `R$ ${impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-                                            const impostoUnitarioStr = `R$ ${impostoUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-
-                                            return (
-                                                <TableRow key={item.id} className="hover:bg-primary/[0.02] transition-colors border-b last:border-0">
-                                                    <TableCell className="py-4">
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="font-bold text-sm text-foreground leading-tight truncate max-w-[200px]" title={item.descricao}>
-                                                                {item.descricao}
-                                                            </span>
-                                                            <div className="flex gap-1 items-center mt-1">
-                                                                <span className="text-[9px] text-muted-foreground font-mono bg-muted px-1 rounded">
-                                                                    NCM {item.ncm}
-                                                                </span>
-                                                                {getClassificacaoBadge(item, originalItem?.status || 'pendente')}
-                                                            </div>
-                                                            {item.classificacao?.sugestao_economia && (
-                                                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 leading-tight">
-                                                                    {item.classificacao.sugestao_economia}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right text-xs font-semibold text-muted-foreground">{item.quantidade}</TableCell>
-                                                    <TableCell className="text-right font-medium text-sm">
-                                                        {item.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-bold text-emerald-600 text-sm bg-emerald-50/30">
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger>
-                                                                    {item.creditosEntrada.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <div className="text-[10px] space-y-1">
-                                                                        <p>IBS: R$ {item.creditosEntrada.ibs.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                                                        <p>CBS: R$ {item.creditosEntrada.cbs.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                                                    </div>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-black text-slate-700 dark:text-slate-300 text-sm">
-                                                        {item.custoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                    </TableCell>
-                                                    <TableCell className="text-center p-2">
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <Input
-                                                                type="number"
-                                                                value={item.margemLucro}
-                                                                onBlur={(e) => handleMarginChange(item.id, Number(e.target.value))}
-                                                                className="h-8 w-16 text-center text-xs font-bold border-primary/20 focus:border-primary"
-                                                            />
-                                                            <span className="text-[10px] font-bold text-muted-foreground">%</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right text-sm text-slate-600 dark:text-slate-400">
-                                                        R$ {item.regimes.reforma2033.debito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-black text-primary text-sm bg-primary/5">
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger className="text-right w-full">
-                                                                    R$ {item.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <div className="text-[10px] space-y-1">
-                                                                        <p>Base p/ Margem: R$ {item.baseCalculoVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                                                        <p>Imposto Venda: R$ {item.regimes.reforma2033.debito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                                                    </div>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
+                        <div className="col-span-6 md:col-span-2 space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-slate-500">NCM</Label>
+                            <Input
+                                placeholder="Opcional"
+                                value={manualNcm}
+                                onChange={(e) => setManualNcm(e.target.value)}
+                                className="h-8 text-xs font-mono"
+                            />
+                        </div>
+                        <div className="col-span-6 md:col-span-2 space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-slate-500">Custo (R$)</Label>
+                            <Input
+                                type="number"
+                                placeholder="0,00"
+                                value={manualValor || ''}
+                                onChange={(e) => setManualValor(Number(e.target.value))}
+                                className="h-8 text-xs"
+                            />
+                        </div>
+                        <div className="col-span-12 md:col-span-3 flex items-end">
+                            <Button
+                                onClick={handleAddManual}
+                                className="w-full bg-blue-600 hover:bg-blue-700 h-8 text-xs font-bold"
+                                disabled={!manualDescricao}
+                            >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Adicionar
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
-                {/* Dialog de Conversão de Unidade */}
-                <Dialog open={showConversionDialog} onOpenChange={setShowConversionDialog}>
-                    <DialogContent className="sm:max-w-[400px]">
-                        <DialogHeader>
-                            <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                                <Package2 className="h-6 w-6 text-blue-600" />
+
+                {/* New Card for XML Import */}
+                <Card className="border-slate-200 shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden border-l-4 border-l-emerald-500">
+                    <CardHeader className="pb-3 pt-3">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Upload className="h-4 w-4 text-emerald-500" />
+                            Importar XML
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-4 px-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                                <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all border-emerald-500/20 hover:border-emerald-500/40">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Upload className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-xs text-slate-600 font-medium">Clique para selecionar XML</span>
+                                    </div>
+                                    <input type="file" className="hidden" accept=".xml" onChange={handleFileUpload} />
+                                </label>
                             </div>
-                            <DialogTitle className="text-center">Conversão Detectada</DialogTitle>
-                            <DialogDescription className="text-center">
-                                O sistema detectou que o produto <strong>{pendingConversion?.descricao}</strong> é vendido em embalagem coletiva ({pendingConversion?.classificacao?.unit_type} com {pendingConversion?.classificacao?.conversion_factor} unidades).
-                                <br /><br />
-                                Deseja converter o custo para o valor <strong>unitário</strong> para precificação?
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 my-4">
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="text-muted-foreground">Custo Atual (Total):</span>
-                                <span className="font-bold">R$ {pendingConversion?.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+
+                            <div>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleAnaliseIA}
+                                    disabled={itens.length === 0 || loading}
+                                    className="h-16 border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-4 flex flex-col gap-1 w-[120px]"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                    <span className="text-[10px]">Classificar Tudo</span>
+                                </Button>
                             </div>
-                            <div className="flex justify-between text-sm text-emerald-600 font-black">
-                                <span>Novo Custo Unitário:</span>
-                                <span>R$ {((pendingConversion?.valorCompra || 0) / (pendingConversion?.classificacao?.conversion_factor || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            {itens.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleClear}
+                                    className="h-16 w-8 text-slate-400 hover:text-destructive transition-colors shrink-0"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            {
+                itens.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 shadow-sm overflow-hidden group">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                    Total Bruto NFe
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-black text-slate-900 dark:text-slate-50">
+                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
+                                    {itens.reduce((acc, i) => acc + i.valorCompra, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/10 border-emerald-200 shadow-sm overflow-hidden group">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                                    Créditos Recuperáveis
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-black text-emerald-900 dark:text-emerald-50">
+                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
+                                    {itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </div>
+                                <p className="text-[9px] text-emerald-600 mt-1 font-bold italic">DINHEIRO DE VOLTA</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200 shadow-sm overflow-hidden group">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                                    Faturamento Projetado
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-black text-blue-900 dark:text-blue-50">
+                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
+                                    {totais.valorTotalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/10 border-purple-200 shadow-sm overflow-hidden group">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-purple-600">
+                                    Margem Líquida Real
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-black text-purple-900 dark:text-purple-50">
+                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
+                                    {(totais.valorTotalVenda - totais.impostoTotal - (itens.reduce((acc, i) => acc + i.valorCompra, 0) - itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : (
+                    <Card className="border-dashed border-2 py-10">
+                        <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
+                            <div className="bg-primary/5 p-4 rounded-full">
+                                <FileText className="h-10 w-10 text-primary/40" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-lg text-foreground">Nenhum dado importado</p>
+                                <p className="text-sm text-muted-foreground max-w-xs mx-auto">Importe o arquivo XML da sua NF-e para iniciar a simulação e análise tributária.</p>
+                            </div>
+                            <Label htmlFor="xml-upload-empty" className="cursor-pointer">
+                                <Button variant="outline" className="pointer-events-none gap-2">
+                                    <Upload className="h-4 w-4" /> Selecionar Arquivo
+                                </Button>
+                                <input
+                                    type="file"
+                                    accept=".xml"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                    id="xml-upload-empty"
+                                />
+                            </Label>
+                        </CardContent>
+                    </Card>
+                )
+            }
+
+            {/* Análise de Inteligência */}
+            {
+                itens.some(i => i.status === 'analisado' && i.classificacao?.sugestao_economia) && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 animate-fade-in mb-4">
+                        <div className="flex items-start gap-3">
+                            <Sparkles className="h-5 w-5 text-emerald-600 mt-0.5" />
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">
+                                    Oportunidades Identificadas pela IA
+                                </h3>
+                                <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
+                                    Encontramos estratégias para otimizar sua carga tributária.
+                                </p>
+                                <Button
+                                    size="sm"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                                    onClick={() => window.open('https://wa.me/5511999999999?text=Gostaria%20de%20saber%20mais%20sobre%20as%20economias%20tributarias%20do%20Simulador', '_blank')}
+                                >
+                                    Falar com Especialista
+                                </Button>
                             </div>
                         </div>
-                        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                            <Button variant="outline" onClick={() => setShowConversionDialog(false)} className="flex-1">
-                                Manter Original
-                            </Button>
-                            <Button onClick={handleConfirmConversion} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                                Confirmar Conversão
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
-            );
+                    </div>
+                )
+            }
+
+            {/* Tabela de Itens */}
+            <Card className="border-primary/10 shadow-lg overflow-hidden relative">
+                {loading && (
+                    <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-4 animate-in fade-in transition-all">
+                        <div className="relative">
+                            <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                            <Sparkles className="absolute inset-0 m-auto h-6 w-6 text-primary animate-pulse" />
+                        </div>
+                        <div className="text-center">
+                            <p className="font-bold text-lg text-primary">IA Classificando Itens...</p>
+                            <p className="text-sm text-muted-foreground">Isso pode levar alguns segundos dependendo da NFe</p>
+                        </div>
+                    </div>
+                )}
+                <CardHeader className="pb-4 border-b bg-muted/50">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-primary" />
+                                Itens da Nota Fiscal
+                            </CardTitle>
+                            <CardDescription>
+                                {itens.length > 0
+                                    ? `${itens.length} itens detectados • Use a IA para classificar tributos`
+                                    : 'Aguardando importação de arquivo XML'
+                                }
+                            </CardDescription>
+                        </div>
+                        {itens.some(i => i.status === 'analisado') && (
+                            <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 gap-1.5 py-1">
+                                <Sparkles className="h-3 w-3" /> IA Ativa
+                            </Badge>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 py-4">Produto / Classificação</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right">Qtd</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 text-right">Compra (R$)</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-emerald-600 text-right">Créditos (R$)</TableHead>
+                                    <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300">Custo Líq.</TableHead>
+                                    <TableHead className="text-center font-bold text-slate-700 dark:text-slate-300">Margem (%)</TableHead>
+                                    <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300 w-[100px]">Impostos Venda</TableHead>
+                                    <TableHead className="text-right font-black text-primary">Preço Sugerido</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {itens.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8} className="text-center py-20 bg-muted/5">
+                                            <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                                                <div className="bg-muted p-4 rounded-full opacity-20">
+                                                    <FileText className="h-12 w-12" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="font-bold text-lg text-foreground/70">Nenhum produto carregado</p>
+                                                    <p className="text-sm max-w-xs mx-auto">Faça upload de uma NFe (XML) para começar a simulação e análise tributária.</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    itensRecalculados.map((item) => {
+                                        const originalItem = itens.find(i => i.id === item.id);
+                                        const impostoTotal = regimeSelecionado === 'reforma2033'
+                                            ? item.regimes.reforma2033.impostoLiquido
+                                            : item.regimes[regimeSelecionado as keyof typeof item.regimes].imposto;
+
+                                        const impostoUnitario = item.quantidade > 0 ? impostoTotal / item.quantidade : impostoTotal;
+
+                                        const impostoTotalStr = `R$ ${impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                                        const impostoUnitarioStr = `R$ ${impostoUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+                                        return (
+                                            <TableRow key={item.id} className="hover:bg-primary/[0.02] transition-colors border-b last:border-0">
+                                                <TableCell className="py-4">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="font-bold text-sm text-foreground leading-tight truncate max-w-[200px]" title={item.descricao}>
+                                                            {item.descricao}
+                                                        </span>
+                                                        <div className="flex gap-1 items-center mt-1">
+                                                            <span className="text-[9px] text-muted-foreground font-mono bg-muted px-1 rounded">
+                                                                NCM {item.ncm}
+                                                            </span>
+                                                            {getClassificacaoBadge(item, originalItem?.status || 'pendente')}
+                                                        </div>
+                                                        {item.classificacao?.sugestao_economia && (
+                                                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 leading-tight">
+                                                                {item.classificacao.sugestao_economia}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right text-xs font-semibold text-muted-foreground">{item.quantidade}</TableCell>
+                                                <TableCell className="text-right font-medium text-sm">
+                                                    {item.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </TableCell>
+                                                <TableCell className="text-right font-bold text-emerald-600 text-sm bg-emerald-50/30">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger>
+                                                                {item.creditosEntrada.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[10px] space-y-1">
+                                                                    <p>IBS: R$ {item.creditosEntrada.ibs.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                    <p>CBS: R$ {item.creditosEntrada.cbs.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </TableCell>
+                                                <TableCell className="text-right font-black text-slate-700 dark:text-slate-300 text-sm">
+                                                    {item.custoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </TableCell>
+                                                <TableCell className="text-center p-2">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <Input
+                                                            type="number"
+                                                            value={item.margemLucro}
+                                                            onBlur={(e) => handleMarginChange(item.id, Number(e.target.value))}
+                                                            className="h-8 w-16 text-center text-xs font-bold border-primary/20 focus:border-primary"
+                                                        />
+                                                        <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right text-sm text-slate-600 dark:text-slate-400">
+                                                    R$ {item.regimes.reforma2033.debito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </TableCell>
+                                                <TableCell className="text-right font-black text-primary text-sm bg-primary/5">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger className="text-right w-full">
+                                                                R$ {item.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[10px] space-y-1">
+                                                                    <p>Base p/ Margem: R$ {item.baseCalculoVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                    <p>Imposto Venda: R$ {item.regimes.reforma2033.debito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+            {/* Dialog de Conversão de Unidade */}
+            <Dialog open={showConversionDialog} onOpenChange={setShowConversionDialog}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Package2 className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <DialogTitle className="text-center">Conversão Detectada</DialogTitle>
+                        <DialogDescription className="text-center">
+                            O sistema detectou que o produto <strong>{pendingConversion?.descricao}</strong> é vendido em embalagem coletiva ({pendingConversion?.classificacao?.unit_type} com {pendingConversion?.classificacao?.conversion_factor} unidades).
+                            <br /><br />
+                            Deseja converter o custo para o valor <strong>unitário</strong> para precificação?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 my-4">
+                        <div className="flex justify-between text-sm mb-2">
+                            <span className="text-muted-foreground">Custo Atual (Total):</span>
+                            <span className="font-bold">R$ {pendingConversion?.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-emerald-600 font-black">
+                            <span>Novo Custo Unitário:</span>
+                            <span>R$ {((pendingConversion?.valorCompra || 0) / (pendingConversion?.classificacao?.conversion_factor || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                        <Button variant="outline" onClick={() => setShowConversionDialog(false)} className="flex-1">
+                            Manter Original
+                        </Button>
+                        <Button onClick={handleConfirmConversion} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                            Confirmar Conversão
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 };
