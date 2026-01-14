@@ -871,7 +871,7 @@ export default function SimuladorNFe() {
                                                         <Input
                                                             type="number"
                                                             value={item.margemLucro}
-                                                            onBlur={(e) => handleMarginChange(item.id, Number(e.target.value))}
+                                                            onChange={(e) => handleMarginChange(item.id, Number(e.target.value))}
                                                             className="h-8 w-16 text-center text-xs font-bold border-primary/20 focus:border-primary"
                                                         />
                                                         <span className="text-[10px] font-bold text-muted-foreground">%</span>
