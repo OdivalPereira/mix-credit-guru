@@ -795,16 +795,31 @@ export default function SimuladorNFe() {
                                             <span className="text-[8px] opacity-70 font-normal normal-case">Unit. / Total</span>
                                         </div>
                                     </TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-emerald-600 text-right">Créditos (R$)</TableHead>
-                                    <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300">Custo Líq.</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-emerald-600 text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span>Créditos (R$)</span>
+                                            <span className="text-[8px] opacity-70 font-normal normal-case">Unit. / Total</span>
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300">
+                                        <div className="flex flex-col items-end">
+                                            <span>Custo Líq.</span>
+                                            <span className="text-[8px] opacity-70 font-normal normal-case">Unit. / Total</span>
+                                        </div>
+                                    </TableHead>
                                     <TableHead className="text-center font-bold text-slate-700 dark:text-slate-300">Margem (%)</TableHead>
-                                    <TableHead className="text-right font-bold text-slate-700 dark:text-slate-300 w-[120px]">
+                                    <TableHead className="text-right font-bold text-red-600 dark:text-red-400 w-[120px]">
                                         <div className="flex flex-col items-end">
                                             <span>Impostos Venda</span>
                                             <span className="text-[8px] opacity-70 font-normal normal-case">Unit. / Total</span>
                                         </div>
                                     </TableHead>
-                                    <TableHead className="text-right font-black text-primary">Preço Sugerido</TableHead>
+                                    <TableHead className="text-right font-black text-primary">
+                                        <div className="flex flex-col items-end">
+                                            <span>Preço Sugerido</span>
+                                            <span className="text-[8px] opacity-70 font-normal normal-case">Unit. / Total</span>
+                                        </div>
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -825,17 +840,24 @@ export default function SimuladorNFe() {
                                 ) : (
                                     itensRecalculados.map((item) => {
                                         const originalItem = itens.find(i => i.id === item.id);
+                                        const qtd = item.quantidade > 0 ? item.quantidade : 1;
+
                                         const impostoTotal = regimeSelecionado === 'reforma2033'
                                             ? item.regimes.reforma2033.impostoLiquido
                                             : item.regimes[regimeSelecionado as keyof typeof item.regimes].imposto;
 
-                                        const impostoUnitario = item.quantidade > 0 ? impostoTotal / item.quantidade : 0;
-                                        const compraUnitario = item.quantidade > 0 ? item.valorCompra / item.quantidade : 0;
+                                        // Unit calculations
+                                        const impostoUnitario = impostoTotal / qtd;
+                                        const compraUnitario = item.valorCompra / qtd;
+                                        const creditosTotal = item.creditosEntrada.total;
+                                        const creditosUnitario = creditosTotal / qtd;
+                                        const custoLiqTotal = item.custoLiquido;
+                                        const custoLiqUnitario = custoLiqTotal / qtd;
+                                        const vendaTotal = item.valorVenda;
+                                        const vendaUnitario = vendaTotal / qtd;
 
-                                        const impostoTotalStr = impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                                        const impostoUnitarioStr = impostoUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                                        const compraTotalStr = item.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                                        const compraUnitarioStr = compraUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                                        // Formatting
+                                        const fmt = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
                                         return (
                                             <TableRow key={item.id} className="hover:bg-primary/[0.02] transition-colors border-b last:border-0 relative group">
@@ -858,17 +880,24 @@ export default function SimuladorNFe() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right text-xs font-semibold text-muted-foreground">{item.quantidade}</TableCell>
+
+                                                {/* Compra */}
                                                 <TableCell className="text-right font-medium text-sm">
                                                     <div className="flex flex-col items-end gap-0.5">
-                                                        <span className="text-[10px] text-muted-foreground">R$ {compraUnitarioStr}</span>
-                                                        <span className="font-bold text-slate-700 dark:text-slate-300">R$ {compraTotalStr}</span>
+                                                        <span className="text-[10px] text-muted-foreground">R$ {fmt(compraUnitario)}</span>
+                                                        <span className="font-bold text-slate-700 dark:text-slate-300">R$ {fmt(item.valorCompra)}</span>
                                                     </div>
                                                 </TableCell>
+
+                                                {/* Créditos */}
                                                 <TableCell className="text-right font-bold text-emerald-600 text-sm bg-emerald-50/30">
                                                     <TooltipProvider>
                                                         <Tooltip>
-                                                            <TooltipTrigger>
-                                                                {item.creditosEntrada.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            <TooltipTrigger asChild>
+                                                                <div className="flex flex-col items-end gap-0.5 cursor-help">
+                                                                    <span className="text-[10px] text-emerald-600/70">R$ {fmt(creditosUnitario)}</span>
+                                                                    <span>R$ {fmt(creditosTotal)}</span>
+                                                                </div>
                                                             </TooltipTrigger>
                                                             <TooltipContent>
                                                                 <div className="text-[10px] space-y-1">
@@ -879,9 +908,16 @@ export default function SimuladorNFe() {
                                                         </Tooltip>
                                                     </TooltipProvider>
                                                 </TableCell>
+
+                                                {/* Custo Líquido */}
                                                 <TableCell className="text-right font-black text-slate-700 dark:text-slate-300 text-sm">
-                                                    {item.custoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    <div className="flex flex-col items-end gap-0.5">
+                                                        <span className="text-[10px] text-muted-foreground">R$ {fmt(custoLiqUnitario)}</span>
+                                                        <span className="font-bold">R$ {fmt(custoLiqTotal)}</span>
+                                                    </div>
                                                 </TableCell>
+
+                                                {/* Margem Input */}
                                                 <TableCell className="text-center p-2">
                                                     <div className="flex items-center justify-center gap-1">
                                                         <Input
@@ -893,21 +929,28 @@ export default function SimuladorNFe() {
                                                         <span className="text-[10px] font-bold text-muted-foreground">%</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right text-sm text-slate-600 dark:text-slate-400">
+
+                                                {/* Impostos Venda (Vermelho) */}
+                                                <TableCell className="text-right text-sm">
                                                     <div className="flex flex-col items-end gap-0.5">
-                                                        <span className="text-[10px] text-muted-foreground">
-                                                            R$ {(regimeSelecionado === 'reforma2033' ? (item.regimes.reforma2033.debito / item.quantidade) : impostoUnitario).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                        <span className="text-[10px] text-red-400">
+                                                            R$ {(regimeSelecionado === 'reforma2033' ? (item.regimes.reforma2033.debito / qtd) : impostoUnitario).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                                         </span>
-                                                        <span className="font-bold text-slate-700 dark:text-slate-300">
+                                                        <span className="font-bold text-red-600 dark:text-red-400">
                                                             R$ {(regimeSelecionado === 'reforma2033' ? item.regimes.reforma2033.debito : impostoTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                                         </span>
                                                     </div>
                                                 </TableCell>
+
+                                                {/* Preço Sugerido */}
                                                 <TableCell className="text-right font-black text-primary text-sm bg-primary/5">
                                                     <TooltipProvider>
                                                         <Tooltip>
-                                                            <TooltipTrigger className="text-right w-full">
-                                                                R$ {item.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            <TooltipTrigger asChild>
+                                                                <div className="flex flex-col items-end gap-0.5 w-full cursor-help">
+                                                                    <span className="text-[10px] text-primary/70">R$ {fmt(vendaUnitario)}</span>
+                                                                    <span>R$ {fmt(vendaTotal)}</span>
+                                                                </div>
                                                             </TooltipTrigger>
                                                             <TooltipContent>
                                                                 <div className="text-[10px] space-y-1">
