@@ -565,200 +565,161 @@ export default function SimuladorNFe() {
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* New Card for Manual Product Entry */}
-                <Card className="border-slate-200 shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden border-l-4 border-l-blue-500">
-                    <CardHeader className="pb-3 pt-3">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <PlusCircle className="h-4 w-4 text-blue-500" />
-                            Entrada Manual
+            {/* Action Bar: Manual Entry & XML Import */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                {/* Manual Entry - Takes up 2 columns on large screens */}
+                <Card className="xl:col-span-2 border-slate-200 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+                    <CardHeader className="pb-3 pt-4 px-4 border-b bg-slate-50/50 dark:bg-slate-900/50">
+                        <CardTitle className="text-xs font-bold flex items-center gap-2 uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                            <PlusCircle className="h-3.5 w-3.5 text-blue-500" />
+                            Adicionar Item Manualmente
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-12 gap-2 pb-4 px-4">
-                        <div className="col-span-12 md:col-span-5 space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-slate-500">Descrição</Label>
-                            <Input
-                                placeholder="Ex: Cerveja Heineken..."
-                                value={manualDescricao}
-                                onChange={(e) => setManualDescricao(e.target.value)}
-                                className="h-8 text-xs"
-                            />
-                            {manualPreview && (
-                                <div className="text-[9px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in">
-                                    <CheckCircle2 className="h-3 w-3" />
-                                    Item já classificado
+                    <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row gap-3 items-start md:items-end">
+                            <div className="flex-1 w-full space-y-1.5">
+                                <Label className="text-[10px] uppercase font-bold text-slate-500">Descrição do Produto</Label>
+                                <div className="relative">
+                                    <Input
+                                        placeholder="Ex: Cerveja 600ml..."
+                                        value={manualDescricao}
+                                        onChange={(e) => setManualDescricao(e.target.value)}
+                                        className="h-9 text-sm"
+                                    />
+                                    {isSearchingManual && (
+                                        <div className="absolute right-3 top-2.5">
+                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                            {isSearchingManual && (
-                                <div className="text-[9px] text-muted-foreground flex items-center gap-1 animate-pulse">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Buscando...
-                                </div>
-                            )}
-                        </div>
-                        <div className="col-span-6 md:col-span-2 space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-slate-500">NCM</Label>
-                            <Input
-                                placeholder="Opcional"
-                                value={manualNcm}
-                                onChange={(e) => setManualNcm(e.target.value)}
-                                className="h-8 text-xs font-mono"
-                            />
-                        </div>
-                        <div className="col-span-6 md:col-span-2 space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-slate-500">Custo (R$)</Label>
-                            <Input
-                                type="number"
-                                placeholder="0,00"
-                                value={manualValor || ''}
-                                onChange={(e) => setManualValor(Number(e.target.value))}
-                                className="h-8 text-xs"
-                            />
-                        </div>
-                        <div className="col-span-12 md:col-span-3 flex items-end">
+                                {manualPreview && (
+                                    <div className="text-[10px] font-medium text-emerald-600 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Classificação encontrada: {manualPreview.unit_type}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="w-full md:w-[120px] space-y-1.5">
+                                <Label className="text-[10px] uppercase font-bold text-slate-500">NCM</Label>
+                                <Input
+                                    placeholder="0000.00.00"
+                                    value={manualNcm}
+                                    onChange={(e) => setManualNcm(e.target.value)}
+                                    className="h-9 font-mono text-sm"
+                                />
+                            </div>
+
+                            <div className="w-full md:w-[120px] space-y-1.5">
+                                <Label className="text-[10px] uppercase font-bold text-slate-500">Custo (R$)</Label>
+                                <Input
+                                    type="number"
+                                    placeholder="0,00"
+                                    value={manualValor || ''}
+                                    onChange={(e) => setManualValor(Number(e.target.value))}
+                                    className="h-9 text-sm font-medium"
+                                />
+                            </div>
+
                             <Button
                                 onClick={handleAddManual}
-                                className="w-full bg-blue-600 hover:bg-blue-700 h-8 text-xs font-bold"
                                 disabled={!manualDescricao}
+                                className="w-full md:w-auto h-9 bg-blue-600 hover:bg-blue-700 font-bold shadow-sm"
                             >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Adicionar
+                                <Plus className="h-4 w-4 md:mr-2" />
+                                <span className="md:inline">Adicionar</span>
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* New Card for XML Import */}
-                <Card className="border-slate-200 shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden border-l-4 border-l-emerald-500">
-                    <CardHeader className="pb-3 pt-3">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <Upload className="h-4 w-4 text-emerald-500" />
-                            Importar XML
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4 px-4">
-                        <div className="flex items-center gap-3">
-                            <div className="flex-1">
-                                <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all border-emerald-500/20 hover:border-emerald-500/40">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Upload className="w-4 h-4 text-emerald-500" />
-                                        <span className="text-xs text-slate-600 font-medium">Clique para selecionar XML</span>
-                                    </div>
-                                    <input type="file" className="hidden" accept=".xml" onChange={handleFileUpload} />
-                                </label>
+                {/* XML Import - Compact Dropzone */}
+                <Card className="xl:col-span-1 border-dashed border-2 border-slate-200 dark:border-slate-800 shadow-none bg-slate-50/50 dark:bg-slate-900/20 hover:bg-slate-50 transition-colors">
+                    <CardContent className="p-0 h-full">
+                        <label className="flex flex-col items-center justify-center w-full h-full min-h-[140px] cursor-pointer group">
+                            <div className="bg-white dark:bg-slate-800 p-3 rounded-full shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                                <Upload className="w-5 h-5 text-emerald-500" />
                             </div>
-
-                            <div>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleAnaliseIA}
-                                    disabled={itens.length === 0 || loading}
-                                    className="h-16 border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-4 flex flex-col gap-1 w-[120px]"
-                                >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                                    <span className="text-[10px]">Classificar Tudo</span>
-                                </Button>
+                            <div className="text-center px-4">
+                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Importar XML da NF-e
+                                </p>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                    Arraste o arquivo ou clique para buscar
+                                </p>
                             </div>
-                            {itens.length > 0 && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleClear}
-                                    className="h-16 w-8 text-slate-400 hover:text-destructive transition-colors shrink-0"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            )}
-                        </div>
+                            <input
+                                type="file"
+                                className="hidden"
+                                accept=".xml"
+                                onChange={handleFileUpload}
+                            />
+                        </label>
                     </CardContent>
                 </Card>
             </div>
-            {
-                itens.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 shadow-sm overflow-hidden group">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                    Total Bruto NFe
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-black text-slate-900 dark:text-slate-50">
-                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                    {itens.reduce((acc, i) => acc + i.valorCompra, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </div>
-                            </CardContent>
-                        </Card>
 
-                        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/10 border-emerald-200 shadow-sm overflow-hidden group">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
-                                    Créditos Recuperáveis
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-black text-emerald-900 dark:text-emerald-50">
-                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                    {itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </div>
-                                <p className="text-[9px] text-emerald-600 mt-1 font-bold italic">DINHEIRO DE VOLTA</p>
-                            </CardContent>
-                        </Card>
 
-                        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200 shadow-sm overflow-hidden group">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
-                                    Faturamento Projetado
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-black text-blue-900 dark:text-blue-50">
-                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                    {totais.valorTotalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/10 border-purple-200 shadow-sm overflow-hidden group">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-purple-600">
-                                    Margem Líquida Real
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-black text-purple-900 dark:text-purple-50">
-                                    <span className="text-sm font-medium mr-1 opacity-50">R$</span>
-                                    {(totais.valorTotalVenda - totais.impostoTotal - (itens.reduce((acc, i) => acc + i.valorCompra, 0) - itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                ) : (
-                    <Card className="border-dashed border-2 py-10">
-                        <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
-                            <div className="bg-primary/5 p-4 rounded-full">
-                                <FileText className="h-10 w-10 text-primary/40" />
+            {/* Summary Cards - Only show when items exist */}
+            {itens.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card className="border-primary/10 shadow-sm">
+                        <CardHeader className="pb-2 pt-3 px-4">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Total Bruto NFe
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-3">
+                            <div className="text-xl font-black text-foreground">
+                                <span className="text-xs font-medium mr-1 opacity-50">R$</span>
+                                {itens.reduce((acc, i) => acc + i.valorCompra, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
-                            <div>
-                                <p className="font-semibold text-lg text-foreground">Nenhum dado importado</p>
-                                <p className="text-sm text-muted-foreground max-w-xs mx-auto">Importe o arquivo XML da sua NF-e para iniciar a simulação e análise tributária.</p>
-                            </div>
-                            <Label htmlFor="xml-upload-empty" className="cursor-pointer">
-                                <Button variant="outline" className="pointer-events-none gap-2">
-                                    <Upload className="h-4 w-4" /> Selecionar Arquivo
-                                </Button>
-                                <input
-                                    type="file"
-                                    accept=".xml"
-                                    onChange={handleFileUpload}
-                                    className="hidden"
-                                    id="xml-upload-empty"
-                                />
-                            </Label>
                         </CardContent>
                     </Card>
-                )
-            }
+
+                    <Card className="border-emerald-200/50 shadow-sm bg-emerald-50/30 dark:bg-emerald-950/10">
+                        <CardHeader className="pb-2 pt-3 px-4">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                                Créditos Recuperáveis
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-3">
+                            <div className="text-xl font-black text-emerald-700 dark:text-emerald-400">
+                                <span className="text-xs font-medium mr-1 opacity-50">R$</span>
+                                {itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-blue-200/50 shadow-sm bg-blue-50/30 dark:bg-blue-950/10">
+                        <CardHeader className="pb-2 pt-3 px-4">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                                Faturamento Projetado
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-3">
+                            <div className="text-xl font-black text-blue-700 dark:text-blue-400">
+                                <span className="text-xs font-medium mr-1 opacity-50">R$</span>
+                                {totais.valorTotalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-purple-200/50 shadow-sm bg-purple-50/30 dark:bg-purple-950/10">
+                        <CardHeader className="pb-2 pt-3 px-4">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-purple-600">
+                                Margem Líquida Real
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-3">
+                            <div className="text-xl font-black text-purple-700 dark:text-purple-400">
+                                <span className="text-xs font-medium mr-1 opacity-50">R$</span>
+                                {(totais.valorTotalVenda - totais.impostoTotal - (itens.reduce((acc, i) => acc + i.valorCompra, 0) - itens.reduce((acc, i) => acc + (i.creditosEntrada?.total || 0), 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
             {/* Análise de Inteligência */}
             {
